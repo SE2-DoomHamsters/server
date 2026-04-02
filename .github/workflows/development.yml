@@ -1,15 +1,17 @@
-name: SonarQube
+name: CI - Development
+
 on:
   push:
     branches:
-      - main
+      - development
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - main
+      - development
+
 jobs:
   build:
-    name: Build and analyze
+    name: Build, Test and Coverage Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -20,20 +22,17 @@ jobs:
         with:
           java-version: 21
           distribution: 'zulu'
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v5
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
       - name: Cache Maven packages
         uses: actions/cache@v5
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: Build and analyze
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=SE2-DoomHamsters_server
+      - name: Cache OWASP NVD database
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/dependency-check
+          key: ${{ runner.os }}-owasp-nvd
+          restore-keys: ${{ runner.os }}-owasp-nvd
+      - name: Build, test and check coverage
+        run: mvn -B verify -Ddependency-check.cacheDirectory=$HOME/.cache/dependency-check

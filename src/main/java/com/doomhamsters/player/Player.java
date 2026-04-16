@@ -16,6 +16,7 @@ public class Player {
 
   //Logic
   public boolean isAlive() { return lives > 0 && !eliminated;}
+  public boolean hasName(String name){return this.name.equals(name);}
 
   //Getters & Setters
   public String getName() { return name; }

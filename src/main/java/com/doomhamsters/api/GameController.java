@@ -1,10 +1,14 @@
 package com.doomhamsters.api;
 
 import com.doomhamsters.api.dto.*;
-import com.doomhamsters.card.Card;
+import com.doomhamsters.card.CardType;
+import com.doomhamsters.game.Game;
 import com.doomhamsters.game.GameManager;
+import com.doomhamsters.player.Deck;
 import com.doomhamsters.player.Player;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/games")
@@ -36,7 +40,7 @@ public class GameController {
   @PostMapping("/{id}/start")
   public void startGame(@PathVariable String id,
                         @RequestBody StartGameRequest req) {
-    gameManager.getGame(id).start(req.playerName);
+    gameManager.getGame(id).start();
   }
 
   @PostMapping("/{id}/play")
@@ -52,14 +56,36 @@ public class GameController {
   }
 
   @PostMapping("/{id}/draw")
-  public Card drawCard(@PathVariable String id,
-                       @RequestBody DrawCardRequest req) {
+  public CardType drawCard(@PathVariable String id,
+                           @RequestBody DrawCardRequest req) {
     return gameManager.getGame(id).drawCard(req.playerName);
   }
 
-  @PostMapping("/{id}/kick")
-  public void kickPlayer(@PathVariable String id,
-                         @RequestBody KickPlayerRequest req) {
-    gameManager.getGame(id).kickPlayer(req.hostName, req.targetPlayerName);
+  //Get Endpoints
+  @GetMapping("/{id}/players")
+  public List<PlayerStateResponse> getPlayers(@PathVariable String id) {
+    return PlayerStateResponse.fromPlayers(gameManager.getGame(id).getPlayers());
+  }
+
+  @GetMapping("/{id}/current-player")
+  public PlayerStateResponse getCurrentPlayer(@PathVariable String id) {
+    return new PlayerStateResponse(gameManager.getGame(id).getCurrentPlayer());
+  }
+
+  @GetMapping("/{id}/hand")
+  public Deck getHand(@PathVariable String id,
+                      @RequestParam String playerName) {
+    return gameManager.getGame(id).getPlayers().stream().filter(p -> p.getName().equals(playerName)).findFirst().orElse(null).getDeck();
+  }
+
+  @GetMapping("/{id}/state")
+  public GameStateResponse getState(@PathVariable String id) {
+    Game game = gameManager.getGame(id);
+
+    return new GameStateResponse(
+      game.getPlayers(),
+      game.getCurrentPlayer(),
+      game.getCurrentState()
+    );
   }
 }

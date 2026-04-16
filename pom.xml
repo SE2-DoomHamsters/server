@@ -15,7 +15,7 @@
     <artifactId>DoomHamsters</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>Doom Hamsters</name>
-    <description>Doom Hamsters - Card Game Server</description>
+    <description>Doom Hamsters - com.doomhamsters.card.Card com.doomhamsters.game.Game Server</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

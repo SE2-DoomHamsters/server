@@ -25,12 +25,14 @@ public class Lobby {
     this.lobbyId = lobbyId;
   }
 
+  // FIX für EI_EXPOSE_REP: Gibt eine Kopie zurück, statt das Original
   public List<User> getMembers() {
-    return members;
+    return (members == null) ? null : new ArrayList<>(members);
   }
 
+  // FIX für EI_EXPOSE_REP2: Speichert eine Kopie, statt die Referenz direkt zu übernehmen
   public void setMembers(List<User> members) {
-    this.members = members;
+    this.members = (members == null) ? new ArrayList<>() : new ArrayList<>(members);
   }
 
   public String getQrCodeBase64() {

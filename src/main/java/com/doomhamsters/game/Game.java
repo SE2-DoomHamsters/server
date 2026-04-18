@@ -12,7 +12,7 @@ public class Game {
   //Fields
   private GameState currentState = GameState.OFF;
   private final String id;
-  private Player winner;
+  private Player winner, host;
   private List<Player> players = new ArrayList<>();
   private Deck discardPile = new Deck(), drawPile = new Deck();
   private Player currentPlayer;
@@ -28,8 +28,8 @@ public class Game {
     players.add(player);
     return player;
   }
-  public void removePlayer(String playerName) {
-    players.removeIf(p -> p.getName().equals(playerName));
+  public void removePlayer(String playerId) {
+    players.removeIf(p -> p.hasId(playerId));
   }
 
   public boolean start(){
@@ -45,18 +45,18 @@ public class Game {
     currentState = GameState.RUNNING;
     return true;
   }
-  public boolean playCard(String playerName, CardType type){
-    if(!currentPlayer.hasName(playerName)) return false;
+  public boolean playCard(String playerId, CardType type){
+    if(!currentPlayer.hasId(playerId)) return false;
     return true;
   }
-  public boolean endTurn(String playerName) {
-    if (!currentPlayer.hasName(playerName)) return false;
+  public boolean endTurn(String playerId) {
+    if (!currentPlayer.hasId(playerId)) return false;
     int nextIndex = (players.indexOf(currentPlayer) + 1) % players.size();
     currentPlayer = players.get(nextIndex);
     return true;
   }
-  public CardType drawCard(String playerName){
-    if(!currentPlayer.hasName(playerName)) return null;
+  public CardType drawCard(String playerId){
+    if(!currentPlayer.hasId(playerId)) return null;
     return drawPile.draw();
   }
 
@@ -67,4 +67,7 @@ public class Game {
   public Deck getDiscardPile() {return discardPile;}
   public Player getCurrentPlayer() { return currentPlayer; }
   public GameState getCurrentState() { return currentState; }
+  public void setHost(Player host) { this.host = host; }
+  public Player getHost() { return host; }
+  public boolean isHost(String playerId) { return host.hasId(playerId); }
 }

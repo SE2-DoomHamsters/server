@@ -34,7 +34,7 @@ public class GameController {
   @PostMapping("/{id}/leave")
   public void leaveGame(@PathVariable String id,
                         @RequestBody LeaveGameRequest req) {
-    gameManager.getGame(id).removePlayer(req.playerName);
+    gameManager.getGame(id).removePlayer(req.playerId);
   }
 
   @PostMapping("/{id}/start")
@@ -46,19 +46,26 @@ public class GameController {
   @PostMapping("/{id}/play")
   public void playCard(@PathVariable String id,
                        @RequestBody PlayCardRequest req) {
-    gameManager.getGame(id).playCard(req.playerName, req.cardType);
+    gameManager.getGame(id).playCard(req.playerId, req.cardType);
   }
 
   @PostMapping("/{id}/end-turn")
   public void endTurn(@PathVariable String id,
                       @RequestBody EndTurnRequest req) {
-    gameManager.getGame(id).endTurn(req.playerName);
+    gameManager.getGame(id).endTurn(req.playerId);
   }
 
   @PostMapping("/{id}/draw")
   public CardType drawCard(@PathVariable String id,
                            @RequestBody DrawCardRequest req) {
-    return gameManager.getGame(id).drawCard(req.playerName);
+    return gameManager.getGame(id).drawCard(req.playerId);
+  }
+
+  @PostMapping("/{id}/kick")
+  public void kickPlayer(@PathVariable String id,
+                        @RequestBody KickPlayerRequest req) {
+    Game game = gameManager.getGame(id);
+    if(game.getHost().hasId(req.hostId)) game.removePlayer(req.targetPlayerId);
   }
 
   //Get Endpoints

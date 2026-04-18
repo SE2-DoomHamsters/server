@@ -36,6 +36,12 @@ public enum CardType {
   public void apply(Player player, Game game) {
     effect.apply(this, player, game);
   }
+  public boolean isHamster() {
+    return switch (this) {
+      case FAT_HAMSTER, NINJA_HAMSTER, SLEEPY_HAMSTER, GREMLIN_HAMSTER, ZOMBI_HAMSTER -> true;
+      default -> false;
+    };
+  }
 
   //Getters & Setters
   public String getName() {

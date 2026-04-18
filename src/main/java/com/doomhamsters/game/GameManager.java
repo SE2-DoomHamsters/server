@@ -1,5 +1,6 @@
 package com.doomhamsters.game;
 
+import com.doomhamsters.player.Player;
 import org.springframework.stereotype.Service;
 import java.util.Map;
 import java.util.UUID;
@@ -13,7 +14,8 @@ public class GameManager {
   public Game createGame(String hostName) {
     String id = UUID.randomUUID().toString();
     Game game = new Game(id);
-    game.addPlayer(hostName);
+    Player p = game.addPlayer(hostName);
+    game.setHost(p);
     games.put(id, game);
     return game;
   }

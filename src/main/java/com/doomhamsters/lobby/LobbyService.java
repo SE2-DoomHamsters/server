@@ -36,7 +36,6 @@ public class LobbyService {
   }
 
   /** Fügt einen User hinzu oder aktualisiert ihn. */
-  /** Fügt einen User hinzu oder aktualisiert ihn. */
   public Lobby joinOrUpdateLobby(String lobbyId, User user) {
     Lobby lobby = activeLobbies.get(lobbyId);
     if (lobby != null) {

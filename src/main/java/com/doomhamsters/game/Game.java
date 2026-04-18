@@ -70,4 +70,7 @@ public class Game {
   public void setHost(Player host) { this.host = host; }
   public Player getHost() { return host; }
   public boolean isHost(String playerId) { return host.hasId(playerId); }
+  public Player getPlayerById(String playerId) {
+    return players.stream().filter(p -> p.getName().equals(playerId)).findFirst().orElse(null);
+  }
 }

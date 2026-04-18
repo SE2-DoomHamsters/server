@@ -34,8 +34,8 @@ public class GameManager {
     );
   }
 
-  public boolean startGame(String id, String hostId) {
-    if(games.get(id).isHost(hostId)) return false;
+  public boolean startGame(String id, String token) {
+    if(games.get(id).isHostToken(token)) return false;
     games.get(id).start();
     return true;
   }
@@ -44,16 +44,16 @@ public class GameManager {
     games.remove(id);
   }
 
-  public void kickPlayer(String id, String hostId, String targetPlayerId) {
+  public void kickPlayer(String id, String hostToken, String targetPlayerId) {
     Game game = getGame(id);
-    if(game.isHost(hostId)) game.removePlayer(targetPlayerId);
+    if(game.isHostToken(hostToken)) game.removePlayer(game.getPlayerById(targetPlayerId).getToken());
   }
 
   public Player joinGame(String gameId, String playerName) {
     return getGame(gameId).addPlayer(playerName);
   }
 
-  public void leaveGame(String gameId, String playerId) {
-    getGame(gameId).removePlayer(playerId);
+  public void leaveGame(String gameId, String token) {
+    getGame(gameId).removePlayer(token);
   }
 }

@@ -28,8 +28,8 @@ public class Game {
     players.add(player);
     return player;
   }
-  public void removePlayer(String playerId) {
-    players.removeIf(p -> p.hasId(playerId));
+  public void removePlayer(String token) {
+    players.removeIf(p -> p.hasToken(token));
   }
 
   public boolean start(){
@@ -45,18 +45,18 @@ public class Game {
     currentState = GameState.RUNNING;
     return true;
   }
-  public boolean playCard(String playerId, CardType type){
-    if(!currentPlayer.hasId(playerId)) return false;
+  public boolean playCard(String token, CardType type){
+    if(!isCurrentPlayer(token)) return false;
     return true;
   }
-  public boolean endTurn(String playerId) {
-    if (!currentPlayer.hasId(playerId)) return false;
+  public boolean endTurn(String token) {
+    if (!isCurrentPlayer(token)) return false;
     int nextIndex = (players.indexOf(currentPlayer) + 1) % players.size();
     currentPlayer = players.get(nextIndex);
     return true;
   }
-  public CardType drawCard(String playerId){
-    if(!currentPlayer.hasId(playerId)) return null;
+  public CardType drawCard(String token){
+    if(!isCurrentPlayer(token)) return null;
     return drawPile.draw();
   }
 
@@ -70,7 +70,14 @@ public class Game {
   public void setHost(Player host) { this.host = host; }
   public Player getHost() { return host; }
   public boolean isHost(String playerId) { return host.hasId(playerId); }
+  public boolean isHostToken(String token){return host.hasToken(token);}
   public Player getPlayerById(String playerId) {
     return players.stream().filter(p -> p.getName().equals(playerId)).findFirst().orElse(null);
+  }
+  public Player getPlayerByToken(String token) {
+    return players.stream().filter(p -> p.hasToken(token)).findFirst().orElse(null);
+  }
+  public boolean isCurrentPlayer(String token){
+    return currentPlayer.hasToken(token);
   }
 }

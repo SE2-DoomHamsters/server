@@ -73,4 +73,15 @@ class LobbyServiceTest {
     assertNotNull(lobbyService.getLobby("FINDMICH"));
     assertNull(lobbyService.getLobby("WEG"));
   }
+  @Test
+  void testGenerateQrCodeError() {
+    // Ein extrem langer String (über 3000 Zeichen) sprengt die Kapazität eines Standard-QR-Codes
+    String tooLong = "A".repeat(5000);
+
+    // Ruft indirekt generateQrCode über createLobby auf
+    Lobby lobby = lobbyService.createLobby(tooLong, testCreator);
+
+    // Wenn die Exception geworfen wurde, ist der Base64 String null
+    assertNull(lobby.getQrCodeBase64());
+  }
 }

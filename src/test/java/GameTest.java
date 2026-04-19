@@ -1,13 +1,15 @@
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 public class GameTest {
+
   static List<Card> makeActionCards(int count) {
     List<Card> cards = new ArrayList<>();
     for (int i = 0; i < count; i++) {
@@ -28,16 +30,18 @@ public class GameTest {
     return cards;
   }
 
-  /** Sets up a ready-to-run game with enough cards for n players. */
+  /**
+   * Sets up a ready-to-run game with enough cards for n players.
+   */
   private static Game setupGame(List<String> playerNames) {
     Game game = new Game();
     // Each player draws 5 action cards, so we need at least playerCount * 5
     int cardCount = playerNames.size() * 5 + 20;
     game.setup(
-      playerNames,
-      makeActionCards(cardCount),
-      makeSnackStash(),
-      makeDoomCards(playerNames.size() + 5) // extra doom cards as buffer
+        playerNames,
+        makeActionCards(cardCount),
+        makeSnackStash(),
+        makeDoomCards(playerNames.size() + 5) // extra doom cards as buffer
     );
     return game;
   }
@@ -68,7 +72,7 @@ public class GameTest {
     void playCallsEffect() {
       boolean[] called = {false};
       Card card = new Card("a1", "Test", "action",
-        (game, player) -> called[0] = true);
+          (game, player) -> called[0] = true);
 
       card.play(null, null);
       assertTrue(called[0]);

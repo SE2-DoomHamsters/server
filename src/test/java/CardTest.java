@@ -1,10 +1,12 @@
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.AssertionsKt.assertNotNull;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.AssertionsKt.assertNotNull;
+import org.junit.jupiter.api.Test;
 
 public class CardTest {
 
@@ -20,7 +22,8 @@ public class CardTest {
 
   @Test
   void constructorWithEffectShouldStoreEffect() {
-    BiConsumer<Game, Player> effect = (g, p) -> {};
+    BiConsumer<Game, Player> effect = (g, p) -> {
+    };
     Card card = new Card("1", "Effect Card", "action", effect);
 
     assertNotNull(card);
@@ -66,7 +69,7 @@ public class CardTest {
   @Test
   void playShouldPassCorrectParametersToEffect() {
     Game game = new Game();
-    Player player = new Player("69","joe");
+    Player player = new Player("69", "joe");
 
     AtomicBoolean correctParams = new AtomicBoolean(false);
 

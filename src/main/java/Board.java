@@ -2,11 +2,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
+
   private final List<Player> players;
   private final Deck deck;
+  private final List<Card> discardPile;
   private int currentIndex;
   private int turnCount;
-  private final List<Card> discardPile;
 
   public Board(List<Player> players, Deck deck) {
     this.players = players;
@@ -22,8 +23,8 @@ public class Board {
 
   public List<Player> getActivePlayers() {
     return players.stream()
-      .filter(Player::isAlive)
-      .toList();
+        .filter(Player::isAlive)
+        .toList();
   }
 
   public Deck getDeck() {

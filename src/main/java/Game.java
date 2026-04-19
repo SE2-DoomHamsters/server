@@ -3,29 +3,40 @@ import java.util.List;
 import java.util.Random;
 
 public class Game {
+
   public static final int STARTING_HAND_SIZE = 6; // 1 Snack Stash + 5 zufällige
-
-  public enum State { SETUP, RUNNING, FINISHED }
-
+  private final Random random = new Random();
   private State state;
   private Player winner;
   private List<Player> players;
   private Deck deck;
   private Board board;
 
-  private final Random random = new Random();
-
   public Game() {
-    this.state  = State.SETUP;
+    this.state = State.SETUP;
     this.winner = null;
     this.players = new ArrayList<>();
   }
 
-  public State getState()   { return state; }
-  public Player getWinner() { return winner; }
-  public Board getBoard()   { return board; }
-  public Deck getDeck()     { return deck; }
-  public List<Player> getPlayers() { return players; }
+  public State getState() {
+    return state;
+  }
+
+  public Player getWinner() {
+    return winner;
+  }
+
+  public Board getBoard() {
+    return board;
+  }
+
+  public Deck getDeck() {
+    return deck;
+  }
+
+  public List<Player> getPlayers() {
+    return players;
+  }
 
   /**
    * Initialisiert alle Entities und startet das Spiel.
@@ -36,10 +47,10 @@ public class Game {
    * @param doomProtos      Doom-Hamster-Karten
    */
   public void setup(
-    List<String> playerNames,
-    List<Card>   allActionCards,
-    Card         snackStashProto,
-    List<Card>   doomProtos
+      List<String> playerNames,
+      List<Card> allActionCards,
+      Card snackStashProto,
+      List<Card> doomProtos
   ) {
     if (playerNames.size() < 2) {
       throw new IllegalArgumentException("Mindestens 2 Spieler erforderlich");
@@ -58,9 +69,9 @@ public class Game {
     // Jeder Spieler erhält 1 Snack Stash + 5 zufällige Karten
     for (Player player : players) {
       Card snackStash = new Card(
-        "ss_" + player.getId(),
-        snackStashProto.getName(),
-        "snack_stash"
+          "ss_" + player.getId(),
+          snackStashProto.getName(),
+          "snack_stash"
       );
       player.addToHand(snackStash);
 
@@ -81,12 +92,14 @@ public class Game {
     state = State.RUNNING;
   }
 
-  /** Prüft die Siegbedingung und setzt ggf. den Gewinner */
+  /**
+   * Prüft die Siegbedingung und setzt ggf. den Gewinner
+   */
   public boolean checkWinCondition() {
     List<Player> alive = board.getActivePlayers();
     if (alive.size() == 1) {
       winner = alive.get(0);
-      state  = State.FINISHED;
+      state = State.FINISHED;
       return true;
     }
     return false;
@@ -98,7 +111,9 @@ public class Game {
    * @param cardIds IDs der zu spielenden Karten (kann leer sein)
    */
   public void executeTurn(List<String> cardIds) {
-    if (state != State.RUNNING) return;
+    if (state != State.RUNNING) {
+      return;
+    }
 
     Player player = board.getCurrentPlayer();
 
@@ -110,7 +125,9 @@ public class Game {
 
     // b) 1 Karte ziehen (Pflicht)
     Card drawn = deck.draw();
-    if (drawn == null) return; // leeres Deck
+    if (drawn == null) {
+      return; // leeres Deck
+    }
 
     if (drawn.isDoom()) {
       Player.DoomResult result = player.handleDoom();
@@ -122,9 +139,13 @@ public class Game {
     }
 
     // c) Siegbedingung prüfen
-    if (checkWinCondition()) return;
+    if (checkWinCondition()) {
+      return;
+    }
 
     // d) Nächster Spieler
     board.advanceTurn();
   }
+
+  public enum State {SETUP, RUNNING, FINISHED}
 }

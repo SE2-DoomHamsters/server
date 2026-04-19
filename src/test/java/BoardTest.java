@@ -1,11 +1,10 @@
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 public class BoardTest {
 
@@ -15,9 +14,9 @@ public class BoardTest {
   @BeforeEach
   void init() {
     players = List.of(
-      new Player("p0", "Alice"),
-      new Player("p1", "Bob"),
-      new Player("p2", "Carol")
+        new Player("p0", "Alice"),
+        new Player("p1", "Bob"),
+        new Player("p2", "Carol")
     );
     board = new Board(new ArrayList<>(players), new Deck(GameTest.makeActionCards(30)));
   }

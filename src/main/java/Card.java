@@ -1,6 +1,7 @@
 import java.util.function.BiConsumer;
 
 public class Card {
+
   private final String id;
   private final String name;
   private final String type; // "action" | "snack_stash" | "doom"

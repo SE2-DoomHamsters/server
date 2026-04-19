@@ -1,12 +1,12 @@
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 public class Decktests {
-
 
 
   @Test
@@ -76,7 +76,9 @@ public class Decktests {
     long doomCount = 0;
     for (int i = 0; i < 12; i++) {
       Card c = deck.draw();
-      if (c != null && c.isDoom()) doomCount++;
+      if (c != null && c.isDoom()) {
+        doomCount++;
+      }
     }
     assertEquals(2, doomCount);
   }

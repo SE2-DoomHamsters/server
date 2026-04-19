@@ -37,7 +37,7 @@ public class LobbyService {
   }
 
   /** Fügt einen User hinzu oder aktualisiert ihn. */
-  public Optional <Lobby> joinOrUpdateLobby(String lobbyId, User user) {
+  public Optional<Lobby> joinOrUpdateLobby(String lobbyId, User user) {
     Lobby lobby = activeLobbies.get(lobbyId);
     if (lobby != null) {
       // 1. Die Kopie der Liste holen
@@ -56,7 +56,7 @@ public class LobbyService {
   }
 
   private String generateQrCode(String text) {
-    if(text == null || text.isBlank()) {
+    if (text == null || text.isBlank()) {
       return null;
     }
     try {

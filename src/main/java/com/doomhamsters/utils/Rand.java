@@ -4,7 +4,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public final class Rand {
 
-  private Rand() {}
+  private Rand() {
+  }
 
   // int [min, max] inclusive
   public static int range(int min, int max) {

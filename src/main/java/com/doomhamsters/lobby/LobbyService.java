@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +37,7 @@ public class LobbyService {
   }
 
   /** Fügt einen User hinzu oder aktualisiert ihn. */
-  public Lobby joinOrUpdateLobby(String lobbyId, User user) {
+  public Optional <Lobby> joinOrUpdateLobby(String lobbyId, User user) {
     Lobby lobby = activeLobbies.get(lobbyId);
     if (lobby != null) {
       // 1. Die Kopie der Liste holen
@@ -49,12 +50,15 @@ public class LobbyService {
       // 3. Die geänderte Liste mit dem Setter zurückspeichern
       lobby.setMembers(currentMembers);
 
-      return lobby;
+      return Optional.of(lobby);
     }
-    return null;
+    return Optional.empty();
   }
 
   private String generateQrCode(String text) {
+    if(text == null || text.isBlank()) {
+      return null;
+    }
     try {
       QRCodeWriter qrCodeWriter = new QRCodeWriter();
       BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, 250, 250);
@@ -62,7 +66,7 @@ public class LobbyService {
       MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream);
       return Base64.getEncoder().encodeToString(outputStream.toByteArray());
     } catch (com.google.zxing.WriterException | java.io.IOException e) {
-      // Hier fangen wir nur die spezifischen Fehler ab, die ZXing/IO werfen können
+
       return null;
     }
   }

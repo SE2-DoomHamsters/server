@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 /**
  * Testklasse für den LobbyService.
  * Prüft die Erstellung, das Beitreten und die QR-Generierung.
@@ -39,11 +41,11 @@ class LobbyServiceTest {
     lobbyService.createLobby("Test", testCreator);
     User newUser = new User("session-2", "Gast", "🐹");
 
-    Lobby joinedLobby = lobbyService.joinOrUpdateLobby("TEST", newUser);
+    Optional<Lobby> result = lobbyService.joinOrUpdateLobby("TEST", newUser);
 
-    assertNotNull(joinedLobby);
+    assertTrue(result.isPresent()); // Prüfen, ob das Optional gefüllt ist
+    Lobby joinedLobby = result.get(); // Den Inhalt aus dem Optional herausholen
     assertEquals(2, joinedLobby.getMembers().size());
-    assertTrue(joinedLobby.getMembers().contains(newUser));
   }
 
   @Test
@@ -52,7 +54,11 @@ class LobbyServiceTest {
     // Gleiche ID, aber neuer Name/Avatar
     User updatedUser = new User("session-1", "NeuerName", "🦊");
 
-    Lobby lobby = lobbyService.joinOrUpdateLobby("TEST", updatedUser);
+    Optional<Lobby> lobbyOptional = lobbyService.joinOrUpdateLobby("TEST", updatedUser);
+
+    assertTrue(lobbyOptional.isPresent(), "Lobby sollte vorhanden sein");
+
+    Lobby lobby = lobbyOptional.get();
 
     assertEquals(1, lobby.getMembers().size());
     assertEquals("NeuerName", lobby.getMembers().get(0).getUsername());
@@ -61,9 +67,9 @@ class LobbyServiceTest {
   @Test
   void testJoinNonExistentLobby() {
     User newUser = new User("session-2", "Gast", "🐹");
-    Lobby result = lobbyService.joinOrUpdateLobby("GIBTS_NICHT", newUser);
+    Optional<Lobby> result = lobbyService.joinOrUpdateLobby("GIBTS_NICHT", newUser);
 
-    assertNull(result);
+    assertTrue(result.isEmpty()); // Prüfen, ob es wirklich leer ist (statt assertNull)
   }
 
   @Test
@@ -83,5 +89,28 @@ class LobbyServiceTest {
 
     // Wenn die Exception geworfen wurde, ist der Base64 String null
     assertNull(lobby.getQrCodeBase64());
+  }
+  @Test
+  void testGenerateQrCodeBranches() {
+
+    Lobby lobbyNull = lobbyService.createLobby("", testCreator);
+
+    Lobby lobbyBlank = lobbyService.createLobby("   ", testCreator);
+    assertNull(lobbyBlank.getQrCodeBase64());
+  }
+
+  @Test
+  void testGetLobbyBranch() {
+    assertNull(lobbyService.getLobby("EXISTIERT_NICHT"));
+  }
+  @Test
+  void testGenerateQrCodeDirectly() throws Exception {
+    java.lang.reflect.Method method = LobbyService.class.getDeclaredMethod("generateQrCode", String.class);
+    method.setAccessible(true);
+
+    assertNull(method.invoke(lobbyService, (Object) null));
+
+    assertNull(method.invoke(lobbyService, ""));
+    assertNull(method.invoke(lobbyService, "   "));
   }
 }

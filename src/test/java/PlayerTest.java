@@ -106,7 +106,7 @@ public class PlayerTest {
   void playCard() {
     boolean[] fired = {false};
     Card card = new Card("a1", "Test", "action",
-        (g, p) -> fired[0] = true);
+      (g, p) -> fired[0] = true);
     player.addToHand(card);
     player.playCard("a1", null);
     assertTrue(fired[0]);
@@ -117,7 +117,7 @@ public class PlayerTest {
   @DisplayName("playCard() throws when card not in hand")
   void playCardNotInHand() {
     assertThrows(IllegalArgumentException.class,
-        () -> player.playCard("missing", null));
+      () -> player.playCard("missing", null));
   }
 }
 

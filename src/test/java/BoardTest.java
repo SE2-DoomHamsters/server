@@ -14,11 +14,11 @@ public class BoardTest {
   @BeforeEach
   void init() {
     players = List.of(
-        new Player("p0", "Alice"),
-        new Player("p1", "Bob"),
-        new Player("p2", "Carol")
+      new Player("p0", "Alice"),
+      new Player("p1", "Bob"),
+      new Player("p2", "Carol")
     );
-    board = new Board(new ArrayList<>(players), new Deck(GameTest.makeActionCards(30)));
+    board = new Board(new ArrayList<>(players), new Deck(Decktests.makeActionCards(30)));
   }
 
   @Test

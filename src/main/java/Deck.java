@@ -1,16 +1,25 @@
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+/**
+ * Represents the deck.
+ */
 
 public class Deck {
 
   private final List<Card> cards;
   private final List<Card> discards;
+  /**
+   * Constructor for discard deck.
+   */
 
   public Deck(List<Card> cards) {
     this.cards = new ArrayList<>(cards);
     this.discards = new ArrayList<>();
   }
+  /**
+   * Default constructor.
+   */
 
   public Deck() {
     this(new ArrayList<>());
@@ -19,17 +28,25 @@ public class Deck {
   public boolean isEmpty() {
     return cards.isEmpty();
   }
+  /**
+   * Helper method that returns the size.
+   */
 
   public int size() {
     return cards.size();
   }
 
   /**
-   * Fisher-Yates-Mischung
+   * Fisher-Yates-Mischung.
    */
+
   public void shuffle() {
     Collections.shuffle(cards);
   }
+
+  /**
+   * Draws a card.
+   */
 
   public Card draw() {
     if (cards.isEmpty()) {
@@ -39,8 +56,17 @@ public class Deck {
   }
 
   /**
-   * Zieht n Karten als Liste
+   * Returns an unmodifiable view of the cards currently in the deck.
+   *
+   * @return the remaining cards
    */
+  public List<Card> getCards() {
+    return Collections.unmodifiableList(cards);
+  }
+  /**
+   * Zieht n Karten als Liste.
+   */
+
   public List<Card> drawMultiple(int n) {
     List<Card> drawn = new ArrayList<>();
     for (int i = 0; i < n; i++) {
@@ -54,14 +80,14 @@ public class Deck {
   }
 
   /**
-   * Legt eine Karte auf den Ablagestapel
+   * Legt eine Karte auf den Ablagestapel.
    */
   public void discard(Card card) {
     discards.add(card);
   }
 
   /**
-   * Mischt Doom-Karten in den bestehenden Stapel ein
+   * Mischt Doom-Karten in den bestehenden Stapel ein.
    */
   public void insertDoomCards(List<Card> doomCards) {
     cards.addAll(doomCards);
@@ -69,6 +95,6 @@ public class Deck {
   }
 
   public List<Card> getDiscards() {
-    return discards;
+    return Collections.unmodifiableList(discards);
   }
 }

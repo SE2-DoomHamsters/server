@@ -1,5 +1,9 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+/**
+ * Represents the game board and manages its state.
+ */
 
 public class Board {
 
@@ -8,10 +12,13 @@ public class Board {
   private final List<Card> discardPile;
   private int currentIndex;
   private int turnCount;
+  /**
+   * Constructor.
+   */
 
   public Board(List<Player> players, Deck deck) {
-    this.players = players;
-    this.deck = deck;
+    this.players = new ArrayList<>(players);
+    this.deck = new Deck(new ArrayList<>(deck.getCards()));
     this.currentIndex = 0;
     this.turnCount = 0;
     this.discardPile = new ArrayList<>();
@@ -21,23 +28,41 @@ public class Board {
     return players.get(currentIndex);
   }
 
+  /**
+   * Returns a list of all players who have not yet been eliminated.
+   *
+   * @return an unmodifiable list of living {@link Player} instances; never {@code null}
+   */
+
   public List<Player> getActivePlayers() {
     return players.stream()
-        .filter(Player::isAlive)
-        .toList();
+      .filter(Player::isAlive)
+      .toList();
   }
 
+
+  /**
+   * Returns a defensive copy of the current deck.
+   *
+   * <p>Mutations to the returned deck do not affect the game's internal state.
+   *
+   * @return a copy of the {@link Deck}
+   */
   public Deck getDeck() {
-    return deck;
+    return new Deck(new ArrayList<>(deck.getCards()));
   }
+
 
   public int getTurnCount() {
     return turnCount;
   }
 
   public List<Card> getDiscardPile() {
-    return discardPile;
+    return Collections.unmodifiableList(discardPile);
   }
+  /**
+   * Advances turn.
+   */
 
   public void advanceTurn() {
     turnCount++;
@@ -47,7 +72,7 @@ public class Board {
   }
 
   /**
-   * Legt eine gespielte Karte auf den Board-Ablagestapel
+   * Legt eine gespielte Karte auf den Board-Ablagestapel.
    */
   public void discardCard(Card card) {
     discardPile.add(card);

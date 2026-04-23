@@ -4,7 +4,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
-/** Ping Pong Test*/
+/** Ping Pong Test. */
 @Controller
 @SuppressWarnings("PMD.AtLeastOneConstructor")
 public class HelloController {

@@ -6,6 +6,7 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+/** Configures STOMP over WebSocket for real-time lobby and game communication. */
 @Configuration
 @EnableWebSocketMessageBroker
 @SuppressWarnings("PMD.AtLeastOneConstructor")

@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 
-/** Integration tests verifying the Spring application context loads correctly. */
+/**
+ * Integration tests verifying the Spring application context loads correctly.
+ */
 @SpringBootTest
 @SuppressWarnings("PMD.AtLeastOneConstructor")
 class DoomHamstersApplicationTests {

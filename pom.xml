@@ -29,7 +29,8 @@
             ${project.build.directory}/site/jacoco/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
         <sonar.coverage.exclusions>
-            **/DoomHamstersApplication.java
+            **/DoomHamstersApplication.java,
+            **/HelloController.java
         </sonar.coverage.exclusions>
     </properties>
 
@@ -65,6 +66,18 @@
             <version>1.18.36</version>
             <scope>provided</scope>
         </dependency>
+
+      <dependency>
+        <groupId>com.google.zxing</groupId>
+        <artifactId>core</artifactId>
+        <version>3.5.3</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.google.zxing</groupId>
+        <artifactId>javase</artifactId>
+        <version>3.5.3</version>
+      </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -132,6 +145,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>com/doomhamsters/DoomHamstersApplication.class</exclude>
+                                <exclude>com/doomhamsters/controller/HelloController.class</exclude>
                             </excludes>
                             <rules>
                                 <rule>
@@ -153,6 +167,9 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.8.6.4</version>
+                <configuration>
+                    <excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

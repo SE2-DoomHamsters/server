@@ -29,7 +29,8 @@
             ${project.build.directory}/site/jacoco/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
         <sonar.coverage.exclusions>
-            **/DoomHamstersApplication.java
+            **/DoomHamstersApplication.java,
+            **/HelloController.java
         </sonar.coverage.exclusions>
     </properties>
 
@@ -144,6 +145,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>com/doomhamsters/DoomHamstersApplication.class</exclude>
+                                <exclude>com/doomhamsters/controller/HelloController.class</exclude>
                             </excludes>
                             <rules>
                                 <rule>

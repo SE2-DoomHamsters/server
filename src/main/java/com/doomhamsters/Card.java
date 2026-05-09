@@ -1,3 +1,5 @@
+package com.doomhamsters;
+
 import java.util.function.BiConsumer;
 
 /**

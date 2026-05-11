@@ -2,6 +2,8 @@ package com.doomhamsters.gamesession;
 
 import com.doomhamsters.Game;
 
+import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
+
 /**
  * Represents a single game session and its current state.
  */
@@ -45,8 +47,9 @@ public class GameSession {
   /**
    * Gets the internal game logic instance.
    *
-   * @return the game instance
+   * @return the game instance (never null)
    */
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public Game getGame() {
     return game;
   }

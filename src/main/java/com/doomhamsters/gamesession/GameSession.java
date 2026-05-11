@@ -1,7 +1,6 @@
 package com.doomhamsters.gamesession;
 
 import com.doomhamsters.Game;
-
 import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 
 /**

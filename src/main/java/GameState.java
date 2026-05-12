@@ -6,7 +6,7 @@ public class GameState {
    *
    * <p>Broadcast to {@code /topic/game/{gameId}} after every state change.
    */
-  public final class GameStatee {
+
 
     private final String gameId;
     private final List<Player> players;
@@ -16,7 +16,7 @@ public class GameState {
     private final boolean snackStashPending;
     private final String pendingPlayerId;
 
-    public GameStatee(
+    public GameState(
       String gameId,
       List<Player> players,
       String currentTurnPlayerId,
@@ -35,4 +35,4 @@ public class GameState {
     public boolean isSnackStashPending() { return snackStashPending; }
     public String getPendingPlayerId() { return pendingPlayerId; }
   }
-}
+

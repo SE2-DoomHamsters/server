@@ -67,6 +67,11 @@ public class PlayerStateDto {
     return new ArrayList<>(hand);
   }
 
+  /**
+   * Sets the visible hand cards for the player.
+   *
+   * @param hand the visible hand cards
+   */
   public void setHand(List<CardDto> hand) {
     this.hand = hand == null
         ? new ArrayList<>()

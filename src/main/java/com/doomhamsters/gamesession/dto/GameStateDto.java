@@ -57,6 +57,11 @@ public class GameStateDto {
     return new ArrayList<>(players);
   }
 
+  /**
+   * Sets the visible players in the game state.
+   *
+   * @param players the player DTO list
+   */
   public void setPlayers(List<PlayerStateDto> players) {
     this.players = players == null
         ? new ArrayList<>()

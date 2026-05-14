@@ -30,6 +30,11 @@ public class Card {
     this.effect = effect;
   }
 
+  /**
+   * Creates a copy of another card.
+   *
+   * @param other the card to copy
+   */
   public Card(Card other) {
     this.id = other.id;
     this.name = other.name;

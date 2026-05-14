@@ -29,6 +29,11 @@ public class Player {
     this.eliminated = false;
   }
 
+  /**
+   * Creates a deep copy of another player.
+   *
+   * @param other the player to copy
+   */
   public Player(Player other) {
     this.id = other.id;
     this.name = other.name;

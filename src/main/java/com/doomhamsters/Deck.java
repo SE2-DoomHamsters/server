@@ -20,6 +20,11 @@ public class Deck {
     this.discards = new ArrayList<>();
   }
 
+  /**
+   * Creates a deep copy of another deck.
+   *
+   * @param other the deck to copy
+   */
   public Deck(Deck other) {
     this.cards = new ArrayList<>();
     this.discards = new ArrayList<>();
@@ -27,8 +32,9 @@ public class Deck {
     for (Card card : other.cards) {
       this.cards.add(new Card(card));
     }
+
     for (Card card : other.discards) {
-      this.cards.add(new Card(card));
+      this.discards.add(new Card(card));
     }
   }
   /**

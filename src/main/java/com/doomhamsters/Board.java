@@ -26,6 +26,13 @@ public class Board {
     this.discardPile = new ArrayList<>();
   }
 
+  /**
+   * Creates a deep copy of another board.
+   *
+   * @param other the board to copy
+   * @param players the copied players to use
+   * @param deck the copied deck to use
+   */
   public Board(Board other, List<Player> players, Deck deck) {
     this.players = players;
     this.deck = deck;

@@ -40,7 +40,6 @@ public class Game {
    */
   public Game(Game other) {
     this.state = other.state;
-    this.random.setSeed(System.currentTimeMillis());
 
     this.players = new ArrayList<>();
     for (Player player : other.players) {

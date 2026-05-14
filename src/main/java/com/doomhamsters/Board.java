@@ -34,8 +34,8 @@ public class Board {
    * @param deck the copied deck to use
    */
   public Board(Board other, List<Player> players, Deck deck) {
-    this.players = players;
-    this.deck = deck;
+    this.players = new ArrayList<>(players);
+    this.deck = new Deck(deck);
     this.currentIndex = other.currentIndex;
 
     this.discardPile = new ArrayList<>();

@@ -11,7 +11,7 @@ class GameSessionServiceTests {
 
   @BeforeEach
   void setUp() {
-    service = new GameSessionService();
+    service = new GameSessionService(new GameSessionPersistenceService());
   }
 
   @Test

@@ -30,6 +30,13 @@ public class Card {
     this.effect = effect;
   }
 
+  public Card(Card other) {
+    this.id = other.id;
+    this.name = other.name;
+    this.type = other.type;
+    this.effect = other.effect;
+  }
+
   /**
    * Creates a card without an effect.
    *

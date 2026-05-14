@@ -19,6 +19,18 @@ public class Deck {
     this.cards = new ArrayList<>(cards);
     this.discards = new ArrayList<>();
   }
+
+  public Deck(Deck other) {
+    this.cards = new ArrayList<>();
+    this.discards = new ArrayList<>();
+
+    for (Card card : other.cards) {
+      this.cards.add(new Card(card));
+    }
+    for (Card card : other.discards) {
+      this.cards.add(new Card(card));
+    }
+  }
   /**
    * Default constructor.
    */

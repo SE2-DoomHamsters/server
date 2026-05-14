@@ -26,6 +26,17 @@ public class Board {
     this.discardPile = new ArrayList<>();
   }
 
+  public Board(Board other, List<Player> players, Deck deck) {
+    this.players = players;
+    this.deck = deck;
+    this.currentIndex = other.currentIndex;
+
+    this.discardPile = new ArrayList<>();
+    for (Card card : other.discardPile) {
+      this.discardPile.add(new Card(card));
+    }
+  }
+
   public Player getCurrentPlayer() {
     return players.get(currentIndex);
   }

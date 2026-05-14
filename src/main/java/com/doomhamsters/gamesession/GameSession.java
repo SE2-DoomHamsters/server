@@ -84,7 +84,9 @@ public class GameSession {
    * @param game the game instance
    */
   public void setGame(Game game) {
-    this.game = game;
+    this.game = game == null
+        ? null
+        : new Game(game);
   }
 
   /**

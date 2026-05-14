@@ -34,6 +34,36 @@ public class Game {
   }
 
   /**
+   * Creates a deep copy of another game instance.
+   *
+   * @param other the game to copy
+   */
+  public Game(Game other) {
+    this.state = other.state;
+    this.random.setSeed(System.currentTimeMillis());
+
+    this.players = new ArrayList<>();
+    for (Player player : other.players) {
+      this.players.add(new Player(player));
+    }
+
+    this.winner =
+        other.winner == null
+            ? null
+            : this.players.stream()
+                .filter(p -> p.getId().equals(other.winner.getId()))
+                .findFirst()
+                .orElse(null);
+
+    this.deck = other.deck == null ? null : new Deck(other.deck);
+
+    this.board =
+        other.board == null
+            ? null
+            : new Board(other.board, this.players, this.deck);
+  }
+
+  /**
    * Returns the current state of the game.
    *
    * @return the current {@link State}

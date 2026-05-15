@@ -29,6 +29,22 @@ public class Player {
     this.eliminated = false;
   }
 
+  /**
+   * Creates a deep copy of another player.
+   *
+   * @param other the player to copy
+   */
+  public Player(Player other) {
+    this.id = other.id;
+    this.name = other.name;
+    this.lives = other.lives;
+
+    this.hand = new ArrayList<>();
+    for (Card card : other.hand) {
+      this.hand.add(new Card(card));
+    }
+  }
+
   public String getId() {
     return id;
   }

@@ -27,7 +27,6 @@ class GameControllerTest {
 
   private MockMvc mockMvc;
 
-  // Wir holen uns den Web-Kontext manuell, statt @AutoConfigureMockMvc zu nutzen
   @Autowired
   private WebApplicationContext webApplicationContext;
 
@@ -45,7 +44,7 @@ class GameControllerTest {
 
   @BeforeEach
   void setUp() {
-    // Hier bauen wir das MockMvc selbst zusammen!
+    // Hier wird der MockMvc selbst zusammengebaut
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
 
     testLobby = new Lobby("TEST_LOBBY");

@@ -7,15 +7,22 @@ import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
  * Represents a single game session and its current state.
  */
 public class GameSession {
-  private final String gameId;
-  private final String lobbyId;
-  private final Game game;
+
+  private String gameId;
+  private String lobbyId;
+  private Game game;
   private GameStatus status;
+
+  /**
+   * Empty constructor required for JSON deserialization.
+   */
+  public GameSession() {
+  }
 
   /**
    * Constructs a new GameSession.
    *
-   * @param gameId  the unique identifier for the game
+   * @param gameId the unique identifier for the game
    * @param lobbyId the identifier of the lobby this game started from
    */
   public GameSession(String gameId, String lobbyId) {
@@ -35,6 +42,15 @@ public class GameSession {
   }
 
   /**
+   * Sets the game ID.
+   *
+   * @param gameId the game ID
+   */
+  public void setGameId(String gameId) {
+    this.gameId = gameId;
+  }
+
+  /**
    * Gets the lobby ID.
    *
    * @return the lobby ID
@@ -44,13 +60,33 @@ public class GameSession {
   }
 
   /**
+   * Sets the lobby ID.
+   *
+   * @param lobbyId the lobby ID
+   */
+  public void setLobbyId(String lobbyId) {
+    this.lobbyId = lobbyId;
+  }
+
+  /**
    * Gets the internal game logic instance.
    *
-   * @return the game instance (never null)
+   * @return the game instance
    */
   @SuppressFBWarnings("EI_EXPOSE_REP")
   public Game getGame() {
     return game;
+  }
+
+  /**
+   * Sets the game instance.
+   *
+   * @param game the game instance
+   */
+  public void setGame(Game game) {
+    this.game = game == null
+        ? null
+        : new Game(game);
   }
 
   /**
@@ -75,6 +111,8 @@ public class GameSession {
    * Possible states for a game session.
    */
   public enum GameStatus {
-    SETUP, RUNNING, FINISHED
+    SETUP,
+    RUNNING,
+    FINISHED
   }
 }

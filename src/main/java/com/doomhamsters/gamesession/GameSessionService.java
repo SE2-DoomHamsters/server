@@ -11,7 +11,21 @@ import org.springframework.stereotype.Service;
 @Service
 public class GameSessionService {
 
-  private final ConcurrentHashMap<String, GameSession> sessions = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<String, GameSession> sessions;
+
+  private final GameSessionPersistenceService persistenceService;
+
+  /**
+   * Constructs the service and restores persisted sessions.
+   *
+   * @param persistenceService persistence handler
+   */
+  public GameSessionService(GameSessionPersistenceService persistenceService) {
+
+    this.persistenceService = persistenceService;
+
+    this.sessions = persistenceService.loadSessions();
+  }
 
   /**
    * Creates and stores a new game session for a given lobby.
@@ -20,9 +34,15 @@ public class GameSessionService {
    * @return the newly created session
    */
   public GameSession createSession(String lobbyId) {
+
     String gameId = UUID.randomUUID().toString();
+
     GameSession newSession = new GameSession(gameId, lobbyId);
+
     sessions.put(gameId, newSession);
+
+    persistSessions();
+
     return newSession;
   }
 
@@ -33,6 +53,7 @@ public class GameSessionService {
    * @return an Optional containing the session if found
    */
   public Optional<GameSession> getSession(String gameId) {
+
     return Optional.ofNullable(sessions.get(gameId));
   }
 
@@ -42,6 +63,17 @@ public class GameSessionService {
    * @param session the session to save
    */
   public void saveSession(GameSession session) {
+
     sessions.put(session.getGameId(), session);
+
+    persistSessions();
+  }
+
+  /**
+   * Persists all active sessions to disk.
+   */
+  private void persistSessions() {
+
+    persistenceService.saveSessions(sessions);
   }
 }

@@ -26,6 +26,24 @@ public class Board {
     this.discardPile = new ArrayList<>();
   }
 
+  /**
+   * Creates a deep copy of another board.
+   *
+   * @param other the board to copy
+   * @param players the copied players to use
+   * @param deck the copied deck to use
+   */
+  public Board(Board other, List<Player> players, Deck deck) {
+    this.players = new ArrayList<>(players);
+    this.deck = new Deck(deck);
+    this.currentIndex = other.currentIndex;
+
+    this.discardPile = new ArrayList<>();
+    for (Card card : other.discardPile) {
+      this.discardPile.add(new Card(card));
+    }
+  }
+
   public Player getCurrentPlayer() {
     return players.get(currentIndex);
   }

@@ -31,6 +31,18 @@ public class Card {
   }
 
   /**
+   * Creates a copy of another card.
+   *
+   * @param other the card to copy
+   */
+  public Card(Card other) {
+    this.id = other.id;
+    this.name = other.name;
+    this.type = other.type;
+    this.effect = other.effect;
+  }
+
+  /**
    * Creates a card without an effect.
    *
    * @param id   the unique identifier of the card

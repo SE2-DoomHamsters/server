@@ -490,4 +490,141 @@ class GameTest {
       assertEquals(Game.State.FINISHED, game.getState());
     }
   }
+  @Nested
+  @DisplayName("Missing Edge Cases and Copy Constructor")
+  class MissingCoverageTests {
+
+    @Test
+    @DisplayName("Copy constructor creates a deep copy without a winner")
+    void testCopyConstructorRunning() {
+      Game original = buildGame(List.of("Alice", "Bob"));
+      Game copy = new Game(original);
+
+      assertEquals(original.getState(), copy.getState());
+      assertEquals(original.getPlayers().size(), copy.getPlayers().size());
+      assertNull(copy.getWinner());
+      assertNotNull(copy.getDeck());
+      assertNotNull(copy.getBoard());
+    }
+
+    @Test
+    @DisplayName("Copy constructor properly maps the winner")
+    void testCopyConstructorWithWinner() {
+      Game original = buildGame(List.of("Alice", "Bob"));
+      eliminate(original.getPlayers().get(1)); // Bob ausscheiden lassen
+      original.checkWinCondition(); // Alice gewinnt
+
+      Game copy = new Game(original);
+      assertEquals(Game.State.FINISHED, copy.getState());
+      assertEquals("Alice", copy.getWinner().getName());
+    }
+
+    @Test
+    @DisplayName("executeTurn() returns early if deck is completely empty")
+    void executeTurnEmptyDeck() {
+      Game game = buildGame(List.of("Alice", "Bob"));
+
+      while (!game.getDeck().isEmpty()) {
+        game.getDeck().draw();
+      }
+
+      Player current = game.getBoard().getCurrentPlayer();
+      game.executeTurn(List.of());
+
+      assertEquals(current, game.getBoard().getCurrentPlayer());
+    }
+
+    @Test
+    @DisplayName("executeTurn() handles neutralized doom cards correctly")
+    void executeTurnDoomNeutralized() {
+      Game game = buildGame(List.of("Alice", "Bob"));
+      Player current = game.getBoard().getCurrentPlayer();
+
+      if (!current.hasSnackStash()) {
+        current.addToHand(snackStashProto());
+      }
+
+      while (!game.getDeck().isEmpty()) {
+        game.getDeck().draw();
+      }
+
+      Card doom = new Card("doom_inj", "Doom Hamster", "doom");
+      game.getDeck().insertDoomCards(List.of(doom));
+
+      int livesBefore = current.getLives();
+      int discardsBefore = game.getDeck().getDiscards().size();
+
+      game.executeTurn(List.of());
+
+      assertEquals(livesBefore, current.getLives());
+      assertFalse(current.hasSnackStash());
+      assertEquals(discardsBefore, game.getDeck().getDiscards().size());
+    }
+  }
+  @Test
+  @DisplayName("Copy constructor handles un-setup game (null board and deck)")
+  void testCopyConstructorSetupState() {
+    Game freshGame = new Game();
+    Game copy = new Game(freshGame);
+
+    assertEquals(Game.State.SETUP, copy.getState());
+    assertNull(copy.getBoard());
+    assertNull(copy.getDeck());
+    assertTrue(copy.getPlayers().isEmpty());
+  }
+
+  @Test
+  @DisplayName("executeTurn() discards doom card if not neutralized")
+  void executeTurnDoomNotNeutralized() {
+    Game game = buildGame(List.of("Alice", "Bob"));
+    Player current = game.getBoard().getCurrentPlayer();
+
+    for (Card c : new java.util.ArrayList<>(current.getHand())) {
+      if (c.isSnackStash()) {
+        current.removeFromHand(c.getId());
+      }
+    }
+
+    while (!game.getDeck().isEmpty()) {
+      game.getDeck().draw();
+    }
+
+    Card doom = new Card("doom_inj_no_shield", "Doom Hamster", "doom");
+    game.getDeck().insertDoomCards(List.of(doom));
+
+    int livesBefore = current.getLives();
+
+    game.executeTurn(List.of());
+
+    assertEquals(livesBefore - 1, current.getLives());
+
+    assertTrue(game.getDeck().getDiscards().stream()
+      .anyMatch(c -> c.getId().equals("doom_inj_no_shield")));
+  }
+  @Test
+  @DisplayName("executeTurn() ends early if the drawn doom card eliminates the current player")
+  void executeTurnPlayerEliminatedByDoom() {
+    Game game = buildGame(List.of("Alice", "Bob"));
+    Player current = game.getBoard().getCurrentPlayer();
+
+    for (Card c : new java.util.ArrayList<>(current.getHand())) {
+      if (c.isSnackStash()) {
+        current.removeFromHand(c.getId());
+      }
+    }
+    while (current.getLives() > 1) {
+      current.handleDoom();
+    }
+    while (!game.getDeck().isEmpty()) {
+      game.getDeck().draw();
+    }
+    Card doom = new Card("doom_fatal", "Doom Hamster", "doom");
+    game.getDeck().insertDoomCards(List.of(doom));
+
+    game.executeTurn(List.of());
+
+    assertEquals(Game.State.FINISHED, game.getState());
+    assertFalse(current.isAlive());
+    assertNotNull(game.getWinner());
+  }
 }

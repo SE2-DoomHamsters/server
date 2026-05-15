@@ -29,9 +29,9 @@ public class GameController {
    * Initialisiert den GameController.
    */
   public GameController(
-    GameSessionService gameSessionService,
-    LobbyService lobbyService,
-    SimpMessagingTemplate messagingTemplate) {
+      GameSessionService gameSessionService,
+      LobbyService lobbyService,
+      SimpMessagingTemplate messagingTemplate) {
     this.gameSessionService = gameSessionService;
     this.lobbyService = lobbyService;
     this.messagingTemplate = messagingTemplate;
@@ -48,8 +48,8 @@ public class GameController {
     }
 
     List<String> playerNames = lobby.getMembers().stream()
-      .map(User::getUsername)
-      .collect(Collectors.toList());
+        .map(User::getUsername)
+        .collect(Collectors.toList());
 
     // 1. Session erstellen
     GameSession session = gameSessionService.createSession(lobbyId);

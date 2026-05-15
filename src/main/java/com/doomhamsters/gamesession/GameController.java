@@ -7,6 +7,7 @@ import com.doomhamsters.lobby.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +29,7 @@ public class GameController {
   /**
    * Initialisiert den GameController.
    */
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public GameController(
       GameSessionService gameSessionService,
       LobbyService lobbyService,

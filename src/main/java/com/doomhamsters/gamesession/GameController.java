@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controller to handle game lifecycle events like starting the game from a lobby.
+ * Controller zur Steuerung von Spiel-Ereignissen, wie dem Starten eines Spiels aus einer Lobby.
  */
 @RestController
 @RequestMapping("/api/game")
@@ -25,6 +25,9 @@ public class GameController {
   private final LobbyService lobbyService;
   private final SimpMessagingTemplate messagingTemplate;
 
+  /**
+   * Initialisiert den GameController.
+   */
   public GameController(
     GameSessionService gameSessionService,
     LobbyService lobbyService,
@@ -34,6 +37,9 @@ public class GameController {
     this.messagingTemplate = messagingTemplate;
   }
 
+  /**
+   * Startet ein neues Spiel aus der angegebenen Lobby.
+   */
   @PostMapping("/start")
   public ResponseEntity<GameStartResponse> startGame(@RequestParam String lobbyId) {
     Lobby lobby = lobbyService.getLobby(lobbyId);

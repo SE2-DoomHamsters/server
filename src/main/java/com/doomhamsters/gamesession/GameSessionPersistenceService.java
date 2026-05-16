@@ -32,8 +32,9 @@ public class GameSessionPersistenceService {
     try {
       File file = new File(filePath);
       File parent = file.getParentFile();
-      if (parent != null) {
-        parent.mkdirs();
+      if (parent != null && !parent.exists() && !parent.mkdirs()) {
+        System.err.println("Failed to create directory: " + parent.getAbsolutePath());
+        return;
       }
       objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, sessions);
     } catch (Exception e) {

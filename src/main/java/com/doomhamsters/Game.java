@@ -1,9 +1,9 @@
 package com.doomhamsters;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 
 /**
@@ -18,7 +18,7 @@ public class Game {
   /** The number of cards each player receives at the start of the game. */
   public static final int STARTING_HAND_SIZE = 6;
 
-  private final Random random = new Random();
+  private final SecureRandom random = new SecureRandom();
 
   private State state;
   private Player winner;

@@ -121,6 +121,20 @@ public class PlayerTest {
     assertThrows(IllegalArgumentException.class,
       () -> player.playCard("missing", null));
   }
+  @Test
+  @DisplayName("Copy constructor duplicates all fields")
+  void copyConstructor() {
+    player.addToHand(new Card("a1", "Test", "action"));
+    player.handleDoom(); // Zieht ein Leben ab
+
+    Player copy = new Player(player);
+
+    assertEquals("p0", copy.getId());
+    assertEquals("Alice", copy.getName());
+    assertEquals(2, copy.getLives());
+    assertEquals(1, copy.getHand().size());
+    assertEquals("a1", copy.getHand().get(0).getId());
+  }
 }
 
 

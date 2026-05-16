@@ -103,6 +103,28 @@ public class Decktests {
     }
     assertEquals(2, doomCount);
   }
+  @Test
+  @DisplayName("Copy constructor creates a deep copy")
+  void copyConstructor() {
+    Deck original = new Deck(makeActionCards(2));
+    original.discard(new Card("discard1", "Discard", "action"));
+
+    Deck copy = new Deck(original);
+
+    assertEquals(2, copy.size());
+    assertEquals(1, copy.getDiscards().size());
+
+    copy.draw();
+    assertEquals(2, original.size());
+    assertEquals(1, copy.size());
+  }
+
+  @Test
+  @DisplayName("getCards() returns the remaining cards")
+  void getCards() {
+    Deck deck = new Deck(makeActionCards(3));
+    assertEquals(3, deck.getCards().size());
+  }
 }
 
 

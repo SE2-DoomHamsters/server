@@ -40,4 +40,29 @@ class GameSessionTests {
     assertNotNull(GameSession.GameStatus.valueOf("SETUP"));
     assertEquals(3, GameSession.GameStatus.values().length);
   }
+  @Test
+  void testEmptyConstructorAndSimpleSetters() {
+    // Testet den leeren Konstruktor
+    GameSession session = new GameSession();
+
+    session.setGameId("game-789");
+    assertEquals("game-789", session.getGameId());
+
+    session.setLobbyId("lobby-101");
+    assertEquals("lobby-101", session.getLobbyId());
+  }
+
+  @Test
+  void testSetGameWithNullAndNonNull() {
+    GameSession session = new GameSession("id", "lobby");
+
+    // 1. Pfad: Übergeht die Null
+    session.setGame(null);
+    assertNull(session.getGame());
+
+    // 2. Pfad: Übergeht ein echtes Game-Objekt
+    com.doomhamsters.Game newGame = new com.doomhamsters.Game();
+    session.setGame(newGame);
+    assertNotNull(session.getGame());
+  }
 }

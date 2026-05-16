@@ -29,10 +29,16 @@ public class GameSessionPersistenceService {
    * @param sessions all active sessions
    */
   public void saveSessions(ConcurrentHashMap<String, GameSession> sessions) {
-
-    objectMapper.writerWithDefaultPrettyPrinter()
-        .writeValue(new File(filePath), sessions);
-
+    try {
+      File file = new File(filePath);
+      File parent = file.getParentFile();
+      if (parent != null) {
+        parent.mkdirs();
+      }
+      objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, sessions);
+    } catch (Exception e) {
+      System.err.println("Failed to save sessions: " + e.getMessage());
+    }
   }
 
   /**
@@ -48,9 +54,13 @@ public class GameSessionPersistenceService {
       return new ConcurrentHashMap<>();
     }
 
-    return objectMapper.readValue(
-        file,
-        new TypeReference<ConcurrentHashMap<String, GameSession>>() {});
-
+    try {
+      return objectMapper.readValue(
+          file,
+          new TypeReference<ConcurrentHashMap<String, GameSession>>() {});
+    } catch (Exception e) {
+      System.err.println("Failed to load sessions, starting fresh: " + e.getMessage());
+      return new ConcurrentHashMap<>();
+    }
   }
 }

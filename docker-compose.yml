@@ -4,6 +4,8 @@ services:
     restart: unless-stopped
     ports:
       - "53217:8080"
+    volumes:
+      - sessions_data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s

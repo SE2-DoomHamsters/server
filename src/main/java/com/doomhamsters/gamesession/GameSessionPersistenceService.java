@@ -12,7 +12,7 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class GameSessionPersistenceService {
 
-  private static final String FILE_PATH = "sessions.json";
+  private static final String FILE_PATH = "/data/sessions.json";
 
   private final ObjectMapper objectMapper;
 

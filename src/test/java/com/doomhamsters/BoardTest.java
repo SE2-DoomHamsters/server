@@ -78,5 +78,27 @@ public class BoardTest {
     board.advanceTurn();
     assertEquals(2, board.getTurnCount());
   }
+  @Test
+  @DisplayName("Copy constructor creates a deep copy of the board")
+  void testCopyConstructor() {
+    board.setCurrentIndex(1); // Bob ist dran
+    board.discardCard(new Card("a1", "Test Action", "action")); // Eine Karte auf den Ablagestapel
+
+    // Ruft den Copy-Konstruktor auf
+    Board copiedBoard = new Board(board, players, board.getDeck());
+
+    // Prüft, ob der Zustand korrekt übernommen wurde
+    assertEquals("Bob", copiedBoard.getCurrentPlayer().getName());
+    assertEquals(1, copiedBoard.getDiscardPile().size());
+    assertEquals("Test Action", copiedBoard.getDiscardPile().get(0).getName());
+  }
+
+  @Test
+  @DisplayName("getDeck() returns a defensive copy")
+  void testGetDeck() {
+    // Ruft die Methode auf und prüft, ob das Deck korrekt zurückgegeben wird
+    Deck copiedDeck = board.getDeck();
+    assertEquals(30, copiedDeck.getCards().size());
+  }
 }
 

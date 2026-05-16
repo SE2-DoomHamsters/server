@@ -175,6 +175,22 @@ public class CardTest {
     card.play(null, null);
     assertEquals(1, callCount[0]);
   }
+  @Test
+  @DisplayName("Copy constructor duplicates all fields and the effect correctly")
+  void copyConstructorDuplicatesFields() {
+    boolean[] effectCalled = {false};
+    BiConsumer<Game, Player> effect = (g, p) -> effectCalled[0] = true;
+    Card original = new Card("c1", "Clone Me", "action", effect);
+
+    Card copy = new Card(original);
+
+    assertEquals("c1", copy.getId());
+    assertEquals("Clone Me", copy.getName());
+    assertEquals("action", copy.getType());
+
+    copy.play(null, null);
+    assertTrue(effectCalled[0]);
+  }
 
 }
 

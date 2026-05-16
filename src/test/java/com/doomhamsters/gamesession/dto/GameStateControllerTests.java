@@ -7,12 +7,17 @@ import com.doomhamsters.gamesession.GameSession;
 import com.doomhamsters.gamesession.GameSessionPersistenceService;
 import com.doomhamsters.gamesession.GameSessionService;
 import com.doomhamsters.gamesession.dto.GameStateMapper;
+import java.io.File;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class GameStateControllerTests {
+
+  @TempDir
+  File tempDir;
 
   private MockMvc mockMvc;
 
@@ -20,10 +25,10 @@ class GameStateControllerTests {
 
   @BeforeEach
   void setUp() {
-
+    String filePath = new File(tempDir, "sessions.json").getAbsolutePath();
     gameSessionService =
         new GameSessionService(
-            new GameSessionPersistenceService());
+            new GameSessionPersistenceService(filePath));
 
     GameStateMapper mapper =
         new GameStateMapper();

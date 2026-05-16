@@ -2,6 +2,7 @@ package com.doomhamsters.gamesession;
 
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
@@ -12,11 +13,13 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class GameSessionPersistenceService {
 
-  private static final String FILE_PATH = "/data/sessions.json";
-
+  private final String filePath;
   private final ObjectMapper objectMapper;
 
-  public GameSessionPersistenceService() {
+  public GameSessionPersistenceService(
+      @Value("${sessions.file.path:sessions.json}") String filePath
+  ) {
+    this.filePath = filePath;
     this.objectMapper = new ObjectMapper();
   }
 
@@ -28,7 +31,7 @@ public class GameSessionPersistenceService {
   public void saveSessions(ConcurrentHashMap<String, GameSession> sessions) {
 
     objectMapper.writerWithDefaultPrettyPrinter()
-        .writeValue(new File(FILE_PATH), sessions);
+        .writeValue(new File(filePath), sessions);
 
   }
 
@@ -39,7 +42,7 @@ public class GameSessionPersistenceService {
    */
   public ConcurrentHashMap<String, GameSession> loadSessions() {
 
-    File file = new File(FILE_PATH);
+    File file = new File(filePath);
 
     if (!file.exists()) {
       return new ConcurrentHashMap<>();

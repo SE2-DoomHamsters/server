@@ -8,7 +8,16 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Handles persistence of game sessions to disk.
+ * Handles persistence of game sessions to disk as JSON.
+ *
+ * <p>The file path is configurable via the {@code sessions.file.path} property
+ * (default: {@code sessions.json} in the working directory).
+ * In Docker, this is overridden by the {@code SESSIONS_FILE_PATH} environment variable
+ * to {@code /data/sessions.json}, which is mounted to a named Docker volume so that
+ * sessions survive container restarts and redeployments.
+ *
+ * <p>If saving or loading fails, the error is logged and the server continues running —
+ * sessions are always available in memory even if disk persistence is unavailable.
  */
 @Service
 public class GameSessionPersistenceService {

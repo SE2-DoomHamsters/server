@@ -3,6 +3,7 @@ package com.doomhamsters.gamesession;
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
@@ -45,9 +46,13 @@ public class GameSessionPersistenceService {
       return new ConcurrentHashMap<>();
     }
 
-    return objectMapper.readValue(
-        file,
-        new TypeReference<ConcurrentHashMap<String, GameSession>>() {});
+    try {
+      return objectMapper.readValue(
+          file,
+          new TypeReference<ConcurrentHashMap<String, GameSession>>() {});
+    } catch (JacksonException exception) {
+      return new ConcurrentHashMap<>();
+    }
 
   }
 }

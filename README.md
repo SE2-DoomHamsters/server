@@ -20,7 +20,7 @@ The system manages game state, player actions, and turn-based logic on the serve
 
 **Javadoc** — run `./mvnw javadoc:javadoc` and open `target/reports/apidocs/index.html` in a browser.
 
-##Features
+## Features
 
 - Real-time multiplayer communication via WebSockets
 - Server-authoritative game state management
@@ -34,10 +34,9 @@ The backend follows a modular structure
 - Game logic is server-side to prevent cheating and ensure consistency.
 - Card effects are implemented using functional interfaces for flexibility.
 
-- ## Example Usage
+## Example Usage
 
 1. Start the server
 2. Connect via WebSocket (e.g., using Postman or a frontend client)
 3. Send a QR code to the host
 4. Play actions using the client
-5. 

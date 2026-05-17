@@ -1,10 +1,10 @@
 package com.doomhamsters.lobby;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -16,119 +16,119 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
-/**
- * Unit tests for LobbyController.
- * Mocks LobbyService and SimpMessagingTemplate to isolate controller logic.
- */
+/** Unit tests for LobbyController. */
 class LobbyControllerTest {
 
   private LobbyService lobbyService;
-  private SimpMessagingTemplate messagingTemplate;
+  private LobbyRealtimePublisher realtimePublisher;
   private LobbyController controller;
-
   private User testUser;
   private Lobby testLobby;
 
   @BeforeEach
   void setUp() {
     lobbyService = mock(LobbyService.class);
-    messagingTemplate = mock(SimpMessagingTemplate.class);
-    controller = new LobbyController(lobbyService, messagingTemplate);
+    realtimePublisher = mock(LobbyRealtimePublisher.class);
+    controller = new LobbyController(lobbyService, realtimePublisher);
 
-    testUser = new User("u1", "HamsterPro", "🐹");
-    testLobby = new Lobby("TEST");
+    testUser = new User("u1", "HamsterPro", "hamster");
+    testLobby = new Lobby("ROOM1234");
+    testLobby.setGroupName("Test");
+    testLobby.setHostId("u1");
     testLobby.setMembers(List.of(testUser));
     testLobby.setQrCodeBase64("base64qr==");
   }
 
-  // ── createLobby ──────────────────────────────────────────────────────────
-
   @Test
-  void createLobby_returnsOkWithLobby() {
+  void createLobbyReturnsOkAndBroadcastsSnapshot() {
     CreateLobbyRequest request = new CreateLobbyRequest();
     request.setGroupName("Test");
     request.setUser(testUser);
     when(lobbyService.createLobby("Test", testUser)).thenReturn(testLobby);
 
-    ResponseEntity<Lobby> response = controller.createLobby(request);
+    ResponseEntity<?> response = controller.createLobby(request);
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    Lobby body = assertLobbyBody(response);
+    assertEquals("ROOM1234", body.getLobbyId());
+    assertEquals(1, body.getMembers().size());
+    verify(realtimePublisher).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
+  void joinLobbyReturnsOkAndBroadcastsFullSnapshot() {
+    User joiningUser = new User("u2", "Guest", "cat");
+    Lobby updatedLobby = new Lobby("ROOM1234");
+    updatedLobby.setMembers(List.of(testUser, joiningUser));
+    when(lobbyService.joinOrUpdateLobby("ROOM1234", joiningUser))
+        .thenReturn(Optional.of(updatedLobby));
+
+    ResponseEntity<?> response = controller.joinLobby("ROOM1234", joiningUser);
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    Lobby body = assertLobbyBody(response);
+    assertEquals(2, body.getMembers().size());
+    verify(realtimePublisher).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
+  void joinLobbyReturns404WhenLobbyNotFound() {
+    when(lobbyService.joinOrUpdateLobby(anyString(), any())).thenReturn(Optional.empty());
+
+    ResponseEntity<?> response = controller.joinLobby("missing", testUser);
+
+    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    verify(realtimePublisher, never()).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
+  void leaveLobbyBroadcastsUpdatedSnapshot() {
+    Lobby updatedLobby = new Lobby("ROOM1234");
+    updatedLobby.setMembers(List.of(new User("u2", "Guest", "cat")));
+    when(lobbyService.leaveLobby("ROOM1234", "u1")).thenReturn(Optional.of(updatedLobby));
+    LobbyController.PlayerIdRequest request = new LobbyController.PlayerIdRequest();
+    request.setUserId("u1");
+
+    ResponseEntity<Lobby> response = controller.leaveLobby("ROOM1234", request);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertNotNull(response.getBody());
-    assertEquals("TEST", response.getBody().getLobbyId());
-  }
-
-  @Test
-  void createLobby_returnsLobbyWithMembers() {
-    CreateLobbyRequest request = new CreateLobbyRequest();
-    request.setGroupName("Test");
-    request.setUser(testUser);
-    when(lobbyService.createLobby(any(), any())).thenReturn(testLobby);
-
-    ResponseEntity<Lobby> response = controller.createLobby(request);
-
     assertEquals(1, response.getBody().getMembers().size());
-    assertEquals("HamsterPro", response.getBody().getMembers().get(0).getUsername());
+    verify(realtimePublisher).broadcastLobbySnapshot(any(Lobby.class));
   }
 
-  // ── joinLobby ─────────────────────────────────────────────────────────────
-
   @Test
-  void joinLobby_returnsOkAndBroadcastsWhenLobbyExists() {
-    User joiningUser = new User("u2", "Gast", "🐱");
-    Lobby updatedLobby = new Lobby("TEST");
-    updatedLobby.setMembers(List.of(testUser, joiningUser));
-    when(lobbyService.joinOrUpdateLobby("TEST", joiningUser))
-        .thenReturn(Optional.of(updatedLobby));
+  void heartbeatReturnsSnapshotAndBroadcasts() {
+    when(lobbyService.heartbeat("ROOM1234", "u1")).thenReturn(Optional.of(testLobby));
+    LobbyController.PlayerIdRequest request = new LobbyController.PlayerIdRequest();
+    request.setUserId("u1");
 
-    ResponseEntity<Lobby> response = controller.joinLobby("TEST", joiningUser);
+    ResponseEntity<Lobby> response = controller.heartbeat("ROOM1234", request);
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals(2, response.getBody().getMembers().size());
-    verify(messagingTemplate).convertAndSend(eq("/topic/lobby/TEST"), any(Lobby.class));
+    assertNotNull(response.getBody());
+    assertEquals("ROOM1234", response.getBody().getLobbyId());
+    verify(realtimePublisher).broadcastLobbySnapshot(any(Lobby.class));
   }
 
   @Test
-  void joinLobby_returns404WhenLobbyNotFound() {
-    when(lobbyService.joinOrUpdateLobby(anyString(), any())).thenReturn(Optional.empty());
+  void getLobbyReturnsAuthoritativeSnapshot() {
+    testLobby.setGameId("game-789");
+    testLobby.setGameStarted(true);
+    when(lobbyService.getLobby("ROOM1234")).thenReturn(testLobby);
 
-    ResponseEntity<Lobby> response = controller.joinLobby("DOES_NOT_EXIST", testUser);
-
-    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-    verify(messagingTemplate, never()).convertAndSend(anyString(), any(Object.class));
-  }
-
-  @Test
-  void joinLobby_broadcastsToCorrectTopic() {
-    User joiner = new User("u3", "NewPlayer", "🦊");
-    Lobby updated = new Lobby("ROOM_42");
-    updated.setMembers(List.of(joiner));
-    when(lobbyService.joinOrUpdateLobby("ROOM_42", joiner)).thenReturn(Optional.of(updated));
-
-    controller.joinLobby("ROOM_42", joiner);
-
-    verify(messagingTemplate).convertAndSend("/topic/lobby/ROOM_42", updated);
-  }
-
-  // ── getLobby Status ──────────────────────────────────────────────────────────────
-
-  @Test
-  void getLobby_returnsOkWithLobbyWhenFound() {
-    when(lobbyService.getLobby("TEST")).thenReturn(testLobby);
-
-    ResponseEntity<Lobby> response = controller.getLobby("TEST");
+    ResponseEntity<Lobby> response = controller.getLobby("ROOM1234");
 
     assertEquals(HttpStatus.OK, response.getStatusCode());
-    assertEquals("TEST", response.getBody().getLobbyId());
+    assertNotNull(response.getBody());
+    assertEquals("game-789", response.getBody().getGameId());
+    assertEquals(true, response.getBody().isGameStarted());
   }
 
-  @Test
-  void getLobby_returns404WhenNotFound() {
-    when(lobbyService.getLobby("MISSING")).thenReturn(null);
-
-    ResponseEntity<Lobby> response = controller.getLobby("MISSING");
-
-    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+  private Lobby assertLobbyBody(ResponseEntity<?> response) {
+    Object body = response.getBody();
+    assertInstanceOf(Lobby.class, body);
+    return (Lobby) body;
   }
 }

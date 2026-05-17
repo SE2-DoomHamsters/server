@@ -1,4 +1,4 @@
-# backend
+# Backend
 This project is a Java-based backend server for a multiplayer card game.  
 It uses WebSockets for real-time communication between clients and the server.
 

@@ -1,0 +1,31 @@
+services:
+  server:
+    # Pre-built image from GitHub Container Registry — built on every push to main via GitHub Actions
+    image: ghcr.io/se2-doomhamsters/server:latest
+
+    # Restart automatically on crash; skip restart only if manually stopped
+    restart: unless-stopped
+
+    ports:
+      # <university-server-port>:<container-internal-port>
+      - "53217:8080"
+
+    environment:
+      # Override default sessions.json path to write inside the Docker volume
+      - SESSIONS_FILE_PATH=/data/sessions.json
+
+    volumes:
+      # Persists game sessions across container restarts and redeployments
+      # Lives on the host at /var/lib/docker/volumes/server_sessions_data/
+      - sessions_data:/data
+
+    healthcheck:
+      # Docker checks this endpoint every 30s to determine container health
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s   # how often to check
+      timeout: 5s     # max time to wait for a response
+      retries: 3      # consecutive failures before marking unhealthy
+
+volumes:
+  # Named volume — managed by Docker, survives container recreation by doco-cd
+  sessions_data:

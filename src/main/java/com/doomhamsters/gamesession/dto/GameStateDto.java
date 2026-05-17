@@ -14,6 +14,14 @@ public class GameStateDto {
 
   private String currentPlayerId;
 
+  private String resolvingDoomPlayerId;
+
+  private boolean pendingDoomRequiresInsertion;
+
+  private String pendingDoomCardId;
+
+  private int remainingDeckSize;
+
   private int turnCount;
 
   private List<PlayerStateDto> players = new ArrayList<>();
@@ -43,6 +51,38 @@ public class GameStateDto {
 
   public void setCurrentPlayerId(String currentPlayerId) {
     this.currentPlayerId = currentPlayerId;
+  }
+
+  public String getResolvingDoomPlayerId() {
+    return resolvingDoomPlayerId;
+  }
+
+  public void setResolvingDoomPlayerId(String resolvingDoomPlayerId) {
+    this.resolvingDoomPlayerId = resolvingDoomPlayerId;
+  }
+
+  public boolean isPendingDoomRequiresInsertion() {
+    return pendingDoomRequiresInsertion;
+  }
+
+  public void setPendingDoomRequiresInsertion(boolean pendingDoomRequiresInsertion) {
+    this.pendingDoomRequiresInsertion = pendingDoomRequiresInsertion;
+  }
+
+  public String getPendingDoomCardId() {
+    return pendingDoomCardId;
+  }
+
+  public void setPendingDoomCardId(String pendingDoomCardId) {
+    this.pendingDoomCardId = pendingDoomCardId;
+  }
+
+  public int getRemainingDeckSize() {
+    return remainingDeckSize;
+  }
+
+  public void setRemainingDeckSize(int remainingDeckSize) {
+    this.remainingDeckSize = remainingDeckSize;
   }
 
   public int getTurnCount() {

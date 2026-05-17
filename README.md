@@ -5,6 +5,21 @@ It uses WebSockets for real-time communication between clients and the server.
 The system manages game state, player actions, and turn-based logic on the server side.
 
 
+## API Documentation
+
+| What | Where |
+|------|-------|
+| REST API (Swagger UI) — local | `http://localhost:8080/swagger-ui.html` |
+| REST API (Swagger UI) — university server | `http://se2-demo.aau.at:53217/swagger-ui.html` |
+| WebSocket/STOMP channels (AsyncAPI) | [`asyncapi.yml`](asyncapi.yml) in the project root |
+| Java source documentation (Javadoc) | Generate with `./mvnw javadoc:javadoc`, then open `target/reports/apidocs/index.html` |
+
+**Swagger UI** — start the server (`./mvnw spring-boot:run`) and open the URL above in a browser. No extra steps needed.
+
+**AsyncAPI** — open [`asyncapi.yml`](asyncapi.yml) directly, or paste it into [studio.asyncapi.com](https://studio.asyncapi.com) for a rendered view.
+
+**Javadoc** — run `./mvnw javadoc:javadoc` and open `target/reports/apidocs/index.html` in a browser.
+
 ##Features
 
 - Real-time multiplayer communication via WebSockets

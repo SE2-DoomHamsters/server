@@ -1,5 +1,7 @@
 package com.doomhamsters.lobby;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -9,6 +11,10 @@ public class User {
   private String id;
   private String username;
   private String avatar;
+  private boolean connected = true;
+
+  @JsonIgnore
+  private Instant lastSeenAt = Instant.now();
 
   /**
    * Standard-Konstruktor für Frameworks.
@@ -26,6 +32,21 @@ public class User {
     this.id = id;
     this.username = username;
     this.avatar = avatar;
+    this.connected = true;
+    this.lastSeenAt = Instant.now();
+  }
+
+  /**
+   * Creates a defensive copy of another user.
+   *
+   * @param other user to copy
+   */
+  public User(User other) {
+    this.id = other.id;
+    this.username = other.username;
+    this.avatar = other.avatar;
+    this.connected = other.connected;
+    this.lastSeenAt = other.lastSeenAt;
   }
 
   /**
@@ -80,6 +101,29 @@ public class User {
    */
   public void setAvatar(String avatar) {
     this.avatar = avatar;
+  }
+
+  public boolean isConnected() {
+    return connected;
+  }
+
+  public void setConnected(boolean connected) {
+    this.connected = connected;
+  }
+
+  @JsonIgnore
+  public Instant getLastSeenAt() {
+    return lastSeenAt;
+  }
+
+  public void setLastSeenAt(Instant lastSeenAt) {
+    this.lastSeenAt = lastSeenAt;
+  }
+
+  /** Marks this lobby member as connected right now. */
+  public void markSeen(Instant seenAt) {
+    this.connected = true;
+    this.lastSeenAt = seenAt;
   }
 
   @Override

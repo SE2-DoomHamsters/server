@@ -2,6 +2,7 @@ package com.doomhamsters.gamesession;
 
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
@@ -12,11 +13,13 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 public class GameSessionPersistenceService {
 
-  private static final String FILE_PATH = "sessions.json";
-
+  private final String filePath;
   private final ObjectMapper objectMapper;
 
-  public GameSessionPersistenceService() {
+  public GameSessionPersistenceService(
+      @Value("${sessions.file.path:sessions.json}") String filePath
+  ) {
+    this.filePath = filePath;
     this.objectMapper = new ObjectMapper();
   }
 
@@ -26,10 +29,17 @@ public class GameSessionPersistenceService {
    * @param sessions all active sessions
    */
   public void saveSessions(ConcurrentHashMap<String, GameSession> sessions) {
-
-    objectMapper.writerWithDefaultPrettyPrinter()
-        .writeValue(new File(FILE_PATH), sessions);
-
+    try {
+      File file = new File(filePath);
+      File parent = file.getParentFile();
+      if (parent != null && !parent.exists() && !parent.mkdirs()) {
+        System.err.println("Failed to create directory: " + parent.getAbsolutePath());
+        return;
+      }
+      objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, sessions);
+    } catch (Exception e) {
+      System.err.println("Failed to save sessions: " + e.getMessage());
+    }
   }
 
   /**
@@ -39,15 +49,19 @@ public class GameSessionPersistenceService {
    */
   public ConcurrentHashMap<String, GameSession> loadSessions() {
 
-    File file = new File(FILE_PATH);
+    File file = new File(filePath);
 
     if (!file.exists()) {
       return new ConcurrentHashMap<>();
     }
 
-    return objectMapper.readValue(
-        file,
-        new TypeReference<ConcurrentHashMap<String, GameSession>>() {});
-
+    try {
+      return objectMapper.readValue(
+          file,
+          new TypeReference<ConcurrentHashMap<String, GameSession>>() {});
+    } catch (Exception e) {
+      System.err.println("Failed to load sessions, starting fresh: " + e.getMessage());
+      return new ConcurrentHashMap<>();
+    }
   }
 }

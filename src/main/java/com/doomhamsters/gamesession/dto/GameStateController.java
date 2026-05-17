@@ -51,6 +51,9 @@ public class GameStateController {
 
     return gameSessionService
         .getSession(gameId)
+        .filter(session -> session.getGame() != null
+            && session.getGame().getPlayers().stream()
+                .anyMatch(p -> p.getId().equals(playerId)))
         .map(session -> {
 
           GameStateDto dto =

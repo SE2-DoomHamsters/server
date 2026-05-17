@@ -1,24 +1,24 @@
 package com.doomhamsters.gamesession;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.io.File;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.Optional;
-import java.io.File;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.io.TempDir;
 
 class GameSessionServiceTests {
 
+  @TempDir
+  File tempDir;
+
+  private String filePath;
   private GameSessionService service;
 
   @BeforeEach
   void setUp() {
-    service = new GameSessionService(new GameSessionPersistenceService());
-  }
-
-  @AfterEach
-  void cleanup() {
-    new File("sessions.json").delete();
+    filePath = new File(tempDir, "sessions.json").getAbsolutePath();
+    service = new GameSessionService(new GameSessionPersistenceService(filePath));
   }
 
   @Test
@@ -61,7 +61,7 @@ class GameSessionServiceTests {
 
     GameSessionService restartedService =
         new GameSessionService(
-            new GameSessionPersistenceService());
+            new GameSessionPersistenceService(filePath));
 
     Optional<GameSession> restored =
         restartedService.getSession(

@@ -2,6 +2,7 @@
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.doomhamsters.Player;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,7 @@ import org.junit.jupiter.api.Test;
 final class GameStateTest {
 
   static List<Player> twoPlayers() {
-    return List.of(new Player("p1", 3), new Player("p2", 3));
+    return List.of(new Player("p1", "sus"), new Player("p2", "sus"));
   }
 
   @Test

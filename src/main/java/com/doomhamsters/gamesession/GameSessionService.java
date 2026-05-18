@@ -28,7 +28,7 @@ public class GameSessionService {
 
     this.persistenceService = persistenceService;
 
-    this.sessions = persistenceService.loadSessions();
+    this.sessions = new ConcurrentHashMap<>(persistenceService.loadSessions());
   }
 
   /**

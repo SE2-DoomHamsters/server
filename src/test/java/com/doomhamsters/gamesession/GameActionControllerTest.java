@@ -13,17 +13,25 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.doomhamsters.Card;
+import com.doomhamsters.Deck;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandPlayedEventDto;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResultEventDto;
 import com.doomhamsters.gamesession.dto.DoomDrawnEventDto;
 import com.doomhamsters.gamesession.dto.GameStateDto;
 import com.doomhamsters.gamesession.dto.GameStateMapper;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -38,11 +46,15 @@ class GameActionControllerTest {
 
   private GameActionController controller;
 
+  @TempDir
+  private Path tempDir;
+
   @BeforeEach
   void setUp() {
     gameSessionService =
         new GameSessionService(
-            new GameSessionPersistenceService());
+            new GameSessionPersistenceService(
+                tempDir.resolve("game-action-sessions.json").toString()));
 
     messagingTemplate = mock(SimpMessagingTemplate.class);
 
@@ -197,6 +209,7 @@ class GameActionControllerTest {
   void drawMutatesSavedSessionAndBroadcastsUpdatedState() {
     GameSession session = runningSession();
     session.getGame().getBoard().setCurrentIndex(1);
+    replaceDeck(session, List.of(new Card("draw_action", "Draw Action", "action")));
     int initialHandSize = session.getGame().getBoard().getCurrentPlayer().getHand().size();
 
     controller.draw(session.getGameId(), "{\"playerId\":\"p1\"}");
@@ -255,10 +268,11 @@ class GameActionControllerTest {
   void drawRejectsNonCurrentPlayer() {
     GameSession session = runningSession();
     session.getGame().getBoard().setCurrentIndex(1);
+    String gameId = session.getGameId();
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> controller.draw(session.getGameId(), "{\"playerId\":\"p0\"}"));
+        () -> controller.draw(gameId, "{\"playerId\":\"p0\"}"));
   }
 
   @Test
@@ -399,10 +413,11 @@ class GameActionControllerTest {
     GameSession session = runningSession();
     session.getGame().setResolvingDoomPlayerId("p1");
     session.getGame().setPendingDoomCard(new Card("doom_insert", "Doom Hamster", "doom"));
+    String gameId = session.getGameId();
 
     assertThrows(
         IllegalStateException.class,
-        () -> controller.ackDoom(session.getGameId(), "{\"playerId\":\"p1\"}"));
+        () -> controller.ackDoom(gameId, "{\"playerId\":\"p1\"}"));
   }
 
   @Test
@@ -430,10 +445,11 @@ class GameActionControllerTest {
     GameSession session = runningSession();
     session.getGame().getBoard().setCurrentIndex(1);
     session.getGame().setResolvingDoomPlayerId("p1");
+    String gameId = session.getGameId();
 
     assertThrows(
         IllegalStateException.class,
-        () -> controller.nextTurn(session.getGameId()));
+        () -> controller.nextTurn(gameId));
 
     GameSession saved =
         gameSessionService
@@ -450,10 +466,11 @@ class GameActionControllerTest {
     GameSession session = runningSession();
     session.getGame().getBoard().setCurrentIndex(1);
     session.getGame().setPendingDoomCard(new Card("doom_insert", "Doom Hamster", "doom"));
+    String gameId = session.getGameId();
 
     assertThrows(
         IllegalStateException.class,
-        () -> controller.nextTurn(session.getGameId()));
+        () -> controller.nextTurn(gameId));
 
     GameSession saved =
         gameSessionService
@@ -470,10 +487,11 @@ class GameActionControllerTest {
     GameSession session = runningSession();
     session.getGame().setResolvingDoomPlayerId("p1");
     session.getGame().setPendingDoomCard(new Card("doom_insert", "Doom Hamster", "doom"));
+    String gameId = session.getGameId();
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> controller.insertDoom(session.getGameId(), "{\"playerId\":\"p0\",\"position\":0}"));
+        () -> controller.insertDoom(gameId, "{\"playerId\":\"p0\",\"position\":0}"));
   }
 
   @Test
@@ -481,99 +499,40 @@ class GameActionControllerTest {
     GameSession session = runningSession();
     session.getGame().setResolvingDoomPlayerId("p1");
     session.getGame().setPendingDoomCard(new Card("doom_insert", "Doom Hamster", "doom"));
+    String gameId = session.getGameId();
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> controller.insertDoom(session.getGameId(), "{\"playerId\":\"p1\",\"position\":999}"));
+        () -> controller.insertDoom(gameId, "{\"playerId\":\"p1\",\"position\":999}"));
   }
 
-  @Test
-  void drawUsesDrawMessageMapping() throws Exception {
+  @ParameterizedTest
+  @MethodSource("gameActionMessageMappings")
+  void gameActionUsesExpectedMessageMapping(
+      String methodName,
+      Class<?>[] parameterTypes,
+      String expectedMapping) throws Exception {
     Method method =
-        GameActionController.class.getMethod(
-            "draw",
-            String.class,
-            String.class);
+        GameActionController.class.getMethod(methodName, parameterTypes);
 
     MessageMapping mapping = method.getAnnotation(MessageMapping.class);
 
     assertArrayEquals(
-        new String[] {"/game/{gameId}/draw"},
+        new String[] {expectedMapping},
         mapping.value());
   }
 
-  @Test
-  void activateCardUsesActivateCardMessageMapping() throws Exception {
-    Method method =
-        GameActionController.class.getMethod(
-            "activateCard",
-            String.class,
-            String.class);
+  private static Stream<Arguments> gameActionMessageMappings() {
+    Class<?>[] gameIdOnly = {String.class};
+    Class<?>[] gameIdAndPayload = {String.class, String.class};
 
-    MessageMapping mapping = method.getAnnotation(MessageMapping.class);
-
-    assertArrayEquals(
-        new String[] {"/game/{gameId}/card/activate"},
-        mapping.value());
-  }
-
-  @Test
-  void nextTurnUsesNextTurnMessageMapping() throws Exception {
-    Method method =
-        GameActionController.class.getMethod(
-            "nextTurn",
-            String.class);
-
-    MessageMapping mapping = method.getAnnotation(MessageMapping.class);
-
-    assertArrayEquals(
-        new String[] {"/game/{gameId}/nextTurn"},
-        mapping.value());
-  }
-
-  @Test
-  void ackDoomUsesAckDoomMessageMapping() throws Exception {
-    Method method =
-        GameActionController.class.getMethod(
-            "ackDoom",
-            String.class,
-            String.class);
-
-    MessageMapping mapping = method.getAnnotation(MessageMapping.class);
-
-    assertArrayEquals(
-        new String[] {"/game/{gameId}/doom/ack"},
-        mapping.value());
-  }
-
-  @Test
-  void insertDoomUsesInsertDoomMessageMapping() throws Exception {
-    Method method =
-        GameActionController.class.getMethod(
-            "insertDoom",
-            String.class,
-            String.class);
-
-    MessageMapping mapping = method.getAnnotation(MessageMapping.class);
-
-    assertArrayEquals(
-        new String[] {"/game/{gameId}/doom/insert"},
-        mapping.value());
-  }
-
-  @Test
-  void acceptDoomUsesAcceptDoomMessageMapping() throws Exception {
-    Method method =
-        GameActionController.class.getMethod(
-            "acceptDoom",
-            String.class,
-            String.class);
-
-    MessageMapping mapping = method.getAnnotation(MessageMapping.class);
-
-    assertArrayEquals(
-        new String[] {"/game/{gameId}/doom/accept"},
-        mapping.value());
+    return Stream.of(
+        Arguments.of("draw", gameIdAndPayload, "/game/{gameId}/draw"),
+        Arguments.of("activateCard", gameIdAndPayload, "/game/{gameId}/card/activate"),
+        Arguments.of("nextTurn", gameIdOnly, "/game/{gameId}/nextTurn"),
+        Arguments.of("ackDoom", gameIdAndPayload, "/game/{gameId}/doom/ack"),
+        Arguments.of("insertDoom", gameIdAndPayload, "/game/{gameId}/doom/insert"),
+        Arguments.of("acceptDoom", gameIdAndPayload, "/game/{gameId}/doom/accept"));
   }
 
   private GameSession runningSession() {
@@ -598,5 +557,15 @@ class GameActionControllerTest {
     }
 
     return cards;
+  }
+
+  private void replaceDeck(GameSession session, List<Card> cards) {
+    try {
+      Field deckField = session.getGame().getClass().getDeclaredField("deck");
+      deckField.setAccessible(true);
+      deckField.set(session.getGame(), new Deck(cards));
+    } catch (ReflectiveOperationException error) {
+      throw new AssertionError("Could not replace test deck", error);
+    }
   }
 }

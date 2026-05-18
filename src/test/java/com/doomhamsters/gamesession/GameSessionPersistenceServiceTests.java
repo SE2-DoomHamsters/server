@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -33,7 +34,7 @@ class GameSessionPersistenceServiceTests {
 
     persistence.saveSessions(sessions);
 
-    ConcurrentHashMap<String, GameSession> loaded =
+    ConcurrentMap<String, GameSession> loaded =
         persistence.loadSessions();
 
     assertFalse(loaded.isEmpty());
@@ -56,7 +57,7 @@ class GameSessionPersistenceServiceTests {
         "{invalid");
 
     GameSessionPersistenceService persistence =
-        new GameSessionPersistenceService();
+        new GameSessionPersistenceService(filePath);
 
     assertTrue(
         persistence.loadSessions().isEmpty());

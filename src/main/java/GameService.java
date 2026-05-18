@@ -57,10 +57,10 @@ public class GameService {
    *
    * <p><b>Card effects:</b>
    * <ul>
-   *   <li>{@link Card#DOOM} — lives {@code -1}; player eliminated when lives reach {@code 0}.
-   *   <li>{@link Card#SNACK_STASH} — flagged as pending; the client must confirm via
+   *   <li>{@link CardType#DOOM} — lives {@code -1}; player eliminated when lives reach {@code 0}.
+   *   <li>{@link CardType#SNACK_STASH} — flagged as pending; the client must confirm via
    *       {@code /app/game/{gameId}/confirm-snack} before the bonus is applied.
-   *   <li>{@link Card#NORMAL} — no effect; turn advances.
+   *   <li>{@link CardType#NORMAL} — no effect; turn advances.
    * </ul>
    *
    * @param gameId   the target game session
@@ -77,7 +77,7 @@ public class GameService {
     validateTurn(state, playerId);
 
     List<Player> mutablePlayers = new ArrayList<>(state.getPlayers());
-    Card drawnCard = drawCard();
+    CardType drawnCard = drawCard();
 
     boolean snackStashPending = false;
     String pendingPlayerId = null;
@@ -130,8 +130,8 @@ public class GameService {
    *
    * <p>Replace this with a proper per-session shuffled deck.
    */
-  private Card drawCard() {
-    Card[] values = Card.values();
+  private CardType drawCard() {
+    CardType[] values = CardType.values();
     return values[random.nextInt(values.length)];
   }
 

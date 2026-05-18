@@ -2,10 +2,14 @@ package com.doomhamsters.gamesession.dto;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * DTO representing a player's visible state.
  */
+@Getter
+@Setter
 public class PlayerStateDto {
 
   private String playerId;
@@ -21,46 +25,7 @@ public class PlayerStateDto {
   private List<CardDto> hand = new ArrayList<>();
 
   public PlayerStateDto() {
-  }
-
-  public String getPlayerId() {
-    return playerId;
-  }
-
-  public void setPlayerId(String playerId) {
-    this.playerId = playerId;
-  }
-
-  public String getPlayerName() {
-    return playerName;
-  }
-
-  public void setPlayerName(String playerName) {
-    this.playerName = playerName;
-  }
-
-  public int getLives() {
-    return lives;
-  }
-
-  public void setLives(int lives) {
-    this.lives = lives;
-  }
-
-  public boolean isAlive() {
-    return alive;
-  }
-
-  public void setAlive(boolean alive) {
-    this.alive = alive;
-  }
-
-  public int getHandSize() {
-    return handSize;
-  }
-
-  public void setHandSize(int handSize) {
-    this.handSize = handSize;
+    // Required by Jackson for response body serialization.
   }
 
   public List<CardDto> getHand() {

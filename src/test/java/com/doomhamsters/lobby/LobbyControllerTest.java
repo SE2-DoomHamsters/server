@@ -3,6 +3,8 @@ package com.doomhamsters.lobby;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -11,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +44,7 @@ class LobbyControllerTest {
   }
 
   @Test
-  void createLobbyReturnsOkAndBroadcastsSnapshot() {
+  void createLobbyReturnsCreatedAndBroadcastsSnapshot() {
     CreateLobbyRequest request = new CreateLobbyRequest();
     request.setGroupName("Test");
     request.setUser(testUser);
@@ -49,11 +52,26 @@ class LobbyControllerTest {
 
     ResponseEntity<?> response = controller.createLobby(request);
 
-    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertEquals(HttpStatus.CREATED, response.getStatusCode());
     Lobby body = assertLobbyBody(response);
     assertEquals("ROOM1234", body.getLobbyId());
     assertEquals(1, body.getMembers().size());
     verify(realtimePublisher).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
+  void createLobbyReturnsBadRequestWhenServiceRejectsRequest() {
+    CreateLobbyRequest request = new CreateLobbyRequest();
+    request.setGroupName("Test");
+    request.setUser(testUser);
+    when(lobbyService.createLobby("Test", testUser))
+        .thenThrow(new IllegalArgumentException("User id is required"));
+
+    ResponseEntity<?> response = controller.createLobby(request);
+
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    assertEquals(Map.of("error", "User id is required"), response.getBody());
+    verify(realtimePublisher, never()).broadcastLobbySnapshot(any(Lobby.class));
   }
 
   @Test
@@ -83,6 +101,30 @@ class LobbyControllerTest {
   }
 
   @Test
+  void joinLobbyReturnsConflictWhenGameAlreadyStarted() {
+    when(lobbyService.joinOrUpdateLobby("ROOM1234", testUser))
+        .thenThrow(new IllegalStateException("Game already started"));
+
+    ResponseEntity<?> response = controller.joinLobby("ROOM1234", testUser);
+
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(Map.of("error", "Game already started"), response.getBody());
+    verify(realtimePublisher, never()).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
+  void joinLobbyReturnsBadRequestWhenUserIsInvalid() {
+    when(lobbyService.joinOrUpdateLobby("ROOM1234", testUser))
+        .thenThrow(new IllegalArgumentException("User id is required"));
+
+    ResponseEntity<?> response = controller.joinLobby("ROOM1234", testUser);
+
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    assertEquals(Map.of("error", "User id is required"), response.getBody());
+    verify(realtimePublisher, never()).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
   void leaveLobbyBroadcastsUpdatedSnapshot() {
     Lobby updatedLobby = new Lobby("ROOM1234");
     updatedLobby.setMembers(List.of(new User("u2", "Guest", "cat")));
@@ -96,6 +138,29 @@ class LobbyControllerTest {
     assertNotNull(response.getBody());
     assertEquals(1, response.getBody().getMembers().size());
     verify(realtimePublisher).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
+  void leaveLobbyReturnsBadRequestWhenUserIdMissing() {
+    LobbyController.PlayerIdRequest request = new LobbyController.PlayerIdRequest();
+
+    ResponseEntity<Lobby> response = controller.leaveLobby("ROOM1234", request);
+
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    verify(realtimePublisher, never()).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
+  void leaveLobbyReturnsOkWithoutBodyWhenLobbyIsRemovedOrMissing() {
+    when(lobbyService.leaveLobby("ROOM1234", "u1")).thenReturn(Optional.empty());
+    LobbyController.PlayerIdRequest request = new LobbyController.PlayerIdRequest();
+    request.setUserId("u1");
+
+    ResponseEntity<Lobby> response = controller.leaveLobby("ROOM1234", request);
+
+    assertEquals(HttpStatus.OK, response.getStatusCode());
+    assertNull(response.getBody());
+    verify(realtimePublisher, never()).broadcastLobbySnapshot(any(Lobby.class));
   }
 
   @Test
@@ -113,6 +178,28 @@ class LobbyControllerTest {
   }
 
   @Test
+  void heartbeatReturnsBadRequestWhenUserIdMissing() {
+    LobbyController.PlayerIdRequest request = new LobbyController.PlayerIdRequest();
+
+    ResponseEntity<Lobby> response = controller.heartbeat("ROOM1234", request);
+
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    verify(realtimePublisher, never()).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
+  void heartbeatReturnsNotFoundWhenMemberOrLobbyMissing() {
+    when(lobbyService.heartbeat("ROOM1234", "u1")).thenReturn(Optional.empty());
+    LobbyController.PlayerIdRequest request = new LobbyController.PlayerIdRequest();
+    request.setUserId("u1");
+
+    ResponseEntity<Lobby> response = controller.heartbeat("ROOM1234", request);
+
+    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    verify(realtimePublisher, never()).broadcastLobbySnapshot(any(Lobby.class));
+  }
+
+  @Test
   void getLobbyReturnsAuthoritativeSnapshot() {
     testLobby.setGameId("game-789");
     testLobby.setGameStarted(true);
@@ -123,7 +210,16 @@ class LobbyControllerTest {
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertNotNull(response.getBody());
     assertEquals("game-789", response.getBody().getGameId());
-    assertEquals(true, response.getBody().isGameStarted());
+    assertTrue(response.getBody().isGameStarted());
+  }
+
+  @Test
+  void getLobbyReturnsNotFoundWhenLobbyMissing() {
+    when(lobbyService.getLobby("missing")).thenReturn(null);
+
+    ResponseEntity<Lobby> response = controller.getLobby("missing");
+
+    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
   }
 
   private Lobby assertLobbyBody(ResponseEntity<?> response) {

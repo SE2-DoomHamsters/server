@@ -10,17 +10,13 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class Decktests {
+class DeckTest {
   static List<Card> makeActionCards(int count) {
     List<Card> cards = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       cards.add(new Card("action_" + i, "Action Card " + i, "action"));
     }
     return cards;
-  }
-
-  private static Card makeSnackStash() {
-    return new Card("ss_proto", "Snack Stash", "snack_stash");
   }
 
   private static List<Card> makeDoomCards(int count) {
@@ -140,6 +136,16 @@ public class Decktests {
   }
 
   @Test
+  @DisplayName("reinsertDoomCard() rejects negative insertion position")
+  void reinsertDoomCardRejectsNegativePosition() {
+    Deck deck = new Deck(makeActionCards(3));
+    Card doom = new Card("doom_invalid", "Doom Hamster", "doom");
+
+    assertThrows(IllegalArgumentException.class, () ->
+        deck.reinsertDoomCard(doom, -1));
+  }
+
+  @Test
   @DisplayName("Copy constructor creates a deep copy")
   void copyConstructor() {
     Deck original = new Deck(makeActionCards(2));
@@ -160,5 +166,20 @@ public class Decktests {
   void getCards() {
     Deck deck = new Deck(makeActionCards(3));
     assertEquals(3, deck.getCards().size());
+  }
+
+  @Test
+  @DisplayName("getCards() and getDiscards() are unmodifiable")
+  void returnedListsAreUnmodifiable() {
+    Deck deck = new Deck(makeActionCards(1));
+    Card card = deck.draw();
+    deck.discard(card);
+    List<Card> cards = deck.getCards();
+    List<Card> discards = deck.getDiscards();
+    Card extraCard = new Card("extra", "Extra", "action");
+
+    assertThrows(UnsupportedOperationException.class, () ->
+        cards.add(extraCard));
+    assertThrows(UnsupportedOperationException.class, discards::clear);
   }
 }

@@ -18,6 +18,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -117,7 +119,7 @@ class LobbyWebSocketIntegrationTest {
         """.formatted(GROUP_NAME, userJson(creator));
 
     HttpResponse<String> response = postJson("/api/lobby/create", requestJson);
-    assertEquals(200, response.statusCode());
+    assertEquals(201, response.statusCode());
     return parseLobby(response.body());
   }
 
@@ -190,7 +192,7 @@ class LobbyWebSocketIntegrationTest {
           >= expectedSubscriberCount) {
         return;
       }
-      TimeUnit.MILLISECONDS.sleep(100);
+      waitBeforePollingAgain();
     }
 
     throw new AssertionError(
@@ -198,6 +200,12 @@ class LobbyWebSocketIntegrationTest {
             + expectedSubscriberCount
             + " subscribers; tracked "
             + lobbySubscriptionTracker.subscriberCount(lobbyTopic));
+  }
+
+  private void waitBeforePollingAgain() throws InterruptedException {
+    synchronized (this) {
+      wait(100);
+    }
   }
 
   private void assertSameMemberIds(LobbyPayload expected, LobbyPayload actual) {
@@ -210,23 +218,23 @@ class LobbyWebSocketIntegrationTest {
 
   private static LobbyPayload parseLobby(String json) {
     return new LobbyPayload(
-        extractFirst(json, "\"lobbyId\"\\s*:\\s*\"([^\"]+)\""),
-        extractAll(json, "\"id\"\\s*:\\s*\"([^\"]+)\""),
+        extractLobbyId(json),
+        extractMemberIds(json),
         json.contains("\"qrCodeBase64\":\""),
         json.contains("\"gameId\":null"),
         json.contains("\"gameStarted\":true"));
   }
 
-  private static String extractFirst(String json, String pattern) {
-    Matcher matcher = Pattern.compile(pattern).matcher(json);
+  private static String extractLobbyId(String json) {
+    Matcher matcher = Pattern.compile("\"lobbyId\"\\s*:\\s*\"([^\"]+)\"").matcher(json);
     if (!matcher.find()) {
-      throw new AssertionError("Could not extract pattern " + pattern + " from " + json);
+      throw new AssertionError("Could not extract lobbyId from " + json);
     }
     return matcher.group(1);
   }
 
-  private static List<String> extractAll(String json, String pattern) {
-    Matcher matcher = Pattern.compile(pattern).matcher(json);
+  private static List<String> extractMemberIds(String json) {
+    Matcher matcher = Pattern.compile("\"id\"\\s*:\\s*\"([^\"]+)\"").matcher(json);
     List<String> values = new ArrayList<>();
     while (matcher.find()) {
       values.add(matcher.group(1));
@@ -234,6 +242,7 @@ class LobbyWebSocketIntegrationTest {
     return values;
   }
 
+  @NullMarked
   private static final class LobbyFrameHandler implements StompFrameHandler {
 
     private final BlockingQueue<LobbyPayload> messages;
@@ -248,12 +257,12 @@ class LobbyWebSocketIntegrationTest {
     }
 
     @Override
-    public void handleFrame(StompHeaders headers, Object payload) {
+    public void handleFrame(StompHeaders headers, @Nullable Object payload) {
       messages.add(parsePayload(payload));
     }
 
-    private LobbyPayload parsePayload(Object payload) {
-      String json = payload.toString();
+    private LobbyPayload parsePayload(@Nullable Object payload) {
+      String json = String.valueOf(payload);
       return parseLobby(json);
     }
   }
@@ -265,6 +274,7 @@ class LobbyWebSocketIntegrationTest {
       boolean gameIdIsNull,
       boolean gameStarted) {}
 
+  @NullMarked
   private static final class RawStringMessageConverter implements MessageConverter {
 
     @Override
@@ -277,7 +287,10 @@ class LobbyWebSocketIntegrationTest {
     }
 
     @Override
-    public Message<?> toMessage(Object payload, MessageHeaders headers) {
+    public Message<?> toMessage(Object payload, @Nullable MessageHeaders headers) {
+      if (headers == null) {
+        return new GenericMessage<>(payload.toString());
+      }
       return new GenericMessage<>(payload.toString(), headers);
     }
   }

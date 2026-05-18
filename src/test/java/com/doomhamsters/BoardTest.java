@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class BoardTest {
+class BoardTest {
 
   private List<Player> players;
   private Board board;
@@ -21,7 +21,7 @@ public class BoardTest {
       new Player("p1", "Bob"),
       new Player("p2", "Carol")
     );
-    board = new Board(new ArrayList<>(players), new Deck(Decktests.makeActionCards(30)));
+    board = new Board(new ArrayList<>(players), new Deck(DeckTest.makeActionCards(30)));
   }
 
   @Test
@@ -56,9 +56,9 @@ public class BoardTest {
   @Test
   @DisplayName("getActivePlayers() excludes eliminated players")
   void getActivePlayers() {
-    players.get(0).handleDoom();
-    players.get(0).handleDoom();
-    players.get(0).handleDoom(); // Alice eliminated
+    players.getFirst().handleDoom();
+    players.getFirst().handleDoom();
+    players.getFirst().handleDoom(); // Alice eliminated
 
     assertEquals(2, board.getActivePlayers().size());
   }
@@ -90,7 +90,7 @@ public class BoardTest {
     // Prüft, ob der Zustand korrekt übernommen wurde
     assertEquals("Bob", copiedBoard.getCurrentPlayer().getName());
     assertEquals(1, copiedBoard.getDiscardPile().size());
-    assertEquals("Test Action", copiedBoard.getDiscardPile().get(0).getName());
+    assertEquals("Test Action", copiedBoard.getDiscardPile().getFirst().getName());
   }
 
   @Test
@@ -101,4 +101,3 @@ public class BoardTest {
     assertEquals(30, copiedDeck.getCards().size());
   }
 }
-

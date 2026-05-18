@@ -290,6 +290,7 @@ public class LobbyService {
   }
 
   /** Speichert den Game-Status fuer eine Lobby. */
+  @SuppressWarnings("UnusedReturnValue")
   public Optional<Lobby> markGameStarted(String lobbyId, String gameId) {
     Lobby lobby = getCanonicalLobby(lobbyId);
     if (lobby == null) {
@@ -322,13 +323,17 @@ public class LobbyService {
     Instant now = Instant.now(clock);
     List<Lobby> changed = new ArrayList<>();
 
-    activeLobbies.forEach((id, lobby) -> {
-      synchronized (lobby) {
-        int before = lobby.getMembers().size();
-        removeExpiredMembersLocked(lobby, now);
-        int after = lobby.getMembers().size();
+    activeLobbies.forEach((id, ignored) -> {
+      Lobby activeLobby = activeLobbies.get(id);
+      if (activeLobby == null) {
+        return;
+      }
+      synchronized (activeLobby) {
+        int before = activeLobby.getMembers().size();
+        removeExpiredMembersLocked(activeLobby, now);
+        int after = activeLobby.getMembers().size();
         if (before != after && activeLobbies.containsKey(id)) {
-          changed.add(new Lobby(lobby));
+          changed.add(new Lobby(activeLobby));
         }
       }
     });
@@ -398,7 +403,7 @@ public class LobbyService {
     }
 
     if (removedIds.contains(lobby.getHostId())) {
-      lobby.setHostId(members.get(0).getId());
+      lobby.setHostId(members.getFirst().getId());
       LOGGER.info(
           "host reassigned: lobbyId={}, newHostId={}, reason=host_expired",
           lobby.getLobbyId(),
@@ -419,7 +424,7 @@ public class LobbyService {
       return;
     }
 
-    lobby.setHostId(members.get(0).getId());
+    lobby.setHostId(members.getFirst().getId());
     LOGGER.info(
         "host reassigned: lobbyId={}, newHostId={}, reason=host_left",
         lobby.getLobbyId(),
@@ -460,50 +465,21 @@ public class LobbyService {
     }
   }
 
-  /** Result of an idempotent lobby start attempt. */
-  public static final class GameStartOutcome {
-    private final Lobby lobby;
-    private final String gameId;
-    private final boolean created;
-
-    /**
-     * Creates a start outcome.
-     *
-     * @param lobby lobby snapshot
-     * @param gameId shared game ID
-     * @param created whether this call created the game
-     */
-    public GameStartOutcome(Lobby lobby, String gameId, boolean created) {
-      this.lobby = new Lobby(lobby);
-      this.gameId = gameId;
-      this.created = created;
+  /**
+   * Result of an idempotent lobby start attempt.
+   *
+   * @param lobby lobby snapshot
+   * @param gameId shared game ID
+   * @param created whether this call created the game
+   */
+  public record GameStartOutcome(Lobby lobby, String gameId, boolean created) {
+    public GameStartOutcome {
+      lobby = new Lobby(lobby);
     }
 
-    /**
-     * Returns the lobby snapshot after the start attempt.
-     *
-     * @return lobby snapshot
-     */
+    @Override
     public Lobby lobby() {
       return new Lobby(lobby);
-    }
-
-    /**
-     * Returns the shared game ID.
-     *
-     * @return game ID
-     */
-    public String gameId() {
-      return gameId;
-    }
-
-    /**
-     * Returns whether the game was created by this call.
-     *
-     * @return true when created
-     */
-    public boolean created() {
-      return created;
     }
   }
 }

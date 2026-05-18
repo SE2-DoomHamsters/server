@@ -1,6 +1,9 @@
 package com.doomhamsters.lobby;
 
+import java.net.URI;
 import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/lobby")
 public class LobbyController {
+
+  private static final String ERROR_KEY = "error";
 
   private final LobbyService lobbyService;
   private final LobbyRealtimePublisher realtimePublisher;
@@ -40,13 +45,14 @@ public class LobbyController {
    * @return the created lobby
    */
   @PostMapping("/create")
-  public ResponseEntity<?> createLobby(@RequestBody CreateLobbyRequest request) {
+  public ResponseEntity<Object> createLobby(@RequestBody CreateLobbyRequest request) {
     try {
       Lobby lobby = lobbyService.createLobby(request.getGroupName(), request.getUser());
       realtimePublisher.broadcastLobbySnapshot(lobby);
-      return ResponseEntity.ok(new Lobby(lobby));
+      return ResponseEntity.created(URI.create("/api/lobby/" + lobby.getLobbyId()))
+          .body(new Lobby(lobby));
     } catch (IllegalArgumentException e) {
-      return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+      return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
     }
   }
 
@@ -58,17 +64,17 @@ public class LobbyController {
    * @return updated lobby snapshot
    */
   @PostMapping("/{lobbyId}/join")
-  public ResponseEntity<?> joinLobby(@PathVariable String lobbyId, @RequestBody User user) {
+  public ResponseEntity<Object> joinLobby(@PathVariable String lobbyId, @RequestBody User user) {
     try {
       return lobbyService.joinOrUpdateLobby(lobbyId, user).map(lobby -> {
         Lobby snapshot = new Lobby(lobby);
         realtimePublisher.broadcastLobbySnapshot(snapshot);
-        return ResponseEntity.ok(snapshot);
-      }).orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok((Object) snapshot);
+      }).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     } catch (IllegalStateException e) {
-      return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+      return errorResponse(HttpStatus.CONFLICT, e.getMessage());
     } catch (IllegalArgumentException e) {
-      return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+      return errorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
     }
   }
 
@@ -134,18 +140,16 @@ public class LobbyController {
     return lobby != null ? ResponseEntity.ok(new Lobby(lobby)) : ResponseEntity.notFound().build();
   }
 
+  private ResponseEntity<Object> errorResponse(HttpStatus status, String message) {
+    return ResponseEntity.status(status).body(Map.of(ERROR_KEY, message));
+  }
+
   /**
    * Request DTO for member-scoped lobby operations.
    */
+  @Getter
+  @Setter
   public static class PlayerIdRequest {
     private String userId;
-
-    public String getUserId() {
-      return userId;
-    }
-
-    public void setUserId(String userId) {
-      this.userId = userId;
-    }
   }
 }

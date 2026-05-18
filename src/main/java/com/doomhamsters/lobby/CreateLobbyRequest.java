@@ -1,9 +1,15 @@
 package com.doomhamsters.lobby;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /** DTO for the create-lobby REST request. */
+@Schema(description = "Request body for creating a new lobby")
 public class CreateLobbyRequest {
 
+  @Schema(description = "Display name of the group/lobby", example = "DoomHamsters")
   private String groupName;
+
+  @Schema(description = "The player creating the lobby")
   private User user;
 
   public CreateLobbyRequest() {}

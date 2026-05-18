@@ -9,23 +9,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ConcurrentHashMap;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class GameSessionPersistenceServiceTests {
 
-  private static final String FILE_PATH = "sessions.json";
-
-  @AfterEach
-  void cleanup() {
-    new File(FILE_PATH).delete();
-  }
+  @TempDir
+  File tempDir;
 
   @Test
   void saveAndLoadSessionsShouldWork() {
-
+    String filePath = new File(tempDir, "sessions.json").getAbsolutePath();
     GameSessionPersistenceService persistence =
-        new GameSessionPersistenceService();
+        new GameSessionPersistenceService(filePath);
 
     ConcurrentHashMap<String, GameSession> sessions =
         new ConcurrentHashMap<>();
@@ -53,9 +49,10 @@ class GameSessionPersistenceServiceTests {
 
   @Test
   void loadSessionsShouldReturnEmptyMapWhenFileCannotBeDeserialized() throws IOException {
+    String filePath = new File(tempDir, "sessions.json").getAbsolutePath();
 
     Files.writeString(
-        Path.of(FILE_PATH),
+        Path.of(filePath),
         "{invalid");
 
     GameSessionPersistenceService persistence =

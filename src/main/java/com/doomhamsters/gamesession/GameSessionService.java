@@ -1,8 +1,10 @@
 package com.doomhamsters.gamesession;
 
+import jakarta.annotation.PreDestroy;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,6 +16,8 @@ public class GameSessionService {
   private final ConcurrentHashMap<String, GameSession> sessions;
 
   private final GameSessionPersistenceService persistenceService;
+  private final Object persistenceMonitor = new Object();
+  private boolean persistenceDirty;
 
   /**
    * Initialisiert den Service und stellt gespeicherte Sitzungen wieder her.
@@ -24,7 +28,7 @@ public class GameSessionService {
 
     this.persistenceService = persistenceService;
 
-    this.sessions = persistenceService.loadSessions();
+    this.sessions = new ConcurrentHashMap<>(persistenceService.loadSessions());
   }
 
   /**
@@ -41,7 +45,7 @@ public class GameSessionService {
 
     sessions.put(gameId, newSession);
 
-    persistSessions();
+    persistSessionsNow();
 
     return newSession;
   }
@@ -66,14 +70,53 @@ public class GameSessionService {
 
     sessions.put(session.getGameId(), session);
 
-    persistSessions();
+    markPersistenceDirty();
   }
 
   /**
-   * Speichert alle aktiven Sitzungen auf der Festplatte.
+   * Persists pending session changes to disk on a timer instead of blocking every game action.
    */
-  private void persistSessions() {
+  @Scheduled(fixedDelayString = "${doomhamsters.game.persistence-interval-ms:2000}")
+  void flushDirtySessions() {
+    persistSessionsIfDirty();
+  }
 
-    persistenceService.saveSessions(sessions);
+  @PreDestroy
+  void flushSessionsOnShutdown() {
+    persistSessionsIfDirty();
+  }
+
+  private void markPersistenceDirty() {
+    synchronized (persistenceMonitor) {
+      persistenceDirty = true;
+    }
+  }
+
+  private void persistSessionsNow() {
+    ConcurrentHashMap<String, GameSession> snapshot = new ConcurrentHashMap<>(sessions);
+    persistenceService.saveSessions(snapshot);
+    synchronized (persistenceMonitor) {
+      persistenceDirty = false;
+    }
+  }
+
+  private void persistSessionsIfDirty() {
+    ConcurrentHashMap<String, GameSession> snapshot;
+    synchronized (persistenceMonitor) {
+      if (!persistenceDirty) {
+        return;
+      }
+      snapshot = new ConcurrentHashMap<>(sessions);
+      persistenceDirty = false;
+    }
+
+    try {
+      persistenceService.saveSessions(snapshot);
+    } catch (RuntimeException error) {
+      synchronized (persistenceMonitor) {
+        persistenceDirty = true;
+      }
+      throw error;
+    }
   }
 }

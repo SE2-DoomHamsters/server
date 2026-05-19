@@ -4,8 +4,10 @@ import com.doomhamsters.Card;
 import com.doomhamsters.Game;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.GameSession;
+import com.doomhamsters.gamesession.cardcommands.CardRegistry;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,6 +15,25 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class GameStateMapper {
+
+  private final CardRegistry cardRegistry;
+
+  /**
+   * Creates a mapper with the built-in card registry.
+   */
+  public GameStateMapper() {
+    this(CardRegistry.defaultRegistry());
+  }
+
+  /**
+   * Creates a mapper with the supplied card registry.
+   *
+   * @param cardRegistry card registry
+   */
+  @Autowired
+  public GameStateMapper(CardRegistry cardRegistry) {
+    this.cardRegistry = cardRegistry;
+  }
 
   /**
    * Creates a filtered game state DTO for a specific player.
@@ -33,6 +54,11 @@ public class GameStateMapper {
 
     dto.setGameId(session.getGameId());
     dto.setGameState(game.getState().name());
+    dto.setResolvingDoomPlayerId(game.getResolvingDoomPlayerId());
+    dto.setPendingDoomRequiresInsertion(game.isPendingDoomRequiresInsertion());
+    dto.setPendingDoomCardId(game.getPendingDoomCardId());
+    dto.setRemainingDeckSize(
+        game.getDeck() == null ? 0 : game.getDeck().size());
 
     if (game.getBoard() != null
         && game.getBoard().getCurrentPlayer() != null) {
@@ -65,13 +91,7 @@ public class GameStateMapper {
 
         for (Card card : player.getHand()) {
 
-          CardDto cardDto = new CardDto();
-
-          cardDto.setId(card.getId());
-          cardDto.setName(card.getName());
-          cardDto.setType(card.getType());
-
-          handDtos.add(cardDto);
+          handDtos.add(cardRegistry.toCardDto(card));
         }
 
         playerDto.setHand(handDtos);

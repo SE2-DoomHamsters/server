@@ -38,6 +38,7 @@ public class Player {
     this.id = other.id;
     this.name = other.name;
     this.lives = other.lives;
+    this.eliminated = other.eliminated;
 
     this.hand = new ArrayList<>();
     for (Card card : other.hand) {

@@ -1,6 +1,7 @@
 package com.doomhamsters.lobby;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,11 +9,14 @@ import java.util.List;
  * Container für eine Spiel-Lobby.
  */
 public class Lobby {
+  @Schema(description = "Die eindeutige ID der Lobby", example = "MEINE_LOBBY")
   private String lobbyId;
   private String groupName;
   private String hostId;
   private int maxPlayers = 6;
+  @Schema(description = "Liste aller aktiven Mitglieder in der Lobby")
   private List<User> members = new ArrayList<>();
+  @Schema(description = "Der Base64-codierte String des Lobby-QR-Codes", example = "iVBORw0KGgo...")
   private String qrCodeBase64;
   private String gameId;
   private boolean gameStarted;

@@ -53,6 +53,7 @@ public class Lobby {
     this.version = other.version;
   }
 
+  /**
    * Gibt die ID der Lobby zurück.
    *
    * @return Die ID der Lobby
@@ -111,16 +112,10 @@ public class Lobby {
   }
 
   /**
-   * Returns a defensive copy of lobby members.
-   *
-   * @return member snapshot
-   */
-  /**
    * Gibt eine Kopie der Mitgliederliste zurück.
    *
    * @return Eine Liste aller Benutzer in dieser Lobby
    */
-  // FIX für EI_EXPOSE_REP: Gibt eine Kopie zurück, statt das Original
   public List<User> getMembers() {
     if (members == null) {
       return new ArrayList<>();

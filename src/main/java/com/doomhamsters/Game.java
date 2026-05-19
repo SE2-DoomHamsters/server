@@ -22,6 +22,10 @@ public class Game {
 
   private State state;
   private Player winner;
+  private String resolvingDoomPlayerId;
+  private String pendingDoomCardId;
+  private String pendingDoomCardName;
+  private String pendingDoomCardType;
   private List<Player> players;
   private Deck deck;
   private Board board;
@@ -30,6 +34,10 @@ public class Game {
   public Game() {
     this.state = State.SETUP;
     this.winner = null;
+    this.resolvingDoomPlayerId = null;
+    this.pendingDoomCardId = null;
+    this.pendingDoomCardName = null;
+    this.pendingDoomCardType = null;
     this.players = new ArrayList<>();
   }
 
@@ -40,6 +48,10 @@ public class Game {
    */
   public Game(Game other) {
     this.state = other.state;
+    this.resolvingDoomPlayerId = other.resolvingDoomPlayerId;
+    this.pendingDoomCardId = other.pendingDoomCardId;
+    this.pendingDoomCardName = other.pendingDoomCardName;
+    this.pendingDoomCardType = other.pendingDoomCardType;
 
     this.players = new ArrayList<>();
     for (Player player : other.players) {
@@ -116,11 +128,137 @@ public class Game {
   }
 
   /**
+   * Returns the player currently showing Doom-resolution UI, if any.
+   *
+   * @return resolving player id, or {@code null}
+   */
+  public String getResolvingDoomPlayerId() {
+    return resolvingDoomPlayerId;
+  }
+
+  /**
+   * Sets the player currently showing Doom-resolution UI.
+   *
+   * @param resolvingDoomPlayerId resolving player id, or {@code null}
+   */
+  public void setResolvingDoomPlayerId(String resolvingDoomPlayerId) {
+    this.resolvingDoomPlayerId = resolvingDoomPlayerId;
+  }
+
+  /**
+   * Clears the pending Doom-resolution UI state.
+   */
+  public void clearResolvingDoomPlayerId() {
+    resolvingDoomPlayerId = null;
+  }
+
+  /**
+   * Returns whether a neutralized Doom card is waiting to be inserted.
+   *
+   * @return {@code true} when the resolving player must choose an insertion depth
+   */
+  public boolean isPendingDoomRequiresInsertion() {
+    return pendingDoomCardId != null;
+  }
+
+  /**
+   * Returns the id of the Doom card waiting to be inserted.
+   *
+   * @return pending Doom card id, or {@code null}
+   */
+  public String getPendingDoomCardId() {
+    return pendingDoomCardId;
+  }
+
+  /**
+   * Sets the id of the Doom card waiting to be inserted.
+   *
+   * @param pendingDoomCardId pending Doom card id, or {@code null}
+   */
+  public void setPendingDoomCardId(String pendingDoomCardId) {
+    this.pendingDoomCardId = pendingDoomCardId;
+  }
+
+  /**
+   * Returns the name of the Doom card waiting to be inserted.
+   *
+   * @return pending Doom card name, or {@code null}
+   */
+  public String getPendingDoomCardName() {
+    return pendingDoomCardName;
+  }
+
+  /**
+   * Sets the name of the Doom card waiting to be inserted.
+   *
+   * @param pendingDoomCardName pending Doom card name, or {@code null}
+   */
+  public void setPendingDoomCardName(String pendingDoomCardName) {
+    this.pendingDoomCardName = pendingDoomCardName;
+  }
+
+  /**
+   * Returns the type of the Doom card waiting to be inserted.
+   *
+   * @return pending Doom card type, or {@code null}
+   */
+  public String getPendingDoomCardType() {
+    return pendingDoomCardType;
+  }
+
+  /**
+   * Sets the type of the Doom card waiting to be inserted.
+   *
+   * @param pendingDoomCardType pending Doom card type, or {@code null}
+   */
+  public void setPendingDoomCardType(String pendingDoomCardType) {
+    this.pendingDoomCardType = pendingDoomCardType;
+  }
+
+  /**
+   * Sets the Doom card waiting to be inserted.
+   *
+   * @param pendingDoomCard pending Doom card, or {@code null}
+   */
+  public void setPendingDoomCard(Card pendingDoomCard) {
+    if (pendingDoomCard == null) {
+      pendingDoomCardId = null;
+      pendingDoomCardName = null;
+      pendingDoomCardType = null;
+      return;
+    }
+
+    pendingDoomCardId = pendingDoomCard.getId();
+    pendingDoomCardName = pendingDoomCard.getName();
+    pendingDoomCardType = pendingDoomCard.getType();
+  }
+
+  /**
+   * Reinserts the pending Doom card at the requested deck position and clears Doom state.
+   *
+   * @param position zero-based deck position, where 0 is the top of the deck
+   */
+  public void insertPendingDoom(int position) {
+    if (pendingDoomCardId == null) {
+      throw new IllegalStateException("No pending Doom card requires insertion.");
+    }
+
+    Card pendingDoomCard =
+        new Card(pendingDoomCardId, pendingDoomCardName, pendingDoomCardType);
+
+    deck.reinsertDoomCard(pendingDoomCard, position);
+    pendingDoomCardId = null;
+    pendingDoomCardName = null;
+    pendingDoomCardType = null;
+    resolvingDoomPlayerId = null;
+  }
+
+  /**
    * Initializes all game entities and transitions the game to {@link State#RUNNING}.
    *
    * <p>Each player receives one Snack Stash card and {@code STARTING_HAND_SIZE - 1} randomly
-   * drawn action cards. Doom Hamster cards ({@code playerCount - 1}) are then shuffled into the
-   * remaining deck. The starting player is chosen at random.
+   * drawn cards from the deck. Doom Hamster cards ({@code playerCount - 1}) are then shuffled into
+   * the remaining deck. The starting player is chosen at random.
    *
    * @param playerNames     the display names of the players; must contain at least two entries
    * @param allActionCards  all action cards excluding Doom and Snack Stash cards
@@ -134,13 +272,67 @@ public class Game {
       List<Card> allActionCards,
       Card snackStashProto,
       List<Card> doomProtos) {
+    List<String> playerIds = new ArrayList<>();
+    for (int i = 0; i < playerNames.size(); i++) {
+      playerIds.add("p" + i);
+    }
+    setupInternal(playerIds, playerNames, allActionCards, snackStashProto, doomProtos);
+  }
+
+  /**
+   * Initializes a game using stable external player IDs.
+   *
+   * @param playerIds stable lobby user IDs to preserve in game state
+   * @param allActionCards all action cards excluding Doom and Snack Stash cards
+   * @param snackStashProto a prototype card used to create each player's Snack Stash
+   * @param doomProtos the pool of Doom Hamster cards to draw from
+   */
+  public void setupWithPlayerIds(
+      List<String> playerIds,
+      List<Card> allActionCards,
+      Card snackStashProto,
+      List<Card> doomProtos) {
+    setupInternal(playerIds, playerIds, allActionCards, snackStashProto, doomProtos);
+  }
+
+  /**
+   * Initializes a game using stable external player IDs and separate display names.
+   *
+   * @param playerIds stable lobby user IDs to preserve in game state
+   * @param playerNames display names to show in the client UI
+   * @param allActionCards all action cards excluding Doom and Snack Stash cards
+   * @param snackStashProto a prototype card used to create each player's Snack Stash
+   * @param doomProtos the pool of Doom Hamster cards to draw from
+   */
+  public void setupWithPlayers(
+      List<String> playerIds,
+      List<String> playerNames,
+      List<Card> allActionCards,
+      Card snackStashProto,
+      List<Card> doomProtos) {
+    setupInternal(playerIds, playerNames, allActionCards, snackStashProto, doomProtos);
+  }
+
+  private void setupInternal(
+      List<String> playerIds,
+      List<String> playerNames,
+      List<Card> allActionCards,
+      Card snackStashProto,
+      List<Card> doomProtos) {
     if (playerNames.size() < 2) {
       throw new IllegalArgumentException("At least 2 players are required");
+    }
+    if (playerIds.size() != playerNames.size()) {
+      throw new IllegalArgumentException("Player IDs and names must have the same size");
+    }
+    int doomCount = playerNames.size() - 1;
+    if (doomProtos.size() < doomCount) {
+      throw new IllegalArgumentException("Not enough Doom cards for player count");
     }
 
     players = new ArrayList<>();
     for (int i = 0; i < playerNames.size(); i++) {
-      players.add(new Player("p" + i, playerNames.get(i)));
+      players.add(new Player(playerIds.get(i), playerNames.get(i)));
     }
 
     deck = new Deck(allActionCards);
@@ -155,8 +347,7 @@ public class Game {
       drawn.forEach(player::addToHand);
     }
 
-    int doomCount = playerNames.size() - 1;
-    List<Card> doomCards = doomProtos.subList(0, Math.min(doomCount, doomProtos.size()));
+    List<Card> doomCards = doomProtos.subList(0, doomCount);
     deck.insertDoomCards(doomCards);
 
     board = new Board(players, deck);
@@ -223,11 +414,85 @@ public class Game {
 
     if (drawn.isDoom()) {
       Player.DoomResult result = player.handleDoom();
-      if (!result.neutralized) {
-        deck.discard(drawn);
+      if (result.neutralized) {
+        setPendingDoomCard(drawn);
+      } else {
+        deck.insertDoomCards(List.of(drawn));
       }
+      resolvingDoomPlayerId = player.getId();
     } else {
       player.addToHand(drawn);
+    }
+
+    if (checkWinCondition()) {
+      return;
+    }
+
+    if (resolvingDoomPlayerId != null) {
+      return;
+    }
+
+    board.advanceTurn();
+  }
+
+  /**
+   * Draws one card for the current player without advancing the turn.
+   *
+   * <p>This supports clients that send draw and next-turn as separate commands.
+   *
+   * @return {@code true} if a card was drawn
+   */
+  public boolean drawForCurrentPlayer() {
+    return drawForCurrentPlayerWithResult().cardDrawn();
+  }
+
+  /**
+   * Draws one card for the current player and returns details about the draw.
+   *
+   * <p>This supports transports that need to emit draw-specific events in addition to the shared
+   * game-state update.
+   *
+   * @return draw result containing the drawn card, or an empty result if no card was drawn
+   */
+  public DrawResult drawForCurrentPlayerWithResult() {
+    if (state != State.RUNNING) {
+      return DrawResult.noCard();
+    }
+
+    Player player = board.getCurrentPlayer();
+    Card drawn = deck.draw();
+    if (drawn == null) {
+      return DrawResult.noCard();
+    }
+
+    Player.DoomResult doomResult = null;
+    if (drawn.isDoom()) {
+      doomResult = player.handleDoom();
+      if (doomResult.neutralized) {
+        setPendingDoomCard(drawn);
+      } else {
+        deck.insertDoomCards(List.of(drawn));
+      }
+      resolvingDoomPlayerId = player.getId();
+    } else {
+      player.addToHand(drawn);
+    }
+
+    checkWinCondition();
+
+    return new DrawResult(drawn, doomResult);
+  }
+
+  /**
+   * Advances to the next active player.
+   */
+  public void advanceTurn() {
+    if (state != State.RUNNING) {
+      return;
+    }
+
+    if (resolvingDoomPlayerId != null || pendingDoomCardId != null) {
+      throw new IllegalStateException("Doom resolution must be acknowledged before next turn.");
     }
 
     if (checkWinCondition()) {
@@ -248,5 +513,42 @@ public class Game {
 
     /** The game has ended and a winner has been determined. */
     FINISHED
+  }
+
+  /**
+   * Details about a draw action.
+   */
+  public static class DrawResult {
+
+    private final Card drawnCard;
+    private final Player.DoomResult doomResult;
+
+    private DrawResult(
+        Card drawnCard,
+        Player.DoomResult doomResult) {
+
+      this.drawnCard = drawnCard == null ? null : new Card(drawnCard);
+      this.doomResult = doomResult;
+    }
+
+    private static DrawResult noCard() {
+      return new DrawResult(null, null);
+    }
+
+    public boolean cardDrawn() {
+      return drawnCard != null;
+    }
+
+    public boolean doomDrawn() {
+      return drawnCard != null && drawnCard.isDoom();
+    }
+
+    public Card getDrawnCard() {
+      return drawnCard == null ? null : new Card(drawnCard);
+    }
+
+    public Player.DoomResult getDoomResult() {
+      return doomResult;
+    }
   }
 }

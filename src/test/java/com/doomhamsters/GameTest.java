@@ -130,6 +130,18 @@ class GameTest {
     }
 
     @Test
+    @DisplayName("throws IllegalArgumentException when Doom card pool is too small")
+    void throwsForTooFewDoomCards() {
+      Game game = new Game();
+      assertThrows(IllegalArgumentException.class, () ->
+        game.setup(
+          List.of("Alice", "Bob", "Carol"),
+          actionCards(30),
+          snackStashProto(),
+          doomCards(1)));
+    }
+
+    @Test
     @DisplayName("creates correct number of players")
     void correctPlayerCount() {
       Game game = buildGame(List.of("Alice", "Bob", "Carol"));
@@ -375,8 +387,9 @@ class GameTest {
     void advancesToNextPlayer() {
       Player first = game.getBoard().getCurrentPlayer();
       game.executeTurn(List.of());
-      // Only check if game is still running (no doom elimination possible)
-      if (game.getState() == Game.State.RUNNING) {
+      // Only check if game is still running and not paused for Doom resolution.
+      if (game.getState() == Game.State.RUNNING
+          && game.getResolvingDoomPlayerId() == null) {
         assertNotSame(first, game.getBoard().getCurrentPlayer());
       }
     }
@@ -559,6 +572,9 @@ class GameTest {
       assertEquals(livesBefore, current.getLives());
       assertFalse(current.hasSnackStash());
       assertEquals(discardsBefore, game.getDeck().getDiscards().size());
+      assertTrue(game.isPendingDoomRequiresInsertion());
+      assertEquals("doom_inj", game.getPendingDoomCardId());
+      assertEquals(current.getId(), game.getResolvingDoomPlayerId());
     }
   }
   @Test
@@ -574,7 +590,7 @@ class GameTest {
   }
 
   @Test
-  @DisplayName("executeTurn() discards doom card if not neutralized")
+  @DisplayName("executeTurn() shuffles doom card back into deck if not neutralized")
   void executeTurnDoomNotNeutralized() {
     Game game = buildGame(List.of("Alice", "Bob"));
     Player current = game.getBoard().getCurrentPlayer();
@@ -593,12 +609,14 @@ class GameTest {
     game.getDeck().insertDoomCards(List.of(doom));
 
     int livesBefore = current.getLives();
+    int discardsBefore = game.getDeck().getDiscards().size();
 
     game.executeTurn(List.of());
 
     assertEquals(livesBefore - 1, current.getLives());
 
-    assertTrue(game.getDeck().getDiscards().stream()
+    assertEquals(discardsBefore, game.getDeck().getDiscards().size());
+    assertTrue(game.getDeck().getCards().stream()
       .anyMatch(c -> c.getId().equals("doom_inj_no_shield")));
   }
   @Test

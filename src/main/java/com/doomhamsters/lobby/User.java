@@ -1,6 +1,7 @@
 package com.doomhamsters.lobby;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -8,8 +9,11 @@ import java.util.Objects;
  * Repräsentiert einen Benutzer in einer Lobby.
  */
 public class User {
+  @Schema(description = "Die eindeutige Socket-Session-ID des Benutzers", example = "abc-12345")
   private String id;
+  @Schema(description = "Der gewählte Anzeigename des Benutzers", example = "DoomSlayer")
   private String username;
+  @Schema(description = "Das gewählte Icon oder Emoji des Benutzers", example = "🐹")
   private String avatar;
   private boolean connected = true;
 

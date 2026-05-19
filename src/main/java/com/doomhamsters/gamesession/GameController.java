@@ -95,7 +95,8 @@ public class GameController {
   @PostMapping("/start")
   public ResponseEntity<GameStartResponse> startGame(
       @Parameter(description = "ID der Lobby") @RequestParam String lobbyId,
-      @Parameter(description = "ID des anfragenden Mitglieds") @RequestParam(required = false) String userId) {
+      @Parameter(description = "ID des anfragenden Mitglieds")
+      @RequestParam(required = false) String userId) {
 
     AtomicReference<GameSession> createdSession = new AtomicReference<>();
     try {

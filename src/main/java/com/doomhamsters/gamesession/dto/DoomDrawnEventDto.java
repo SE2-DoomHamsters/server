@@ -9,21 +9,44 @@ public class DoomDrawnEventDto {
 
   private CardDto card;
 
+  /**
+   * Creates an empty Doom-drawn event.
+   */
   public DoomDrawnEventDto() {
   }
 
+  /**
+   * Creates a Doom-drawn event for the supplied card.
+   *
+   * @param card Doom card that was drawn
+   */
   public DoomDrawnEventDto(CardDto card) {
     this.card = copyCard(card);
   }
 
+  /**
+   * Returns the event type.
+   *
+   * @return event type constant
+   */
   public String getType() {
     return TYPE;
   }
 
+  /**
+   * Returns the Doom card that was drawn.
+   *
+   * @return defensive card DTO copy
+   */
   public CardDto getCard() {
     return copyCard(card);
   }
 
+  /**
+   * Sets the Doom card that was drawn.
+   *
+   * @param card Doom card DTO
+   */
   public void setCard(CardDto card) {
     this.card = copyCard(card);
   }

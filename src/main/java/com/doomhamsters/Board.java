@@ -14,10 +14,13 @@ public class Board {
   private final List<Card> discardPile;
   private int currentIndex;
   private int turnCount;
-  /**
-   * Constructor.
-   */
 
+  /**
+   * Creates a board for the supplied players and deck.
+   *
+   * @param players players participating in the game
+   * @param deck draw deck used by the board
+   */
   public Board(List<Player> players, Deck deck) {
     this.players = new ArrayList<>(players);
     this.deck = new Deck(new ArrayList<>(deck.getCards()));
@@ -45,6 +48,11 @@ public class Board {
     }
   }
 
+  /**
+   * Returns the player whose turn is currently active.
+   *
+   * @return current player
+   */
   public Player getCurrentPlayer() {
     return players.get(currentIndex);
   }
@@ -74,10 +82,20 @@ public class Board {
   }
 
 
+  /**
+   * Returns the number of turns completed on this board.
+   *
+   * @return completed turn count
+   */
   public int getTurnCount() {
     return turnCount;
   }
 
+  /**
+   * Returns the board discard pile.
+   *
+   * @return immutable discard pile snapshot
+   */
   public List<Card> getDiscardPile() {
     return Collections.unmodifiableList(discardPile);
   }
@@ -93,12 +111,19 @@ public class Board {
   }
 
   /**
-   * Legt eine gespielte Karte auf den Board-Ablagestapel.
+   * Adds a played card to the board discard pile.
+   *
+   * @param card card to discard
    */
   public void discardCard(Card card) {
     discardPile.add(card);
   }
 
+  /**
+   * Sets the index of the current player.
+   *
+   * @param index zero-based player index
+   */
   public void setCurrentIndex(int index) {
     this.currentIndex = index;
   }

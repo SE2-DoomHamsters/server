@@ -31,6 +31,11 @@ public class GameSessionPersistenceService {
   private final String filePath;
   private final ObjectMapper objectMapper;
 
+  /**
+   * Creates the persistence service for the configured sessions file.
+   *
+   * @param filePath path where sessions are stored
+   */
   public GameSessionPersistenceService(
       @Value("${sessions.file.path:sessions.json}") String filePath
   ) {

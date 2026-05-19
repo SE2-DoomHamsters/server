@@ -27,6 +27,13 @@ public class LobbySubscriptionTracker {
       new ConcurrentHashMap<>();
 
   /**
+   * Creates an empty lobby subscription tracker.
+   */
+  public LobbySubscriptionTracker() {
+    // Required by Spring for this stateful component; subscriptions are added by event listeners.
+  }
+
+  /**
    * Records STOMP subscriptions to lobby topics.
    *
    * @param event subscribe event

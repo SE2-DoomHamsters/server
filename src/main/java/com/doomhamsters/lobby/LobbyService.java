@@ -77,7 +77,13 @@ public class LobbyService {
     this.realtimePublisher = realtimePublisher;
   }
 
-  /** Creates a new lobby with the creator as host and first member. */
+  /**
+   * Erstellt eine neue Lobby basierend auf einem Gruppennamen.
+   *
+   * @param groupName Der eingegebene Name der Gruppe
+   * @param creator Der Benutzer, der diese Lobby erstellt
+   * @return Die neu generierte Lobby
+   */
   public Lobby createLobby(String groupName, User creator) {
     validateUser(creator);
 
@@ -101,7 +107,13 @@ public class LobbyService {
     return new Lobby(lobby);
   }
 
-  /** Adds a user atomically, or treats the same user ID as a reconnect/update. */
+  /**
+   * Fügt einen User einer bestehenden Lobby hinzu oder aktualisiert seine Daten.
+   *
+   * @param lobbyId Die ID der Lobby, der beigetreten werden soll
+   * @param user Der Benutzer, der beitritt oder aktualisiert wird
+   * @return Ein Optional mit der aktualisierten Lobby, falls sie existiert
+   */
   public Optional<Lobby> joinOrUpdateLobby(String lobbyId, User user) {
     validateUser(user);
 
@@ -481,5 +493,15 @@ public class LobbyService {
     public Lobby lobby() {
       return new Lobby(lobby);
     }
+  }
+
+  /**
+   * Sucht und liefert eine aktive Lobby anhand ihrer ID.
+   *
+   * @param lobbyId Die ID der gesuchten Lobby
+   * @return Die gefundene Lobby oder null, falls sie nicht existiert
+   */
+  public Lobby getLobby(String lobbyId) {
+    return activeLobbies.get(lobbyId);
   }
 }

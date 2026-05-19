@@ -1,5 +1,6 @@
 package com.doomhamsters;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -8,6 +9,8 @@ import java.util.List;
  */
 
 public class Deck {
+
+  private static final SecureRandom RANDOM = new SecureRandom();
 
   private final List<Card> cards;
   private final List<Card> discards;
@@ -112,6 +115,24 @@ public class Deck {
   public void insertDoomCards(List<Card> doomCards) {
     cards.addAll(doomCards);
     shuffle();
+  }
+
+  /**
+   * Reinserts a Doom card at a random position in the remaining draw deck.
+   */
+  public void reinsertDoomCard(Card doomCard) {
+    int position = RANDOM.nextInt(cards.size() + 1);
+    reinsertDoomCard(doomCard, position);
+  }
+
+  /**
+   * Reinserts a Doom card at the given position in the remaining draw deck.
+   */
+  public void reinsertDoomCard(Card doomCard, int position) {
+    if (position < 0 || position > cards.size()) {
+      throw new IllegalArgumentException("Doom insertion position is out of range");
+    }
+    cards.add(position, doomCard);
   }
 
   public List<Card> getDiscards() {

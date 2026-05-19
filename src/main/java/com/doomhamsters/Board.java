@@ -37,6 +37,7 @@ public class Board {
     this.players = new ArrayList<>(players);
     this.deck = new Deck(deck);
     this.currentIndex = other.currentIndex;
+    this.turnCount = other.turnCount;
 
     this.discardPile = new ArrayList<>();
     for (Card card : other.discardPile) {

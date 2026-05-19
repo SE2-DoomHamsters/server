@@ -2,6 +2,7 @@ package com.doomhamsters;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -9,17 +10,13 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class Decktests {
+class DeckTest {
   static List<Card> makeActionCards(int count) {
     List<Card> cards = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       cards.add(new Card("action_" + i, "Action Card " + i, "action"));
     }
     return cards;
-  }
-
-  private static Card makeSnackStash() {
-    return new Card("ss_proto", "Snack Stash", "snack_stash");
   }
 
   private static List<Card> makeDoomCards(int count) {
@@ -103,6 +100,51 @@ public class Decktests {
     }
     assertEquals(2, doomCount);
   }
+
+  @Test
+  @DisplayName("reinsertDoomCard() keeps neutralized doom in draw deck")
+  void reinsertDoomCard() {
+    Deck deck = new Deck(makeActionCards(3));
+    Card doom = new Card("doom_reinserted", "Doom Hamster", "doom");
+
+    deck.reinsertDoomCard(doom);
+
+    assertEquals(4, deck.size());
+    assertTrue(deck.getCards().stream()
+        .anyMatch(card -> card.getId().equals("doom_reinserted")));
+  }
+
+  @Test
+  @DisplayName("reinsertDoomCard() supports explicit insertion position")
+  void reinsertDoomCardAtPosition() {
+    Deck deck = new Deck(makeActionCards(3));
+    Card doom = new Card("doom_positioned", "Doom Hamster", "doom");
+
+    deck.reinsertDoomCard(doom, 1);
+
+    assertEquals("doom_positioned", deck.getCards().get(1).getId());
+  }
+
+  @Test
+  @DisplayName("reinsertDoomCard() rejects invalid insertion position")
+  void reinsertDoomCardRejectsInvalidPosition() {
+    Deck deck = new Deck(makeActionCards(3));
+    Card doom = new Card("doom_invalid", "Doom Hamster", "doom");
+
+    assertThrows(IllegalArgumentException.class, () ->
+        deck.reinsertDoomCard(doom, 4));
+  }
+
+  @Test
+  @DisplayName("reinsertDoomCard() rejects negative insertion position")
+  void reinsertDoomCardRejectsNegativePosition() {
+    Deck deck = new Deck(makeActionCards(3));
+    Card doom = new Card("doom_invalid", "Doom Hamster", "doom");
+
+    assertThrows(IllegalArgumentException.class, () ->
+        deck.reinsertDoomCard(doom, -1));
+  }
+
   @Test
   @DisplayName("Copy constructor creates a deep copy")
   void copyConstructor() {
@@ -125,6 +167,19 @@ public class Decktests {
     Deck deck = new Deck(makeActionCards(3));
     assertEquals(3, deck.getCards().size());
   }
+
+  @Test
+  @DisplayName("getCards() and getDiscards() are unmodifiable")
+  void returnedListsAreUnmodifiable() {
+    Deck deck = new Deck(makeActionCards(1));
+    Card card = deck.draw();
+    deck.discard(card);
+    List<Card> cards = deck.getCards();
+    List<Card> discards = deck.getDiscards();
+    Card extraCard = new Card("extra", "Extra", "action");
+
+    assertThrows(UnsupportedOperationException.class, () ->
+        cards.add(extraCard));
+    assertThrows(UnsupportedOperationException.class, discards::clear);
+  }
 }
-
-

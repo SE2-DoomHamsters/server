@@ -2,7 +2,6 @@ package com.doomhamsters.lobby;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -24,10 +23,14 @@ class LobbyTest {
     lobby.setLobbyId("TEST_LOBBY");
     lobby.setMembers(members);
     lobby.setQrCodeBase64("base64string");
+    lobby.setGameId("game-123");
+    lobby.setGameStarted(true);
 
     assertEquals("TEST_LOBBY", lobby.getLobbyId());
     assertEquals(1, lobby.getMembers().size());
     assertEquals("base64string", lobby.getQrCodeBase64());
+    assertEquals("game-123", lobby.getGameId());
+    assertTrue(lobby.isGameStarted());
   }
 
   @Test
@@ -64,13 +67,14 @@ class LobbyTest {
 
 
   @Test
-  void testGetMembersWhenNull() throws Exception {
+  void testGetMembersWhenInternalListIsNullReturnsEmptySnapshot() throws Exception {
     Lobby lobby = new Lobby();
     // Ich nutze Reflection, um das private Feld hart auf null zu setzen,
     java.lang.reflect.Field field = Lobby.class.getDeclaredField("members");
     field.setAccessible(true);
     field.set(lobby, null);
 
-    assertNull(lobby.getMembers()); // Deckt den (members == null) Branch in getMembers ab
+    assertNotNull(lobby.getMembers());
+    assertTrue(lobby.getMembers().isEmpty());
   }
 }

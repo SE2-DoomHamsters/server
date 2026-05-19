@@ -1,0 +1,522 @@
+package com.doomhamsters.gamesession;
+
+import com.doomhamsters.Card;
+import com.doomhamsters.Game;
+import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.ActivateCardCommandRequest;
+import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
+import com.doomhamsters.gamesession.cardcommands.CardCommandPlayedEventDto;
+import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
+import com.doomhamsters.gamesession.cardcommands.CardCommandResultEventDto;
+import com.doomhamsters.gamesession.cardcommands.CardDefinition;
+import com.doomhamsters.gamesession.cardcommands.CardRegistry;
+import com.doomhamsters.gamesession.dto.CardDto;
+import com.doomhamsters.gamesession.dto.DoomDrawnEventDto;
+import com.doomhamsters.gamesession.dto.GameStateDto;
+import com.doomhamsters.gamesession.dto.GameStateMapper;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Controller;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+
+/**
+ * Handles authoritative game actions sent over STOMP.
+ */
+@Controller
+public class GameActionController {
+
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(GameActionController.class);
+
+  private final GameSessionService gameSessionService;
+
+  private final GameStateMapper gameStateMapper;
+
+  private final SimpMessagingTemplate messagingTemplate;
+
+  private final ObjectMapper objectMapper;
+
+  private final CardRegistry cardRegistry;
+
+  /**
+   * Constructs the action controller.
+   *
+   * @param gameSessionService session service
+   * @param gameStateMapper state mapper
+   * @param messagingTemplate broker publisher
+   * @param objectMapper JSON parser
+   * @param cardRegistry card registry
+   */
+  @Autowired
+  public GameActionController(
+      GameSessionService gameSessionService,
+      GameStateMapper gameStateMapper,
+      SimpMessagingTemplate messagingTemplate,
+      ObjectMapper objectMapper,
+      CardRegistry cardRegistry) {
+
+    this.gameSessionService = gameSessionService;
+    this.gameStateMapper = gameStateMapper;
+    this.messagingTemplate = messagingTemplate;
+    this.objectMapper = objectMapper;
+    this.cardRegistry = cardRegistry;
+  }
+
+  /**
+   * Constructs the action controller with the built-in card command registry.
+   *
+   * @param gameSessionService session service
+   * @param gameStateMapper state mapper
+   * @param messagingTemplate broker publisher
+   * @param objectMapper JSON parser
+   */
+  public GameActionController(
+      GameSessionService gameSessionService,
+      GameStateMapper gameStateMapper,
+      SimpMessagingTemplate messagingTemplate,
+      ObjectMapper objectMapper) {
+
+    this(
+        gameSessionService,
+        gameStateMapper,
+        messagingTemplate,
+        objectMapper,
+        CardRegistry.defaultRegistry());
+  }
+
+  /**
+   * Activates one authoritative card command.
+   *
+   * @param gameId destination game id
+   * @param payload action payload
+   */
+  @MessageMapping("/game/{gameId}/card/activate")
+  public void activateCard(
+      @DestinationVariable String gameId,
+      @Payload String payload) {
+
+    ActivateCardCommandRequest request = readActivateCardRequest(payload);
+    GameSession session = loadSession(gameId);
+    Game game = session.getGame();
+
+    assertCurrentPlayer(game, request.getPlayerId());
+    assertNoPendingDoomInsertion(game);
+    assertNoResolvingDoom(game);
+
+    Player player = findPlayer(game, request.getPlayerId());
+    Card handCard = findCardInHand(player, request.getCardId());
+    assertCardTypeMatches(handCard, request.getCardType());
+
+    CardDefinition definition =
+        cardRegistry.get(
+            request.getCommandId(),
+            request.getCardType());
+
+    Card playedCard = player.removeFromHand(request.getCardId());
+    game.getBoard().discardCard(playedCard);
+
+    CardCommandResult result =
+        definition.execute(
+            new CardCommandContext(
+                session,
+                game,
+                player,
+            playedCard,
+            request.getParameters()));
+
+    publishCardPlayedEvent(session.getGameId(), request, player, playedCard, definition, result);
+    publishCardResultIfNeeded(session.getGameId(), request, playedCard, definition, result);
+    saveAndBroadcast(session, request.getPlayerId());
+  }
+
+  /**
+   * Draws one card for the current player.
+   *
+   * @param gameId destination game id
+   * @param payload action payload containing playerId
+   */
+  @MessageMapping("/game/{gameId}/draw")
+  public void draw(
+      @DestinationVariable String gameId,
+      @Payload String payload) {
+
+    String playerId = readPlayerId(payload);
+    GameSession session = loadSession(gameId);
+    Game game = session.getGame();
+
+    assertCurrentPlayer(game, playerId);
+
+    LOGGER.info(
+        "before draw: gameId={}, currentPlayerId={}, turnCount={}",
+        gameId,
+        currentPlayerId(game),
+        turnCount(game));
+
+    Game.DrawResult drawResult = game.drawForCurrentPlayerWithResult();
+
+    LOGGER.info(
+        "after draw: currentPlayerId={}, turnCount={}, handSizes={}",
+        currentPlayerId(game),
+        turnCount(game),
+        handSizes(game));
+
+    sendPrivateDoomEventIfNeeded(session.getGameId(), playerId, drawResult);
+    saveAndBroadcast(session, playerId);
+  }
+
+  /**
+   * Acknowledges the already-resolved doom result and clears public doom-resolution state.
+   *
+   * <p>Doom life loss is applied during draw so clients that need an explicit "accept doom" action
+   * can call this endpoint to close their UI and refresh state without applying damage twice.
+   *
+   * @param gameId destination game id
+   * @param payload action payload containing playerId
+   */
+  @MessageMapping("/game/{gameId}/doom/ack")
+  public void ackDoom(
+      @DestinationVariable String gameId,
+      @Payload String payload) {
+
+    String playerId = readPlayerId(payload);
+    GameSession session = loadSession(gameId);
+    Game game = session.getGame();
+
+    assertPlayerExists(game, playerId);
+    assertResolvingDoomPlayer(game, playerId);
+    assertNoPendingDoomInsertion(game);
+    game.clearResolvingDoomPlayerId();
+    saveAndBroadcast(session, playerId);
+  }
+
+  /**
+   * Inserts a neutralized Doom card at the resolving player's requested deck depth.
+   *
+   * @param gameId destination game id
+   * @param payload action payload containing playerId and position
+   */
+  @MessageMapping("/game/{gameId}/doom/insert")
+  public void insertDoom(
+      @DestinationVariable String gameId,
+      @Payload String payload) {
+
+    String playerId = readPlayerId(payload);
+    GameSession session = loadSession(gameId);
+    Game game = session.getGame();
+
+    assertPlayerExists(game, playerId);
+    assertResolvingDoomPlayer(game, playerId);
+    assertPendingDoomInsertion(game);
+    game.insertPendingDoom(readPosition(payload));
+    saveAndBroadcast(session, playerId);
+  }
+
+  /**
+   * Compatibility alias for older clients that still send doom/accept.
+   *
+   * @param gameId destination game id
+   * @param payload action payload containing playerId
+   */
+  @MessageMapping("/game/{gameId}/doom/accept")
+  public void acceptDoom(
+      @DestinationVariable String gameId,
+      @Payload String payload) {
+
+    ackDoom(gameId, payload);
+  }
+
+  /**
+   * Advances the game to the next active player.
+   *
+   * @param gameId destination game id
+   */
+  @MessageMapping("/game/{gameId}/nextTurn")
+  public void nextTurn(
+      @DestinationVariable String gameId) {
+
+    GameSession session = loadSession(gameId);
+    Game game = session.getGame();
+    final String playerId = currentPlayerId(game);
+
+    LOGGER.info(
+        "before nextTurn: currentPlayerId={}, turnCount={}",
+        currentPlayerId(game),
+        turnCount(game));
+
+    game.advanceTurn();
+
+    LOGGER.info(
+        "after nextTurn: currentPlayerId={}, turnCount={}",
+        currentPlayerId(game),
+        turnCount(game));
+
+    saveAndBroadcast(session, playerId);
+  }
+
+  private GameSession loadSession(String gameId) {
+    return gameSessionService
+        .getSession(gameId)
+        .orElseThrow(() -> new IllegalArgumentException("Game session not found: " + gameId));
+  }
+
+  private void saveAndBroadcast(
+      GameSession session,
+      String requestingPlayerId) {
+
+    gameSessionService.saveSession(session);
+
+    LOGGER.info(
+        "after session save: gameId={}, currentPlayerId={}, turnCount={}",
+        session.getGameId(),
+        currentPlayerId(session.getGame()),
+        turnCount(session.getGame()));
+
+    GameStateDto dto =
+        gameStateMapper.toFilteredDto(
+            session,
+            requestingPlayerId);
+
+    messagingTemplate.convertAndSend(
+        "/topic/game-state/" + session.getGameId(),
+        dto);
+  }
+
+  private void sendPrivateDoomEventIfNeeded(
+      String gameId,
+      String playerId,
+      Game.DrawResult drawResult) {
+
+    if (drawResult == null || !drawResult.doomDrawn()) {
+      return;
+    }
+
+    messagingTemplate.convertAndSend(
+        "/queue/game/" + gameId + "/" + playerId,
+        new DoomDrawnEventDto(cardRegistry.toCardDto(drawResult.getDrawnCard())));
+  }
+
+  private CardDto toCardDto(Card card) {
+    return cardRegistry.toCardDto(card);
+  }
+
+  private ActivateCardCommandRequest readActivateCardRequest(String payload) {
+    try {
+      ActivateCardCommandRequest request =
+          objectMapper.readValue(
+              payload,
+              ActivateCardCommandRequest.class);
+
+      assertTextPresent(request.getPlayerId(), "playerId");
+      assertTextPresent(request.getCardId(), "cardId");
+      assertTextPresent(request.getCardType(), "cardType");
+      assertTextPresent(request.getCommandId(), "commandId");
+
+      return request;
+    } catch (JacksonException exception) {
+      throw new IllegalArgumentException("Action payload must be valid JSON.", exception);
+    }
+  }
+
+  private void publishCardPlayedEvent(
+      String gameId,
+      ActivateCardCommandRequest request,
+      Player player,
+      Card playedCard,
+      CardDefinition definition,
+      CardCommandResult result) {
+
+    CardCommandPlayedEventDto event = new CardCommandPlayedEventDto();
+    event.setPlayerId(player.getId());
+    event.setPlayerName(player.getName());
+    event.setCommandId(request.getCommandId());
+    event.setCard(cardRegistry.toCardDto(playedCard, definition));
+    event.setMessage(result.getPublicMessage());
+
+    messagingTemplate.convertAndSend(
+        "/topic/game/" + gameId,
+        event);
+  }
+
+  private void publishCardResultIfNeeded(
+      String gameId,
+      ActivateCardCommandRequest request,
+      Card playedCard,
+      CardDefinition definition,
+      CardCommandResult result) {
+
+    if (!result.hasPrivateResult()) {
+      return;
+    }
+
+    CardCommandResultEventDto event = new CardCommandResultEventDto();
+    event.setPlayerId(request.getPlayerId());
+    event.setCommandId(request.getCommandId());
+    event.setCard(cardRegistry.toCardDto(playedCard, definition));
+    event.setRevealedCard(toCardDto(result.getRevealedCard()));
+    event.setMessage(result.getPrivateMessage());
+
+    messagingTemplate.convertAndSend(
+        "/queue/game/" + gameId + "/" + request.getPlayerId(),
+        event);
+  }
+
+  private void assertTextPresent(
+      String value,
+      String fieldName) {
+
+    if (value == null || value.isBlank()) {
+      throw new IllegalArgumentException("Action payload must contain " + fieldName + ".");
+    }
+  }
+
+  private String readPlayerId(String payload) {
+    JsonNode root;
+
+    try {
+      root = objectMapper.readTree(payload);
+    } catch (JacksonException exception) {
+      throw new IllegalArgumentException("Action payload must be valid JSON.", exception);
+    }
+
+    JsonNode playerId = root.get("playerId");
+    if (playerId == null || !playerId.isTextual()) {
+      throw new IllegalArgumentException("Action payload must contain playerId.");
+    }
+
+    return playerId.asText();
+  }
+
+  private int readPosition(String payload) {
+    JsonNode root;
+
+    try {
+      root = objectMapper.readTree(payload);
+    } catch (JacksonException exception) {
+      throw new IllegalArgumentException("Action payload must be valid JSON.", exception);
+    }
+
+    JsonNode position = root.get("position");
+    if (position == null || !position.isInt()) {
+      throw new IllegalArgumentException("Action payload must contain integer position.");
+    }
+
+    return position.asInt();
+  }
+
+  private void assertCurrentPlayer(
+      Game game,
+      String playerId) {
+
+    String currentPlayerId = currentPlayerId(game);
+    if (!playerId.equals(currentPlayerId)) {
+      throw new IllegalArgumentException("It is not player " + playerId + "'s turn.");
+    }
+  }
+
+  private void assertPlayerExists(
+      Game game,
+      String playerId) {
+
+    findPlayer(game, playerId);
+  }
+
+  private void assertResolvingDoomPlayer(
+      Game game,
+      String playerId) {
+
+    String resolvingPlayerId = game.getResolvingDoomPlayerId();
+    if (resolvingPlayerId == null) {
+      throw new IllegalStateException("No doom resolution is pending.");
+    }
+
+    if (!playerId.equals(resolvingPlayerId)) {
+      throw new IllegalArgumentException(
+          "Player " + playerId + " is not resolving doom.");
+    }
+  }
+
+  private void assertPendingDoomInsertion(Game game) {
+    if (!game.isPendingDoomRequiresInsertion()) {
+      throw new IllegalStateException("No pending Doom card requires insertion.");
+    }
+  }
+
+  private void assertNoPendingDoomInsertion(Game game) {
+    if (game.isPendingDoomRequiresInsertion()) {
+      throw new IllegalStateException("Pending Doom insertion must be completed with doom/insert.");
+    }
+  }
+
+  private void assertNoResolvingDoom(Game game) {
+    if (game.getResolvingDoomPlayerId() != null) {
+      throw new IllegalStateException("Doom resolution must be acknowledged before playing cards.");
+    }
+  }
+
+  private void assertCardTypeMatches(
+      Card card,
+      String requestedCardType) {
+
+    if (!requestedCardType.equals(card.getType())) {
+      throw new IllegalArgumentException(
+          "Card " + card.getId() + " is type " + card.getType()
+              + ", not " + requestedCardType + ".");
+    }
+  }
+
+  private Player findPlayer(
+      Game game,
+      String playerId) {
+
+    return game.getPlayers().stream()
+        .filter(player -> player.getId().equals(playerId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Player not found: " + playerId));
+  }
+
+  private Card findCardInHand(
+      Player player,
+      String cardId) {
+
+    return player.getHand().stream()
+        .filter(card -> card.getId().equals(cardId))
+        .findFirst()
+        .orElseThrow(
+            () -> new IllegalArgumentException(
+                "No card with id " + cardId + " in " + player.getName() + "'s hand"));
+  }
+
+  private String currentPlayerId(Game game) {
+    if (game.getBoard() == null
+        || game.getBoard().getCurrentPlayer() == null) {
+
+      return null;
+    }
+
+    return game.getBoard().getCurrentPlayer().getId();
+  }
+
+  private int turnCount(Game game) {
+    if (game.getBoard() == null) {
+      return 0;
+    }
+
+    return game.getBoard().getTurnCount();
+  }
+
+  private String handSizes(Game game) {
+    return game.getPlayers().stream()
+        .collect(Collectors.toMap(
+            Player::getId,
+            player -> player.getHand().size()))
+        .toString();
+  }
+}

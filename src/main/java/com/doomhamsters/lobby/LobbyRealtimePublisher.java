@@ -16,6 +16,17 @@ public class LobbyRealtimePublisher {
   private final SimpMessagingTemplate messagingTemplate;
   private final LobbySubscriptionTracker lobbySubscriptionTracker;
 
+  /**
+   * Creates a new {@code LobbyRealtimePublisher}.
+   *
+   * <p>The {@code @SuppressFBWarnings("EI_EXPOSE_REP2")} annotation acknowledges that
+   * {@code messagingTemplate} and {@code lobbySubscriptionTracker} are stored directly
+   * without defensive copying — this is intentional, as both are Spring-managed singletons
+   * whose lifecycle is controlled by the application context.
+   *
+   * @param messagingTemplate        used to broadcast messages to WebSocket subscribers
+   * @param lobbySubscriptionTracker tracks which clients are subscribed to which lobby
+   */
   @SuppressFBWarnings("EI_EXPOSE_REP2")
   public LobbyRealtimePublisher(
       SimpMessagingTemplate messagingTemplate,

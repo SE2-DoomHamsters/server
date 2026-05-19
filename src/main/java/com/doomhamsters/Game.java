@@ -535,10 +535,20 @@ public class Game {
       return new DrawResult(null, null);
     }
 
+    /**
+     * Returns whether a card has been drawn in the current turn.
+     *
+     * @return {@code true} if a card was drawn, {@code false} if the turn has not produced a draw
+     */
     public boolean cardDrawn() {
       return drawnCard != null;
     }
 
+    /**
+     * Returns whether the drawn card is a {@link CardType#DOOM} card.
+     *
+     * @return {@code true} if a card was drawn and it is of type DOOM, {@code false} otherwise
+     */
     public boolean doomDrawn() {
       return drawnCard != null && drawnCard.isDoom();
     }

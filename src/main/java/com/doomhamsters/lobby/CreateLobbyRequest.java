@@ -12,6 +12,9 @@ public class CreateLobbyRequest {
   @Schema(description = "The player creating the lobby")
   private User user;
 
+  /**
+   * No-args constructor required for JSON deserialization.
+   */
   public CreateLobbyRequest() {}
 
   public String getGroupName() {

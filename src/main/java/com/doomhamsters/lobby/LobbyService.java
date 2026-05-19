@@ -1,5 +1,8 @@
 package com.doomhamsters.lobby;
 
+import com.doomhamsters.CardType;
+import com.doomhamsters.GameState;
+import com.doomhamsters.Player;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
@@ -13,10 +16,14 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -384,6 +391,126 @@ public class LobbyService {
     return lobbyId;
   }
 
+  /**
+   * Laufende Spielzustände, keyed by gameId.
+   * In Produktion durch einen verteilten Store ersetzen.
+   */
+  private final Map<String, GameState> activeGames = new ConcurrentHashMap<>();
+
+  /**
+   * Registriert eine neue Spielsitzung.
+   *
+   * @param gameId  eindeutiger Bezeichner des Spiels
+   * @param players initiale Spielerliste
+   */
+  public void registerGame(String gameId, List<Player> players) {
+    String firstTurn = players.isEmpty() ? "" : players.get(0).getId();
+    activeGames.put(
+        gameId,
+      new GameState(gameId, players, firstTurn, false, null));
+  }
+
+  /**
+   * Liefert den aktuellen {@link GameState} für das gegebene Spiel, oder empty wenn nicht
+   * gefunden.
+   */
+  public Optional<GameState> findGame(String gameId) {
+    return Optional.ofNullable(activeGames.get(gameId));
+  }
+  /**
+   * Verarbeitet eine Draw-Aktion für {@code playerId} in {@code gameId}.
+   *
+   * <p>Zuerst wird die Turn-Validierung durchgeführt; ist der anfragende Spieler nicht
+   * der aktive Spieler, wird eine {@link IllegalArgumentException} geworfen und
+   * <em>kein Zustand verändert</em>.
+   *
+   * <p><b>Karteneffekte:</b>
+   * <ul>
+   *   <li>{@link CardType#DOOM} — lives {@code -1}; Spieler wird eliminiert wenn lives {@code 0}.
+   *   <li>{@link CardType#SNACK_STASH} — als pending markiert; Client muss via
+   *       {@code /app/game/{gameId}/confirm-snack} bestätigen.
+   *   <li>{@link CardType#NORMAL} — kein Effekt; Turn wird weitergegeben.
+   * </ul>
+   *
+   * @param gameId   die Zielspielsitzung
+   * @param playerId der Spieler der ziehen möchte
+   * @return der aktualisierte {@link GameState} bereit zum Broadcast
+   * @throws NoSuchElementException   wenn {@code gameId} nicht gefunden wird
+   * @throws IllegalArgumentException wenn es nicht {@code playerId}'s Turn ist
+   */
+
+  public synchronized GameState processDraw(String gameId, String playerId) {
+    GameState state =
+        findGame(gameId)
+        .orElseThrow(() -> new NoSuchElementException("Game not found: " + gameId));
+
+    validateTurn(state, playerId);
+
+    List<Player> mutablePlayers = new ArrayList<>(state.getPlayers());
+    CardType drawnCard = drawCard();
+
+    boolean snackStashPending = false;
+    String pendingPlayerId = null;
+    String nextTurnPlayerId = state.getCurrentTurnPlayerId();
+
+    switch (drawnCard) {
+      case DOOM -> {
+        applyDoom(mutablePlayers, playerId);
+        nextTurnPlayerId = advanceTurn(mutablePlayers, playerId);
+      }
+      case SNACK_STASH -> {
+        snackStashPending = true;
+        pendingPlayerId = playerId;
+        // Turn wird erst nach Bestätigung weitergegeben.
+      }
+      case NORMAL -> nextTurnPlayerId = advanceTurn(mutablePlayers, playerId);
+
+      default -> {
+        return null;
+      }
+    }
+    GameState updated =
+        new GameState(gameId, mutablePlayers, nextTurnPlayerId, snackStashPending, pendingPlayerId);
+    activeGames.put(gameId, updated);
+    return updated;
+  }
+
+  private static void validateTurn(GameState state, String playerId) {
+    if (!playerId.equals(state.getCurrentTurnPlayerId())) {
+      throw new IllegalArgumentException(
+        String.format("Not player %s's turn. Current turn: %s",
+          playerId, state.getCurrentTurnPlayerId()));
+    }
+  }
+
+  private final Random random = new Random();
+
+  private CardType drawCard() {
+    CardType[] values = CardType.values();
+    return values[random.nextInt(values.length)];
+  }
+
+  private static void applyDoom(List<Player> players, String playerId) {
+    players.stream()
+      .filter(p -> p.getId().equals(playerId))
+      .findFirst()
+        .ifPresent(Player::decrementLives);
+  }
+
+  private static String advanceTurn(List<Player> players, String currentPlayerId) {
+    List<Player> active =
+        players.stream().filter(p -> !p.isEliminated()).collect(Collectors.toList());
+    if (active.size() <= 1) {
+      return currentPlayerId;
+    }
+    int currentIndex =
+        IntStream.range(0, active.size())
+        .filter(i -> active.get(i).getId().equals(currentPlayerId))
+        .findFirst()
+        .orElse(0);
+    return active.get((currentIndex + 1) % active.size()).getId();
+  }
+
   private void removeExpiredMembersLocked(Lobby lobby, Instant now) {
     if (lobby.isGameStarted()) {
       return;
@@ -485,6 +612,13 @@ public class LobbyService {
    * @param created whether this call created the game
    */
   public record GameStartOutcome(Lobby lobby, String gameId, boolean created) {
+    /**
+     * Immutable outcome returned after a game-start attempt.
+     *
+     * <p>The enclosed {@link Lobby} snapshot is defensively copied on construction and on
+     * access, so callers cannot mutate the recorded state after the fact.
+     *
+     */
     public GameStartOutcome {
       lobby = new Lobby(lobby);
     }

@@ -108,8 +108,8 @@ public class LobbyController {
    * @return updated lobby snapshot
    */
   @Operation(summary = "Leave a lobby",
-      description = "Removes the player from the lobby. " +
-        "If the host leaves, a new host is assigned.")
+      description = "Removes the player from the lobby. "
+          + "If the host leaves, a new host is assigned.")
   @ApiResponse(responseCode = "200", description = "Left lobby successfully")
   @ApiResponse(responseCode = "400", description = "Invalid request")
   @PostMapping("/{lobbyId}/leave")
@@ -138,8 +138,8 @@ public class LobbyController {
    * @return current lobby snapshot
    */
   @Operation(summary = "Send heartbeat",
-      description = "Marks the player as still connected. " +
-        "Must be called regularly to avoid timeout.")
+      description = "Marks the player as still connected. "
+          + "Must be called regularly to avoid timeout.")
   @ApiResponse(responseCode = "200", description = "Heartbeat accepted",
       content = @Content(schema = @Schema(implementation = Lobby.class)))
   @ApiResponse(responseCode = "400", description = "Invalid request")

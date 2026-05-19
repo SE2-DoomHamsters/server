@@ -1,3 +1,5 @@
+package com.doomhamsters;
+
 /** Payload sent by the client when requesting to draw a card. */
 public final class DrawRequest {
 

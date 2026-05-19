@@ -1,7 +1,8 @@
-
+package com.doomhamsters;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.doomhamsters.lobby.LobbyService;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -10,7 +11,7 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link GameService}.
+ * Unit tests for {@link LobbyService}.
  *
  * <p>Because {drawCard()} is random, card-specific branches are covered via
  * {@link RepeatedTest} with enough iterations to hit all enum values with very high probability
@@ -22,11 +23,11 @@ final class GameServiceTest {
   private static final String PLAYER_1 = "p1";
   private static final String PLAYER_2 = "p2";
 
-  private GameService service;
+  private LobbyService service;
 
   @BeforeEach
   void setUp() {
-    service = new GameService();
+    service = new LobbyService();
   }
 
   // -------------------------------------------------------------------------

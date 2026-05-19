@@ -1,4 +1,5 @@
-import com.doomhamsters.Player;
+package com.doomhamsters;
+
 import java.util.List;
 
 /**

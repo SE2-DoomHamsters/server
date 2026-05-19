@@ -13,7 +13,16 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class DoomHamstersApplication {
 
   /**
+   * Creates the Spring Boot application configuration.
+   */
+  public DoomHamstersApplication() {
+    // Required by Spring Boot when creating the application context.
+  }
+
+  /**
    * Starts the Spring Boot application.
+   *
+   * @param args command-line arguments
    */
   public static void main(String[] args) {
     SpringApplication.run(DoomHamstersApplication.class, args);

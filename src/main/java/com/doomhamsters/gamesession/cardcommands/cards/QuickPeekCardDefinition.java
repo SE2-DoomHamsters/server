@@ -13,6 +13,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class QuickPeekCardDefinition implements CardDefinition {
 
+  /**
+   * Creates the Quick Peek card definition.
+   */
+  public QuickPeekCardDefinition() {
+    // Required by Spring component scanning for this stateless card definition.
+  }
+
   @Override
   public String cardType() {
     return "QuickPeek";

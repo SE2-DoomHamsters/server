@@ -45,25 +45,50 @@ public class CardCommandContext {
         : Map.copyOf(parameters);
   }
 
+  /**
+   * Returns the session containing the command.
+   *
+   * @return game session
+   */
   @SuppressFBWarnings("EI_EXPOSE_REP")
   public GameSession getSession() {
     return session;
   }
 
+  /**
+   * Returns the mutable game being updated by the command.
+   *
+   * @return game instance
+   */
   @SuppressFBWarnings("EI_EXPOSE_REP")
   public Game getGame() {
     return game;
   }
 
+  /**
+   * Returns the player who activated the command.
+   *
+   * @return activating player
+   */
   @SuppressFBWarnings("EI_EXPOSE_REP")
   public Player getPlayer() {
     return player;
   }
 
+  /**
+   * Returns the activated card.
+   *
+   * @return defensive card copy
+   */
   public Card getCard() {
     return new Card(card);
   }
 
+  /**
+   * Returns command parameters supplied by the client.
+   *
+   * @return immutable command parameters
+   */
   public Map<String, Object> getParameters() {
     return Collections.unmodifiableMap(parameters);
   }

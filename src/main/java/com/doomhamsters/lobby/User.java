@@ -15,6 +15,7 @@ public class User {
   private String username;
   @Schema(description = "Das gewählte Icon oder Emoji des Benutzers", example = "🐹")
   private String avatar;
+  @Schema(description = "Whether the user is currently connected", example = "true")
   private boolean connected = true;
 
   @JsonIgnore
@@ -107,24 +108,48 @@ public class User {
     this.avatar = avatar;
   }
 
+  /**
+   * Returns whether the user is currently connected.
+   *
+   * @return {@code true} when the user is connected
+   */
   public boolean isConnected() {
     return connected;
   }
 
+  /**
+   * Sets whether the user is currently connected.
+   *
+   * @param connected connected flag
+   */
   public void setConnected(boolean connected) {
     this.connected = connected;
   }
 
+  /**
+   * Returns when the user was last seen.
+   *
+   * @return last seen timestamp
+   */
   @JsonIgnore
   public Instant getLastSeenAt() {
     return lastSeenAt;
   }
 
+  /**
+   * Sets when the user was last seen.
+   *
+   * @param lastSeenAt last seen timestamp
+   */
   public void setLastSeenAt(Instant lastSeenAt) {
     this.lastSeenAt = lastSeenAt;
   }
 
-  /** Marks this lobby member as connected right now. */
+  /**
+   * Marks this lobby member as connected at the supplied timestamp.
+   *
+   * @param seenAt timestamp to store as last seen
+   */
   public void markSeen(Instant seenAt) {
     this.connected = true;
     this.lastSeenAt = seenAt;

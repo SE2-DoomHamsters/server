@@ -9,6 +9,7 @@ import java.util.List;
 
 public class Player {
 
+  /** Starting number of lives for each player. */
   public static final int STARTING_LIVES = 3;
 
   private final String id;
@@ -18,9 +19,11 @@ public class Player {
   private boolean eliminated;
 
   /**
-   * Constructs the default player.
+   * Creates a new player.
+   *
+   * @param id stable player identifier
+   * @param name display name
    */
-
   public Player(String id, String name) {
     this.id = id;
     this.name = name;
@@ -46,26 +49,56 @@ public class Player {
     }
   }
 
+  /**
+   * Returns the stable player identifier.
+   *
+   * @return player id
+   */
   public String getId() {
     return id;
   }
 
+  /**
+   * Returns the player display name.
+   *
+   * @return display name
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   * Returns the player's remaining lives.
+   *
+   * @return remaining lives
+   */
   public int getLives() {
     return lives;
   }
 
+  /**
+   * Returns the player's hand.
+   *
+   * @return immutable hand snapshot
+   */
   public List<Card> getHand() {
     return Collections.unmodifiableList(hand);
   }
 
+  /**
+   * Returns whether the player can still take turns.
+   *
+   * @return {@code true} when the player has lives and is not eliminated
+   */
   public boolean isAlive() {
     return lives > 0 && !eliminated;
   }
 
+  /**
+   * Returns whether the player has been eliminated.
+   *
+   * @return {@code true} when the player is eliminated
+   */
   public boolean isEliminated() {
     return eliminated;
   }

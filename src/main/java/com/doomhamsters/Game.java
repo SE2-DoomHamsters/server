@@ -535,18 +535,38 @@ public class Game {
       return new DrawResult(null, null);
     }
 
+    /**
+     * Returns whether any card was drawn.
+     *
+     * @return {@code true} when a card was drawn
+     */
     public boolean cardDrawn() {
       return drawnCard != null;
     }
 
+    /**
+     * Returns whether the drawn card was a Doom card.
+     *
+     * @return {@code true} when the drawn card is Doom
+     */
     public boolean doomDrawn() {
       return drawnCard != null && drawnCard.isDoom();
     }
 
+    /**
+     * Returns the card that was drawn.
+     *
+     * @return copy of the drawn card, or {@code null} if no card was drawn
+     */
     public Card getDrawnCard() {
       return drawnCard == null ? null : new Card(drawnCard);
     }
 
+    /**
+     * Returns the Doom resolution result for the draw.
+     *
+     * @return Doom result, or {@code null} when no Doom card was drawn
+     */
     public Player.DoomResult getDoomResult() {
       return doomResult;
     }

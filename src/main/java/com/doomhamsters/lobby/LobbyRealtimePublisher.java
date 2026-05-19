@@ -16,6 +16,12 @@ public class LobbyRealtimePublisher {
   private final SimpMessagingTemplate messagingTemplate;
   private final LobbySubscriptionTracker lobbySubscriptionTracker;
 
+  /**
+   * Creates a realtime publisher.
+   *
+   * @param messagingTemplate STOMP messaging template
+   * @param lobbySubscriptionTracker tracker used for fanout diagnostics
+   */
   @SuppressFBWarnings("EI_EXPOSE_REP2")
   public LobbyRealtimePublisher(
       SimpMessagingTemplate messagingTemplate,
@@ -24,7 +30,11 @@ public class LobbyRealtimePublisher {
     this.lobbySubscriptionTracker = lobbySubscriptionTracker;
   }
 
-  /** Broadcasts a full lobby snapshot to all subscribers. */
+  /**
+   * Broadcasts a full lobby snapshot to all subscribers.
+   *
+   * @param lobby lobby snapshot to broadcast
+   */
   public void broadcastLobbySnapshot(Lobby lobby) {
     String topic = "/topic/lobby/" + lobby.getLobbyId();
     int memberCount = lobby.getMembers().size();
@@ -43,7 +53,12 @@ public class LobbyRealtimePublisher {
     messagingTemplate.convertAndSend(topic, new Lobby(lobby));
   }
 
-  /** Broadcasts the shared started game ID for a lobby. */
+  /**
+   * Broadcasts the shared started game ID for a lobby.
+   *
+   * @param lobbyId lobby id whose subscribers should receive the event
+   * @param gameId started game id
+   */
   public void broadcastGameStart(String lobbyId, String gameId) {
     String topic = "/topic/game/" + lobbyId;
     LOGGER.info("broadcast fanout: topic={}, lobbyId={}, gameId={}", topic, lobbyId, gameId);

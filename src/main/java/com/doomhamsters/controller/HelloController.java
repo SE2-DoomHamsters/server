@@ -10,6 +10,13 @@ import org.springframework.stereotype.Controller;
 public class HelloController {
 
   /**
+   * Creates the test WebSocket controller.
+   */
+  public HelloController() {
+    // Required by Spring so it can instantiate this controller.
+  }
+
+  /**
    * Receives a text message on {/app/hello} and broadcasts the reply to
    * every subscriber of {/topic/test}.
    *

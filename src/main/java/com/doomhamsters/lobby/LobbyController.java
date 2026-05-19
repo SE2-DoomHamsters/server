@@ -1,5 +1,11 @@
 package com.doomhamsters.lobby;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
 import java.util.Map;
 import lombok.Getter;
@@ -15,7 +21,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * REST endpoints for lobby management.
+ *
+ * <p>Create/join use HTTP request-response. After a join the updated lobby is
+ * also broadcast via STOMP so all connected clients see the new member.
  */
+@Tag(name = "Lobby", description = "Lobby lifecycle — create, join and fetch lobby state")
 @RestController
 @RequestMapping("/api/lobby")
 public class LobbyController {
@@ -44,6 +54,11 @@ public class LobbyController {
    * @param request create lobby request payload
    * @return the created lobby
    */
+  @Operation(summary = "Create a new lobby",
+      description = "Creates a lobby with a QR code. The creator is added as the first member.")
+  @ApiResponse(responseCode = "201", description = "Lobby created successfully",
+      content = @Content(schema = @Schema(implementation = Lobby.class)))
+  @ApiResponse(responseCode = "400", description = "Invalid request")
   @PostMapping("/create")
   public ResponseEntity<Object> createLobby(@RequestBody CreateLobbyRequest request) {
     try {
@@ -63,6 +78,13 @@ public class LobbyController {
    * @param user    user joining the lobby
    * @return updated lobby snapshot
    */
+  @Operation(summary = "Join an existing lobby",
+      description = "Adds the player to the lobby and broadcasts the updated lobby"
+          + " to all STOMP subscribers on /topic/lobby/{lobbyId}.")
+  @ApiResponse(responseCode = "200", description = "Lobby joined successfully",
+      content = @Content(schema = @Schema(implementation = Lobby.class)))
+  @ApiResponse(responseCode = "404", description = "Lobby not found")
+  @ApiResponse(responseCode = "409", description = "Game already started")
   @PostMapping("/{lobbyId}/join")
   public ResponseEntity<Object> joinLobby(@PathVariable String lobbyId, @RequestBody User user) {
     try {
@@ -85,6 +107,10 @@ public class LobbyController {
    * @param request payload containing the user ID leaving
    * @return updated lobby snapshot
    */
+  @Operation(summary = "Leave a lobby",
+      description = "Removes the player from the lobby. If the host leaves, a new host is assigned.")
+  @ApiResponse(responseCode = "200", description = "Left lobby successfully")
+  @ApiResponse(responseCode = "400", description = "Invalid request")
   @PostMapping("/{lobbyId}/leave")
   public ResponseEntity<Lobby> leaveLobby(
       @PathVariable String lobbyId,
@@ -110,6 +136,12 @@ public class LobbyController {
    * @param request payload containing the user ID
    * @return current lobby snapshot
    */
+  @Operation(summary = "Send heartbeat",
+      description = "Marks the player as still connected. Must be called regularly to avoid timeout.")
+  @ApiResponse(responseCode = "200", description = "Heartbeat accepted",
+      content = @Content(schema = @Schema(implementation = Lobby.class)))
+  @ApiResponse(responseCode = "400", description = "Invalid request")
+  @ApiResponse(responseCode = "404", description = "Lobby or user not found")
   @PostMapping("/{lobbyId}/heartbeat")
   public ResponseEntity<Lobby> heartbeat(
       @PathVariable String lobbyId,
@@ -134,8 +166,13 @@ public class LobbyController {
    * @param lobbyId lobby identifier
    * @return lobby snapshot
    */
+  @Operation(summary = "Get current lobby state")
+  @ApiResponse(responseCode = "200", description = "Lobby found",
+      content = @Content(schema = @Schema(implementation = Lobby.class)))
+  @ApiResponse(responseCode = "404", description = "Lobby not found")
   @GetMapping("/{lobbyId}")
-  public ResponseEntity<Lobby> getLobby(@PathVariable String lobbyId) {
+  public ResponseEntity<Lobby> getLobby(
+      @Parameter(description = "Lobby identifier") @PathVariable String lobbyId) {
     Lobby lobby = lobbyService.getLobby(lobbyId);
     return lobby != null ? ResponseEntity.ok(new Lobby(lobby)) : ResponseEntity.notFound().build();
   }

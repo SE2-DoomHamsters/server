@@ -130,6 +130,12 @@ public class User {
     this.lastSeenAt = seenAt;
   }
 
+  /**
+   * Vergleicht diesen User mit einem anderen Objekt auf Gleichheit anhand der ID.
+   *
+   * @param o Das zu vergleichende Objekt
+   * @return true, wenn die IDs übereinstimmen, sonst false
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -142,6 +148,11 @@ public class User {
     return Objects.equals(id, user.id);
   }
 
+  /**
+   * Generiert den Hashcode basierend auf der User-ID.
+   *
+   * @return Der generierte Hashcode
+   */
   @Override
   public int hashCode() {
     return Objects.hash(id);

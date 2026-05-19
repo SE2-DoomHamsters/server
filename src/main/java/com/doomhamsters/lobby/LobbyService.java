@@ -494,14 +494,4 @@ public class LobbyService {
       return new Lobby(lobby);
     }
   }
-
-  /**
-   * Sucht und liefert eine aktive Lobby anhand ihrer ID.
-   *
-   * @param lobbyId Die ID der gesuchten Lobby
-   * @return Die gefundene Lobby oder null, falls sie nicht existiert
-   */
-  public Lobby getLobby(String lobbyId) {
-    return activeLobbies.get(lobbyId);
-  }
 }

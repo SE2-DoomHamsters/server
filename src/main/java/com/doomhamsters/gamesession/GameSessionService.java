@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * Service for managing the lifecycle of game sessions.
+ * Service zur Verwaltung des Lebenszyklus von Spielsitzungen.
  */
 @Service
 public class GameSessionService {
@@ -20,9 +20,9 @@ public class GameSessionService {
   private boolean persistenceDirty;
 
   /**
-   * Constructs the service and restores persisted sessions.
+   * Initialisiert den Service und stellt gespeicherte Sitzungen wieder her.
    *
-   * @param persistenceService persistence handler
+   * @param persistenceService Der Handler für die Persistenz
    */
   public GameSessionService(GameSessionPersistenceService persistenceService) {
 
@@ -32,10 +32,10 @@ public class GameSessionService {
   }
 
   /**
-   * Creates and stores a new game session for a given lobby.
+   * Erstellt und speichert eine neue Spielsitzung für eine gegebene Lobby.
    *
-   * @param lobbyId the lobby to start the game from
-   * @return the newly created session
+   * @param lobbyId Die Lobby, aus der das Spiel gestartet wird
+   * @return Die neu erstellte Spielsitzung
    */
   public GameSession createSession(String lobbyId) {
 
@@ -51,10 +51,10 @@ public class GameSessionService {
   }
 
   /**
-   * Retrieves an existing game session by its ID.
+   * Ruft eine existierende Spielsitzung anhand ihrer ID ab.
    *
-   * @param gameId the ID of the session
-   * @return an Optional containing the session if found
+   * @param gameId Die ID der Sitzung
+   * @return Ein Optional, das die Sitzung enthält, falls gefunden
    */
   public Optional<GameSession> getSession(String gameId) {
 
@@ -62,9 +62,9 @@ public class GameSessionService {
   }
 
   /**
-   * Manually saves or updates a game session in the store.
+   * Speichert oder aktualisiert eine Spielsitzung manuell im Speicher.
    *
-   * @param session the session to save
+   * @param session Die zu speichernde Sitzung
    */
   public void saveSession(GameSession session) {
 

@@ -22,8 +22,16 @@ public class Lobby {
   private boolean gameStarted;
   private int version = 0;
 
+  /**
+   * Standard-Konstruktor für Frameworks und Deserialisierung.
+   */
   public Lobby() {}
 
+  /**
+   * Erstellt eine neue Lobby mit der angegebenen ID.
+   *
+   * @param lobbyId Die eindeutige ID der Lobby
+   */
   public Lobby(String lobbyId) {
     this.lobbyId = lobbyId;
   }
@@ -45,10 +53,19 @@ public class Lobby {
     this.version = other.version;
   }
 
+   * Gibt die ID der Lobby zurück.
+   *
+   * @return Die ID der Lobby
+   */
   public String getLobbyId() {
     return lobbyId;
   }
 
+  /**
+   * Setzt die ID der Lobby.
+   *
+   * @param lobbyId Die zu setzende Lobby-ID
+   */
   public void setLobbyId(String lobbyId) {
     this.lobbyId = lobbyId;
   }
@@ -98,6 +115,12 @@ public class Lobby {
    *
    * @return member snapshot
    */
+  /**
+   * Gibt eine Kopie der Mitgliederliste zurück.
+   *
+   * @return Eine Liste aller Benutzer in dieser Lobby
+   */
+  // FIX für EI_EXPOSE_REP: Gibt eine Kopie zurück, statt das Original
   public List<User> getMembers() {
     if (members == null) {
       return new ArrayList<>();
@@ -111,10 +134,11 @@ public class Lobby {
   }
 
   /**
-   * Replaces lobby members with defensive copies.
+   * Überschreibt die Liste der Mitglieder mit einer neuen Liste.
    *
-   * @param members new members
+   * @param members Die neue Liste der Benutzer
    */
+  // FIX für EI_EXPOSE_REP2: Speichert eine Kopie, statt die Referenz direkt zu übernehmen
   public void setMembers(List<User> members) {
     this.members = new ArrayList<>();
     if (members != null) {
@@ -124,10 +148,20 @@ public class Lobby {
     }
   }
 
+  /**
+   * Gibt den generierten QR-Code als Base64-String zurück.
+   *
+   * @return Der QR-Code als Base64-String
+   */
   public String getQrCodeBase64() {
     return qrCodeBase64;
   }
 
+  /**
+   * Setzt den QR-Code als Base64-String.
+   *
+   * @param qrCodeBase64 Der zu setzende Base64-String
+   */
   public void setQrCodeBase64(String qrCodeBase64) {
     this.qrCodeBase64 = qrCodeBase64;
   }

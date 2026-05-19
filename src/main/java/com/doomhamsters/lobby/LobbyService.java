@@ -21,7 +21,13 @@ public class LobbyService {
 
   private final Map<String, Lobby> activeLobbies = new ConcurrentHashMap<>();
 
-  /** Erstellt eine neue Lobby. */
+  /**
+   * Erstellt eine neue Lobby basierend auf einem Gruppennamen.
+   *
+   * @param groupName Der eingegebene Name der Gruppe
+   * @param creator Der Benutzer, der diese Lobby erstellt
+   * @return Die neu generierte Lobby
+   */
   public Lobby createLobby(String groupName, User creator) {
     String lobbyId = groupName.toUpperCase().trim().replaceAll("\\s+", "_");
     Lobby lobby = new Lobby(lobbyId);
@@ -36,7 +42,13 @@ public class LobbyService {
     return lobby;
   }
 
-  /** Fügt einen User hinzu oder aktualisiert ihn. */
+  /**
+   * Fügt einen User einer bestehenden Lobby hinzu oder aktualisiert seine Daten.
+   *
+   * @param lobbyId Die ID der Lobby, der beigetreten werden soll
+   * @param user Der Benutzer, der beitritt oder aktualisiert wird
+   * @return Ein Optional mit der aktualisierten Lobby, falls sie existiert
+   */
   public Optional<Lobby> joinOrUpdateLobby(String lobbyId, User user) {
     Lobby lobby = activeLobbies.get(lobbyId);
     if (lobby != null) {
@@ -71,7 +83,12 @@ public class LobbyService {
     }
   }
 
-  /** Liefert eine Lobby per ID. */
+  /**
+   * Sucht und liefert eine aktive Lobby anhand ihrer ID.
+   *
+   * @param lobbyId Die ID der gesuchten Lobby
+   * @return Die gefundene Lobby oder null, falls sie nicht existiert
+   */
   public Lobby getLobby(String lobbyId) {
     return activeLobbies.get(lobbyId);
   }

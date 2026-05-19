@@ -1,13 +1,17 @@
 package com.doomhamsters.lobby;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 
 /**
  * Repräsentiert einen Benutzer in einer Lobby.
  */
 public class User {
+  @Schema(description = "Die eindeutige Socket-Session-ID des Benutzers", example = "abc-12345")
   private String id;
+  @Schema(description = "Der gewählte Anzeigename des Benutzers", example = "DoomSlayer")
   private String username;
+  @Schema(description = "Das gewählte Icon oder Emoji des Benutzers", example = "🐹")
   private String avatar;
 
   /**
@@ -82,6 +86,12 @@ public class User {
     this.avatar = avatar;
   }
 
+  /**
+   * Vergleicht diesen User mit einem anderen Objekt auf Gleichheit anhand der ID.
+   *
+   * @param o Das zu vergleichende Objekt
+   * @return true, wenn die IDs übereinstimmen, sonst false
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -94,6 +104,11 @@ public class User {
     return Objects.equals(id, user.id);
   }
 
+  /**
+   * Generiert den Hashcode basierend auf der User-ID.
+   *
+   * @return Der generierte Hashcode
+   */
   @Override
   public int hashCode() {
     return Objects.hash(id);

@@ -10,6 +10,12 @@ import com.doomhamsters.lobby.Lobby;
 import com.doomhamsters.lobby.LobbyRealtimePublisher;
 import com.doomhamsters.lobby.LobbyService;
 import com.doomhamsters.lobby.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +33,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controller zur Steuerung von Spiel-Ereignissen.
+ * REST Endpunkte zur Steuerung des Spiel-Lebenszyklus.
+ *
+ * <p>Das Starten nutzt HTTP Request-Response. Danach wird die
+ * Antwort auch via STOMP an die Lobby gesendet.
  */
+@Tag(name = "Game", description = "Game lifecycle — Spiel aus Lobby starten")
 @RestController
 @RequestMapping("/api/game")
 public class GameController {
@@ -43,14 +53,14 @@ public class GameController {
   private final CardRegistry cardRegistry;
 
   /**
-   * Initializes the GameController.
+   * Initialisiert den GameController mit seinen Abhängigkeiten.
    *
-   * @param gameSessionService game session service
-   * @param lobbyService lobby service
-   * @param messagingTemplate STOMP messaging template
-   * @param realtimePublisher lobby/game-start publisher
-   * @param gameStateMapper game state mapper
-   * @param cardRegistry card registry
+   * @param gameSessionService Der Service für Spielsitzungen
+   * @param lobbyService Der Service für die Lobbys
+   * @param messagingTemplate Das Template für STOMP-Nachrichten
+   * @param realtimePublisher Der Publisher für Lobby/Spielstart-Events
+   * @param gameStateMapper Der Mapper für den Spielzustand
+   * @param cardRegistry Die Registry für Karten-Commands
    */
   @SuppressFBWarnings("EI_EXPOSE_REP2")
   public GameController(
@@ -69,16 +79,23 @@ public class GameController {
   }
 
   /**
-   * Starts a new game from the given lobby.
+   * Startet ein neues Spiel aus der angegebenen Lobby.
    *
-   * @param lobbyId lobby identifier
-   * @param userId lobby member identifier
-   * @return game start response
+   * <p>POST /api/game/start
+   *
+   * @param lobbyId Die ID der Ziel-Lobby
+   * @param userId Die ID des anfragenden Lobby-Mitglieds
+   * @return GameStartResponse mit neuer Spiel-ID, oder 404 bei Fehler
    */
+  @Operation(summary = "Startet ein neues Spiel",
+      description = "Erstellt GameSession und sendet ID via STOMP.")
+  @ApiResponse(responseCode = "200", description = "Spiel erfolgreich gestartet",
+      content = @Content(schema = @Schema(implementation = GameStartResponse.class)))
+  @ApiResponse(responseCode = "404", description = "Lobby nicht gefunden")
   @PostMapping("/start")
   public ResponseEntity<GameStartResponse> startGame(
-      @RequestParam String lobbyId,
-      @RequestParam(required = false) String userId) {
+      @Parameter(description = "ID der Lobby") @RequestParam String lobbyId,
+      @Parameter(description = "ID des anfragenden Mitglieds") @RequestParam(required = false) String userId) {
 
     AtomicReference<GameSession> createdSession = new AtomicReference<>();
     try {

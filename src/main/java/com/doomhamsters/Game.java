@@ -132,9 +132,7 @@ public class Game {
    *
    * @param board restored board
    */
-  @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
-      value = "EI_EXPOSE_REP2",
-      justification = "Board is a freshly deserialized object; rebindRestoredState replaces its internals immediately after assignment.")
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public void setBoard(Board board) {
     this.board = board;
     rebindRestoredState();

@@ -1,5 +1,8 @@
 package com.doomhamsters;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,6 +11,7 @@ import java.util.List;
  * Represents the deck.
  */
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Deck {
 
   private static final SecureRandom RANDOM = new SecureRandom();
@@ -23,6 +27,20 @@ public class Deck {
   public Deck(List<Card> cards) {
     this.cards = new ArrayList<>(cards);
     this.discards = new ArrayList<>();
+  }
+
+  /**
+   * Creates a deck from persisted draw and discard piles.
+   *
+   * @param cards current draw pile
+   * @param discards current discard pile
+   */
+  @JsonCreator
+  public Deck(
+      @JsonProperty("cards") List<Card> cards,
+      @JsonProperty("discards") List<Card> discards) {
+    this.cards = cards == null ? new ArrayList<>() : new ArrayList<>(cards);
+    this.discards = discards == null ? new ArrayList<>() : new ArrayList<>(discards);
   }
 
   /**

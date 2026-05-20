@@ -1,5 +1,6 @@
 package com.doomhamsters;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +14,7 @@ import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
  * State#FINISHED}, coordinating players, the deck, and the board.
  */
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Game {
 
   /** The number of cards each player receives at the start of the game. */
@@ -85,6 +87,15 @@ public class Game {
   }
 
   /**
+   * Restores the lifecycle state from persisted JSON.
+   *
+   * @param state restored state
+   */
+  public void setState(State state) {
+    this.state = state;
+  }
+
+  /**
    * Returns the winning player, or {@code null} if the game is not yet finished.
    *
    * @return the winner, or {@code null}
@@ -93,6 +104,16 @@ public class Game {
   @SuppressFBWarnings("EI_EXPOSE_REP")
   public Player getWinner() {
     return winner;
+  }
+
+  /**
+   * Restores the winner from persisted JSON.
+   *
+   * @param winner restored winner
+   */
+  public void setWinner(Player winner) {
+    this.winner = winner == null ? null : new Player(winner);
+    rebindRestoredState();
   }
 
   /**
@@ -107,6 +128,17 @@ public class Game {
   }
 
   /**
+   * Restores the board from persisted JSON.
+   *
+   * @param board restored board
+   */
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
+  public void setBoard(Board board) {
+    this.board = board;
+    rebindRestoredState();
+  }
+
+  /**
    * Returns the deck currently in use.
    *
    * @return the {@link Deck}
@@ -118,6 +150,16 @@ public class Game {
   }
 
   /**
+   * Restores the deck from persisted JSON.
+   *
+   * @param deck restored deck
+   */
+  public void setDeck(Deck deck) {
+    this.deck = deck == null ? null : new Deck(deck);
+    rebindRestoredState();
+  }
+
+  /**
    * Returns the list of all players, including eliminated ones.
    *
    * @return an unmodifiable view of all players
@@ -125,6 +167,21 @@ public class Game {
 
   public List<Player> getPlayers() {
     return Collections.unmodifiableList(players);
+  }
+
+  /**
+   * Restores the player list from persisted JSON.
+   *
+   * @param players restored players
+   */
+  public void setPlayers(List<Player> players) {
+    this.players = new ArrayList<>();
+    if (players != null) {
+      for (Player player : players) {
+        this.players.add(new Player(player));
+      }
+    }
+    rebindRestoredState();
   }
 
   /**
@@ -213,6 +270,20 @@ public class Game {
    */
   public void setPendingDoomCardType(String pendingDoomCardType) {
     this.pendingDoomCardType = pendingDoomCardType;
+  }
+
+  private void rebindRestoredState() {
+    if (board != null && deck != null && players != null) {
+      board.rebindToGameState(players, deck);
+    }
+
+    if (winner != null && players != null) {
+      winner =
+          players.stream()
+              .filter(player -> player.getId().equals(winner.getId()))
+              .findFirst()
+              .orElse(winner);
+    }
   }
 
   /**

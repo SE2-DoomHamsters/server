@@ -1,5 +1,8 @@
 package com.doomhamsters;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,6 +10,7 @@ import java.util.List;
  * Represents the player.
  */
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Player {
 
   /** Starting number of lives for each player. */
@@ -30,6 +34,29 @@ public class Player {
     this.lives = STARTING_LIVES;
     this.hand = new ArrayList<>();
     this.eliminated = false;
+  }
+
+  /**
+   * Creates a player from persisted JSON state.
+   *
+   * @param id stable player identifier
+   * @param name display name
+   * @param hand cards currently in hand
+   * @param lives remaining lives
+   * @param eliminated whether the player is eliminated
+   */
+  @JsonCreator
+  public Player(
+      @JsonProperty("id") String id,
+      @JsonProperty("name") String name,
+      @JsonProperty("hand") List<Card> hand,
+      @JsonProperty("lives") Integer lives,
+      @JsonProperty("eliminated") Boolean eliminated) {
+    this.id = id;
+    this.name = name;
+    this.lives = lives == null ? STARTING_LIVES : lives;
+    this.hand = hand == null ? new ArrayList<>() : new ArrayList<>(hand);
+    this.eliminated = eliminated != null && eliminated;
   }
 
   /**

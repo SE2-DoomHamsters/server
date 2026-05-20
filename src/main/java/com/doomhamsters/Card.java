@@ -1,5 +1,8 @@
 package com.doomhamsters;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.function.BiConsumer;
 
 /**
@@ -8,6 +11,7 @@ import java.util.function.BiConsumer;
  * <p>A card has a type ({@code action}, {@code snack_stash}, or {@code doom}) and an optional
  * effect that is executed when the card is played.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Card {
 
   private final String id;
@@ -49,7 +53,11 @@ public class Card {
    * @param name the display name of the card
    * @param type the card type; one of {@code "action"}, {@code "snack_stash"}, or {@code "doom"}
    */
-  public Card(String id, String name, String type) {
+  @JsonCreator
+  public Card(
+      @JsonProperty("id") String id,
+      @JsonProperty("name") String name,
+      @JsonProperty("type") String type) {
     this(id, name, type, null);
   }
 

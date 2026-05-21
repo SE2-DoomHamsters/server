@@ -18,7 +18,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -510,7 +510,7 @@ public class LobbyService {
     }
   }
 
-  private final Random random = new Random();
+  private final SecureRandom random = new SecureRandom();
 
   private CardType drawCard() {
     CardType[] values = CardType.values();

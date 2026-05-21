@@ -86,7 +86,9 @@ public class LobbyController {
   @ApiResponse(responseCode = "404", description = "Lobby not found")
   @ApiResponse(responseCode = "409", description = "Game already started")
   @PostMapping("/{lobbyId}/join")
-  public ResponseEntity<Object> joinLobby(@PathVariable String lobbyId, @RequestBody User user) {
+  public ResponseEntity<Object> joinLobby(
+      @Parameter(description = "Lobby identifier") @PathVariable String lobbyId,
+      @RequestBody User user) {
     try {
       return lobbyService.joinOrUpdateLobby(lobbyId, user).map(lobby -> {
         Lobby snapshot = new Lobby(lobby);
@@ -112,9 +114,10 @@ public class LobbyController {
           + "If the host leaves, a new host is assigned.")
   @ApiResponse(responseCode = "200", description = "Left lobby successfully")
   @ApiResponse(responseCode = "400", description = "Invalid request")
+  @ApiResponse(responseCode = "404", description = "Lobby not found")
   @PostMapping("/{lobbyId}/leave")
   public ResponseEntity<Lobby> leaveLobby(
-      @PathVariable String lobbyId,
+      @Parameter(description = "Lobby identifier") @PathVariable String lobbyId,
       @RequestBody PlayerIdRequest request) {
     if (request.getUserId() == null) {
       return ResponseEntity.badRequest().build();
@@ -146,7 +149,7 @@ public class LobbyController {
   @ApiResponse(responseCode = "404", description = "Lobby or user not found")
   @PostMapping("/{lobbyId}/heartbeat")
   public ResponseEntity<Lobby> heartbeat(
-      @PathVariable String lobbyId,
+      @Parameter(description = "Lobby identifier") @PathVariable String lobbyId,
       @RequestBody PlayerIdRequest request) {
     if (request.getUserId() == null) {
       return ResponseEntity.badRequest().build();
@@ -168,7 +171,8 @@ public class LobbyController {
    * @param lobbyId lobby identifier
    * @return lobby snapshot
    */
-  @Operation(summary = "Get current lobby state")
+  @Operation(summary = "Get current lobby state",
+      description = "Returns the latest authoritative lobby snapshot for the supplied lobby ID.")
   @ApiResponse(responseCode = "200", description = "Lobby found",
       content = @Content(schema = @Schema(implementation = Lobby.class)))
   @ApiResponse(responseCode = "404", description = "Lobby not found")
@@ -186,9 +190,20 @@ public class LobbyController {
   /**
    * Request DTO for member-scoped lobby operations.
    */
+  @Schema(description = "Request body containing the affected lobby member")
   @Getter
   @Setter
   public static class PlayerIdRequest {
+
+    @Schema(description = "Unique user identifier of the affected lobby member",
+        example = "abc-12345")
     private String userId;
+
+    /**
+     * Creates an empty member-scoped request.
+     */
+    public PlayerIdRequest() {
+      // Required by Jackson when binding JSON request bodies.
+    }
   }
 }

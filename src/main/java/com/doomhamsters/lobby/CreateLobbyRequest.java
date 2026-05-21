@@ -13,24 +13,46 @@ public class CreateLobbyRequest {
   private User user;
 
   /**
-   * No-args constructor required for JSON deserialization.
+   * Creates an empty create-lobby request.
    */
-  public CreateLobbyRequest() {}
+  public CreateLobbyRequest() {
+    // Required by Jackson when binding JSON request bodies.
+  }
 
+  /**
+   * Returns the requested lobby group name.
+   *
+   * @return group name
+   */
   public String getGroupName() {
     return groupName;
   }
 
+  /**
+   * Sets the requested lobby group name.
+   *
+   * @param groupName group name
+   */
   public void setGroupName(String groupName) {
     this.groupName = groupName;
   }
 
   // Defensive copy – avoids EI_EXPOSE_REP (User is mutable)
+  /**
+   * Returns the user creating the lobby.
+   *
+   * @return defensive user copy, or {@code null}
+   */
   public User getUser() {
     return user == null ? null : new User(user.getId(), user.getUsername(), user.getAvatar());
   }
 
   // Defensive copy – avoids EI_EXPOSE_REP2
+  /**
+   * Sets the user creating the lobby.
+   *
+   * @param user creator user
+   */
   public void setUser(User user) {
     this.user = user == null ? null : new User(user.getId(), user.getUsername(), user.getAvatar());
   }

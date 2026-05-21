@@ -174,7 +174,13 @@ public class LobbyService {
     }
   }
 
-  /** Updates a member heartbeat and returns the current authoritative snapshot. */
+  /**
+   * Updates a member heartbeat and returns the current authoritative snapshot.
+   *
+   * @param lobbyId lobby to update
+   * @param userId member reporting the heartbeat
+   * @return updated lobby snapshot, or empty if the lobby or member does not exist
+   */
   public Optional<Lobby> heartbeat(String lobbyId, String userId) {
     if (userId == null || userId.isBlank()) {
       throw new IllegalArgumentException("userId is required");
@@ -201,7 +207,13 @@ public class LobbyService {
     }
   }
 
-  /** Removes a user from the lobby and reassigns host to the oldest remaining member. */
+  /**
+   * Removes a user from the lobby and reassigns host to the oldest remaining member.
+   *
+   * @param lobbyId lobby to leave
+   * @param userId member leaving the lobby
+   * @return updated lobby snapshot, or empty if the lobby does not exist
+   */
   public Optional<Lobby> leaveLobby(String lobbyId, String userId) {
     if (lobbyId == null || userId == null) {
       return Optional.empty();
@@ -308,7 +320,13 @@ public class LobbyService {
     }
   }
 
-  /** Speichert den Game-Status fuer eine Lobby. */
+  /**
+   * Stores the started game id for a lobby.
+   *
+   * @param lobbyId lobby to mark as started
+   * @param gameId started game id
+   * @return updated lobby snapshot, or empty if the lobby does not exist
+   */
   @SuppressWarnings("UnusedReturnValue")
   public Optional<Lobby> markGameStarted(String lobbyId, String gameId) {
     Lobby lobby = getCanonicalLobby(lobbyId);
@@ -324,7 +342,12 @@ public class LobbyService {
     }
   }
 
-  /** Returns the authoritative snapshot for a lobby ID. */
+  /**
+   * Returns the authoritative snapshot for a lobby ID.
+   *
+   * @param lobbyId lobby to fetch
+   * @return lobby snapshot, or {@code null} if no lobby exists
+   */
   public Lobby getLobby(String lobbyId) {
     Lobby lobby = getCanonicalLobby(lobbyId);
     if (lobby == null) {
@@ -337,7 +360,11 @@ public class LobbyService {
     }
   }
 
-  /** Removes expired pre-game members and returns changed lobby snapshots. */
+  /**
+   * Removes expired pre-game members and returns changed lobby snapshots.
+   *
+   * @return lobby snapshots changed by cleanup
+   */
   public List<Lobby> cleanupExpiredMembers() {
     Instant now = Instant.now(clock);
     List<Lobby> changed = new ArrayList<>();
@@ -623,6 +650,11 @@ public class LobbyService {
       lobby = new Lobby(lobby);
     }
 
+    /**
+     * Returns a defensive lobby snapshot.
+     *
+     * @return lobby snapshot copy
+     */
     @Override
     public Lobby lobby() {
       return new Lobby(lobby);

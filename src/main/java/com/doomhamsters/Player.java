@@ -229,4 +229,15 @@ public class Player {
       this.livesRemaining = livesRemaining;
     }
   }
+  /** Decrements lives by one and marks the player eliminated if lives reach zero. */
+
+  public void decrementLives() {
+    if (eliminated) {
+      return;
+    }
+    lives = Math.max(0, lives - 1);
+    if (lives == 0) {
+      eliminated = true;
+    }
+  }
 }

@@ -1,0 +1,488 @@
+asyncapi: 3.0.0
+info:
+  title: DoomHamsters WebSocket API
+  version: 1.0.0
+  description: >
+    Real-time STOMP over WebSocket API for the DoomHamsters card game.
+
+    Clients connect to /ws, send commands to /app/..., receive public updates
+    from /topic/..., and receive private player-specific events from /queue/....
+servers:
+  production:
+    host: '{host}:53217'
+    protocol: ws
+    description: University server deployed via doco-cd on every push to main
+    variables:
+      host:
+        description: University server IP address
+  development:
+    host: 'localhost:53217'
+    protocol: ws
+    description: Local development server using server.port from application.properties
+channels:
+  '/topic/test':
+    address: '/topic/test'
+    messages:
+      helloReply.message:
+        $ref: '#/components/messages/HelloReplyMessage'
+    description: Test broadcast used by HelloController.
+  '/app/hello':
+    address: '/app/hello'
+    messages:
+      hello.message:
+        $ref: '#/components/messages/HelloMessage'
+    description: Test command handled by HelloController.
+  '/topic/lobby/{lobbyId}':
+    address: '/topic/lobby/{lobbyId}'
+    messages:
+      lobbyUpdate.message:
+        $ref: '#/components/messages/LobbyMessage'
+    description: >
+      Broadcasts the authoritative lobby snapshot after create, join, leave,
+      heartbeat, cleanup, or game start changes.
+    parameters:
+      lobbyId:
+        description: Lobby identifier returned by POST /api/lobby/create.
+  '/topic/game/{lobbyId}':
+    address: '/topic/game/{lobbyId}'
+    messages:
+      gameStart.message:
+        $ref: '#/components/messages/GameStartMessage'
+    description: Broadcasts the started game id to lobby subscribers.
+    parameters:
+      lobbyId:
+        description: Lobby identifier used to start the game.
+  '/topic/game/{gameId}':
+    address: '/topic/game/{gameId}'
+    messages:
+      cardCommandPlayed.message:
+        $ref: '#/components/messages/CardCommandPlayedMessage'
+    description: Public game events that are not full state snapshots.
+    parameters:
+      gameId:
+        description: Game session identifier.
+  '/topic/game-state/{gameId}':
+    address: '/topic/game-state/{gameId}'
+    messages:
+      gameStateUpdate.message:
+        $ref: '#/components/messages/GameStateMessage'
+    description: >
+      Broadcasts filtered game state after game start and after accepted game
+      actions. The requesting player's hand may be visible; other hands are
+      represented by hand size only.
+    parameters:
+      gameId:
+        description: Game session identifier.
+  '/queue/game/{gameId}/{playerId}':
+    address: '/queue/game/{gameId}/{playerId}'
+    messages:
+      doomDrawn.message:
+        $ref: '#/components/messages/DoomDrawnMessage'
+      cardCommandResult.message:
+        $ref: '#/components/messages/CardCommandResultMessage'
+    description: Private events sent only to one player.
+    parameters:
+      gameId:
+        description: Game session identifier.
+      playerId:
+        description: Player identifier receiving the private message.
+  '/app/game/{gameId}/card/activate':
+    address: '/app/game/{gameId}/card/activate'
+    messages:
+      activateCard.message:
+        $ref: '#/components/messages/ActivateCardMessage'
+    description: Activates an authoritative card command from the current player's hand.
+    parameters:
+      gameId:
+        description: Game session identifier.
+  '/app/game/{gameId}/draw':
+    address: '/app/game/{gameId}/draw'
+    messages:
+      draw.message:
+        $ref: '#/components/messages/DrawMessage'
+    description: Draws one card for the current player.
+    parameters:
+      gameId:
+        description: Game session identifier.
+  '/app/game/{gameId}/doom/ack':
+    address: '/app/game/{gameId}/doom/ack'
+    messages:
+      ackDoom.message:
+        $ref: '#/components/messages/DoomAckMessage'
+    description: Acknowledges an already-resolved Doom result.
+    parameters:
+      gameId:
+        description: Game session identifier.
+  '/app/game/{gameId}/doom/insert':
+    address: '/app/game/{gameId}/doom/insert'
+    messages:
+      insertDoom.message:
+        $ref: '#/components/messages/DoomInsertMessage'
+    description: Inserts a neutralized Doom card at the selected deck position.
+    parameters:
+      gameId:
+        description: Game session identifier.
+  '/app/game/{gameId}/doom/accept':
+    address: '/app/game/{gameId}/doom/accept'
+    messages:
+      acceptDoom.message:
+        $ref: '#/components/messages/DoomAckMessage'
+    description: Compatibility alias for /app/game/{gameId}/doom/ack.
+    parameters:
+      gameId:
+        description: Game session identifier.
+  '/app/game/{gameId}/nextTurn':
+    address: '/app/game/{gameId}/nextTurn'
+    messages:
+      nextTurn.message:
+        $ref: '#/components/messages/NextTurnMessage'
+    description: Advances to the next active player. No request body is required.
+    parameters:
+      gameId:
+        description: Game session identifier.
+operations:
+  receiveHelloReply:
+    action: send
+    channel:
+      $ref: '#/channels/~1topic~1test'
+    messages:
+      - $ref: '#/channels/~1topic~1test/messages/helloReply.message'
+  sendHello:
+    action: receive
+    channel:
+      $ref: '#/channels/~1app~1hello'
+    messages:
+      - $ref: '#/channels/~1app~1hello/messages/hello.message'
+  receiveLobbyUpdate:
+    action: send
+    channel:
+      $ref: '#/channels/~1topic~1lobby~1{lobbyId}'
+    messages:
+      - $ref: '#/channels/~1topic~1lobby~1{lobbyId}/messages/lobbyUpdate.message'
+  receiveGameStart:
+    action: send
+    channel:
+      $ref: '#/channels/~1topic~1game~1{lobbyId}'
+    messages:
+      - $ref: '#/channels/~1topic~1game~1{lobbyId}/messages/gameStart.message'
+  receiveCardCommandPlayed:
+    action: send
+    channel:
+      $ref: '#/channels/~1topic~1game~1{gameId}'
+    messages:
+      - $ref: '#/channels/~1topic~1game~1{gameId}/messages/cardCommandPlayed.message'
+  receiveGameStateUpdate:
+    action: send
+    channel:
+      $ref: '#/channels/~1topic~1game-state~1{gameId}'
+    messages:
+      - $ref: '#/channels/~1topic~1game-state~1{gameId}/messages/gameStateUpdate.message'
+  receiveDoomDrawn:
+    action: send
+    channel:
+      $ref: '#/channels/~1queue~1game~1{gameId}~1{playerId}'
+    messages:
+      - $ref: '#/channels/~1queue~1game~1{gameId}~1{playerId}/messages/doomDrawn.message'
+  receiveCardCommandResult:
+    action: send
+    channel:
+      $ref: '#/channels/~1queue~1game~1{gameId}~1{playerId}'
+    messages:
+      - $ref: '#/channels/~1queue~1game~1{gameId}~1{playerId}/messages/cardCommandResult.message'
+  sendActivateCard:
+    action: receive
+    channel:
+      $ref: '#/channels/~1app~1game~1{gameId}~1card~1activate'
+    messages:
+      - $ref: '#/channels/~1app~1game~1{gameId}~1card~1activate/messages/activateCard.message'
+  sendDraw:
+    action: receive
+    channel:
+      $ref: '#/channels/~1app~1game~1{gameId}~1draw'
+    messages:
+      - $ref: '#/channels/~1app~1game~1{gameId}~1draw/messages/draw.message'
+  sendDoomAck:
+    action: receive
+    channel:
+      $ref: '#/channels/~1app~1game~1{gameId}~1doom~1ack'
+    messages:
+      - $ref: '#/channels/~1app~1game~1{gameId}~1doom~1ack/messages/ackDoom.message'
+  sendDoomInsert:
+    action: receive
+    channel:
+      $ref: '#/channels/~1app~1game~1{gameId}~1doom~1insert'
+    messages:
+      - $ref: '#/channels/~1app~1game~1{gameId}~1doom~1insert/messages/insertDoom.message'
+  sendDoomAccept:
+    action: receive
+    channel:
+      $ref: '#/channels/~1app~1game~1{gameId}~1doom~1accept'
+    messages:
+      - $ref: '#/channels/~1app~1game~1{gameId}~1doom~1accept/messages/acceptDoom.message'
+  sendNextTurn:
+    action: receive
+    channel:
+      $ref: '#/channels/~1app~1game~1{gameId}~1nextTurn'
+    messages:
+      - $ref: '#/channels/~1app~1game~1{gameId}~1nextTurn/messages/nextTurn.message'
+components:
+  messages:
+    HelloMessage:
+      name: HelloMessage
+      payload:
+        type: string
+    HelloReplyMessage:
+      name: HelloReply
+      payload:
+        type: string
+    LobbyMessage:
+      name: Lobby
+      summary: Current lobby state including members, QR code, and game-start state.
+      payload:
+        $ref: '#/components/schemas/Lobby'
+    GameStartMessage:
+      name: GameStartResponse
+      summary: Signals that the game has started.
+      payload:
+        $ref: '#/components/schemas/GameStartResponse'
+    GameStateMessage:
+      name: GameStateDto
+      summary: Filtered game state.
+      payload:
+        $ref: '#/components/schemas/GameStateDto'
+    DoomDrawnMessage:
+      name: DoomDrawnEventDto
+      summary: Private event sent to the player who drew a Doom card.
+      payload:
+        $ref: '#/components/schemas/DoomDrawnEventDto'
+    CardCommandPlayedMessage:
+      name: CardCommandPlayedEventDto
+      summary: Public event emitted when a visible card command is played.
+      payload:
+        $ref: '#/components/schemas/CardCommandPlayedEventDto'
+    CardCommandResultMessage:
+      name: CardCommandResultEventDto
+      summary: Private event emitted to the player who activated a card command.
+      payload:
+        $ref: '#/components/schemas/CardCommandResultEventDto'
+    ActivateCardMessage:
+      name: ActivateCardCommandRequest
+      payload:
+        $ref: '#/components/schemas/ActivateCardCommandRequest'
+    DrawMessage:
+      name: DrawCommand
+      payload:
+        $ref: '#/components/schemas/PlayerIdCommand'
+    DoomAckMessage:
+      name: DoomAckCommand
+      payload:
+        $ref: '#/components/schemas/PlayerIdCommand'
+    DoomInsertMessage:
+      name: DoomInsertCommand
+      payload:
+        $ref: '#/components/schemas/DoomInsertCommand'
+    NextTurnMessage:
+      name: NextTurnCommand
+      payload:
+        type: object
+        description: Empty body; gameId is taken from the destination path.
+        additionalProperties: false
+  schemas:
+    Lobby:
+      type: object
+      properties:
+        lobbyId:
+          type: string
+          example: ABC12345
+        groupName:
+          type: string
+          example: DoomHamsters
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        qrCodeBase64:
+          type: string
+          description: Base64-encoded PNG QR code for joining the lobby.
+        gameId:
+          type: string
+          nullable: true
+          description: Game session id after the lobby starts a game.
+        gameStarted:
+          type: boolean
+        version:
+          type: integer
+          description: Monotonically increasing lobby snapshot version.
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique player identifier.
+        username:
+          type: string
+          example: DoomSlayer
+        avatar:
+          type: string
+          example: hamster
+        connected:
+          type: boolean
+    GameStartResponse:
+      type: object
+      properties:
+        gameId:
+          type: string
+          example: 550e8400-e29b-41d4-a716-446655440000
+    GameStateDto:
+      type: object
+      properties:
+        gameId:
+          type: string
+        gameState:
+          type: string
+          enum:
+            - SETUP
+            - RUNNING
+            - FINISHED
+        currentPlayerId:
+          type: string
+          nullable: true
+        resolvingDoomPlayerId:
+          type: string
+          nullable: true
+        pendingDoomRequiresInsertion:
+          type: boolean
+        pendingDoomCardId:
+          type: string
+          nullable: true
+        remainingDeckSize:
+          type: integer
+          minimum: 0
+        turnCount:
+          type: integer
+          minimum: 0
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayerStateDto'
+    PlayerStateDto:
+      type: object
+      properties:
+        playerId:
+          type: string
+        playerName:
+          type: string
+        lives:
+          type: integer
+          minimum: 0
+        alive:
+          type: boolean
+        handSize:
+          type: integer
+          minimum: 0
+        hand:
+          type: array
+          description: Populated only for the requesting player.
+          items:
+            $ref: '#/components/schemas/CardDto'
+    CardDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: Quick Peek
+        type:
+          type: string
+          description: Internal card type used by game logic.
+          enum:
+            - action
+            - snack_stash
+            - doom
+            - QuickPeek
+            - PowerNap
+        effectId:
+          type: string
+          nullable: true
+          enum:
+            - QUICK_PEEK
+            - POWER_NAP
+    ActivateCardCommandRequest:
+      type: object
+      required:
+        - playerId
+        - cardId
+        - cardType
+        - commandId
+      properties:
+        playerId:
+          type: string
+        cardId:
+          type: string
+        cardType:
+          type: string
+        commandId:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+    PlayerIdCommand:
+      type: object
+      required:
+        - playerId
+      properties:
+        playerId:
+          type: string
+    DoomInsertCommand:
+      type: object
+      required:
+        - playerId
+        - position
+      properties:
+        playerId:
+          type: string
+        position:
+          type: integer
+          minimum: 0
+    DoomDrawnEventDto:
+      type: object
+      properties:
+        type:
+          type: string
+          const: DOOM_DRAWN
+        card:
+          $ref: '#/components/schemas/CardDto'
+    CardCommandPlayedEventDto:
+      type: object
+      properties:
+        type:
+          type: string
+          const: CARD_COMMAND_PLAYED
+        playerId:
+          type: string
+        playerName:
+          type: string
+        commandId:
+          type: string
+        card:
+          $ref: '#/components/schemas/CardDto'
+        message:
+          type: string
+    CardCommandResultEventDto:
+      type: object
+      properties:
+        type:
+          type: string
+          const: CARD_COMMAND_RESULT
+        playerId:
+          type: string
+        commandId:
+          type: string
+        card:
+          $ref: '#/components/schemas/CardDto'
+        revealedCard:
+          nullable: true
+          $ref: '#/components/schemas/CardDto'
+        message:
+          type: string

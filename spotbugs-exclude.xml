@@ -14,4 +14,14 @@
     <Bug pattern="EI_EXPOSE_REP2"/>
   </Match>
 
+  <Match>
+    <Class name="com.doomhamsters.gamesession.GameActionController"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+
+  <Match>
+    <Class name="com.doomhamsters.gamesession.GameStateSnapshotController"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+
 </FindBugsFilter>

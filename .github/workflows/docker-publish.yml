@@ -1,4 +1,7 @@
 name: Build and Push Docker Image
+
+# Triggered on every push to main — builds the Docker image and publishes it
+# to GitHub Container Registry (ghcr.io) so doco-cd can deploy it automatically.
 on:
   push:
     branches:
@@ -8,14 +11,17 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: read   # needed to checkout the repository
+      packages: write  # needed to push to ghcr.io
 
     steps:
       - name: Checkout code
+        # Pinned to full SHA for supply-chain security (tag v4)
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4
 
       - name: Log in to GitHub Container Registry
+        # github.actor + GITHUB_TOKEN authenticate as the user who triggered the push.
+        # GITHUB_TOKEN is automatically provided by GitHub Actions — no manual secret needed.
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 #v3
         with:
           registry: ghcr.io
@@ -23,9 +29,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
+        # Builds the Dockerfile and overwrites the :latest tag on ghcr.io.
+        # doco-cd detects the new :latest image within ~3 minutes and redeploys.
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 #v5
         with:
           context: .
           push: true
           tags: ghcr.io/se2-doomhamsters/server:latest
-

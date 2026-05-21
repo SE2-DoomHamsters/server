@@ -1,13 +1,30 @@
 package com.doomhamsters.gamesession;
 
 import com.doomhamsters.Card;
+import com.doomhamsters.Game;
+import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.CardRegistry;
+import com.doomhamsters.gamesession.dto.GameStateDto;
+import com.doomhamsters.gamesession.dto.GameStateMapper;
 import com.doomhamsters.lobby.Lobby;
+import com.doomhamsters.lobby.LobbyRealtimePublisher;
 import com.doomhamsters.lobby.LobbyService;
 import com.doomhamsters.lobby.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,68 +33,191 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controller zur Steuerung von Spiel-Ereignissen, wie dem Starten eines Spiels aus einer Lobby.
+ * REST Endpunkte zur Steuerung des Spiel-Lebenszyklus.
+ *
+ * <p>Das Starten nutzt HTTP Request-Response. Danach wird die
+ * Antwort auch via STOMP an die Lobby gesendet.
  */
+@Tag(name = "Game", description = "Game lifecycle — Spiel aus Lobby starten")
 @RestController
 @RequestMapping("/api/game")
 public class GameController {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(GameController.class);
+
   private final GameSessionService gameSessionService;
   private final LobbyService lobbyService;
   private final SimpMessagingTemplate messagingTemplate;
+  private final LobbyRealtimePublisher realtimePublisher;
+  private final GameStateMapper gameStateMapper;
+  private final CardRegistry cardRegistry;
 
   /**
-   * Initialisiert den GameController.
+   * Initialisiert den GameController mit seinen Abhängigkeiten.
+   *
+   * @param gameSessionService Der Service für Spielsitzungen
+   * @param lobbyService Der Service für die Lobbys
+   * @param messagingTemplate Das Template für STOMP-Nachrichten
+   * @param realtimePublisher Der Publisher für Lobby/Spielstart-Events
+   * @param gameStateMapper Der Mapper für den Spielzustand
+   * @param cardRegistry Die Registry für Karten-Commands
    */
   @SuppressFBWarnings("EI_EXPOSE_REP2")
   public GameController(
       GameSessionService gameSessionService,
       LobbyService lobbyService,
-      SimpMessagingTemplate messagingTemplate) {
+      SimpMessagingTemplate messagingTemplate,
+      LobbyRealtimePublisher realtimePublisher,
+      GameStateMapper gameStateMapper,
+      CardRegistry cardRegistry) {
     this.gameSessionService = gameSessionService;
     this.lobbyService = lobbyService;
     this.messagingTemplate = messagingTemplate;
+    this.realtimePublisher = realtimePublisher;
+    this.gameStateMapper = gameStateMapper;
+    this.cardRegistry = cardRegistry;
   }
 
   /**
    * Startet ein neues Spiel aus der angegebenen Lobby.
+   *
+   * <p>POST /api/game/start
+   *
+   * @param lobbyId Die ID der Ziel-Lobby
+   * @param userId Die ID des anfragenden Lobby-Mitglieds
+   * @return GameStartResponse mit neuer Spiel-ID, oder 404 bei Fehler
    */
+  @Operation(summary = "Startet ein neues Spiel",
+      description = "Erstellt GameSession und sendet ID via STOMP.")
+  @ApiResponse(responseCode = "200", description = "Spiel erfolgreich gestartet",
+      content = @Content(schema = @Schema(implementation = GameStartResponse.class)))
+  @ApiResponse(responseCode = "404", description = "Lobby nicht gefunden")
   @PostMapping("/start")
-  public ResponseEntity<GameStartResponse> startGame(@RequestParam String lobbyId) {
-    Lobby lobby = lobbyService.getLobby(lobbyId);
-    if (lobby == null) {
-      return ResponseEntity.notFound().build();
-    }
+  public ResponseEntity<GameStartResponse> startGame(
+      @Parameter(description = "ID der Lobby") @RequestParam String lobbyId,
+      @Parameter(description = "ID des anfragenden Mitglieds")
+      @RequestParam(required = false) String userId) {
 
+    AtomicReference<GameSession> createdSession = new AtomicReference<>();
+    try {
+      return lobbyService.startGame(
+          lobbyId,
+          userId,
+          lobby -> {
+            GameSession session = createStartedSession(lobby);
+            createdSession.set(session);
+            return session.getGameId();
+          }).map(outcome -> {
+            realtimePublisher.broadcastGameStart(outcome.lobby().getLobbyId(), outcome.gameId());
+            realtimePublisher.broadcastLobbySnapshot(outcome.lobby());
+            if (outcome.created() && createdSession.get() != null) {
+              broadcastInitialGameState(createdSession.get());
+            }
+            return ResponseEntity.ok(new GameStartResponse(outcome.gameId()));
+          }).orElseGet(() -> ResponseEntity.notFound().build());
+    } catch (SecurityException e) {
+      LOGGER.warn("start rejected: lobbyId={}, userId={}, reason=not_member", lobbyId, userId);
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    } catch (IllegalArgumentException | IllegalStateException e) {
+      LOGGER.warn(
+          "start rejected: lobbyId={}, userId={}, reason={}",
+          lobbyId,
+          userId,
+          e.getMessage());
+      return ResponseEntity.badRequest().build();
+    }
+  }
+
+  private GameSession createStartedSession(Lobby lobby) {
+    GameSession session = gameSessionService.createSession(lobby.getLobbyId());
+
+    List<String> playerIds = lobby.getMembers().stream()
+        .map(User::getId)
+        .collect(Collectors.toList());
     List<String> playerNames = lobby.getMembers().stream()
-        .map(User::getUsername)
+        .map(user -> user.getUsername() == null || user.getUsername().isBlank()
+            ? user.getId()
+            : user.getUsername())
         .collect(Collectors.toList());
 
-    // 1. Session erstellen
-    GameSession session = gameSessionService.createSession(lobbyId);
-
-    // 2. Setup durchführen
     List<Card> actionCards = createDummyActionCards();
     Card snackStash = new Card("ss_proto", "Snack Stash", "snack_stash");
-    List<Card> doomCards = List.of(new Card("doom_1", "Doom Hamster", "doom"));
+    List<Card> doomCards = createDoomCards(playerIds.size() - 1);
 
-    session.getGame().setup(playerNames, actionCards, snackStash, doomCards);
+    session.getGame().setupWithPlayers(playerIds, playerNames, actionCards, snackStash, doomCards);
+    addTestingCommandCardsToHands(session.getGame());
     session.setStatus(GameSession.GameStatus.RUNNING);
 
+    logInitialGameState(session);
     gameSessionService.saveSession(session);
 
-    // 3. Antwort an den Host
-    GameStartResponse response = new GameStartResponse(session.getGameId());
+    return session;
+  }
 
-    messagingTemplate.convertAndSend("/topic/game/" + lobbyId, response);
+  private void broadcastInitialGameState(GameSession session) {
+    GameStateDto initialState = gameStateMapper.toFilteredDto(session, null);
+    messagingTemplate.convertAndSend("/topic/game-state/" + session.getGameId(), initialState);
+  }
 
-    return ResponseEntity.ok(response);
+  private void logInitialGameState(GameSession session) {
+    Game game = session.getGame();
+
+    LOGGER.info(
+        "initial game state: gameId={}, resolvingDoomPlayerId={}, "
+            + "pendingDoomRequiresInsertion={}, pendingDoomCardId={}, currentPlayerId={}, "
+            + "playerLives={}, deckTop={}",
+        session.getGameId(),
+        game.getResolvingDoomPlayerId(),
+        game.isPendingDoomRequiresInsertion(),
+        game.getPendingDoomCardId(),
+        currentPlayerId(game),
+        playerLives(game),
+        deckTop(game));
+  }
+
+  private String currentPlayerId(Game game) {
+    if (game.getBoard() == null || game.getBoard().getCurrentPlayer() == null) {
+      return null;
+    }
+    return game.getBoard().getCurrentPlayer().getId();
+  }
+
+  private Map<String, Integer> playerLives(Game game) {
+    return game.getPlayers().stream()
+        .collect(Collectors.toMap(Player::getId, Player::getLives));
+  }
+
+  private String deckTop(Game game) {
+    if (game.getDeck() == null || game.getDeck().getCards().isEmpty()) {
+      return null;
+    }
+    Card topCard = game.getDeck().getCards().get(0);
+    return topCard.getId() + ":" + topCard.getType();
   }
 
   private List<Card> createDummyActionCards() {
     List<Card> cards = new ArrayList<>();
-    for (int i = 0; i < 35; i++) {
+    for (int i = 0; i < 40; i++) {
       cards.add(new Card("act_" + i, "Aktion " + i, "action"));
+    }
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("ss_deck_" + i, "Snack Stash", "snack_stash"));
+    }
+    return cards;
+  }
+
+  private void addTestingCommandCardsToHands(Game game) {
+    for (Player player : game.getPlayers()) {
+      for (Card card : cardRegistry.createTestingCardsForPlayer(player.getId())) {
+        player.addToHand(card);
+      }
+    }
+  }
+
+  private List<Card> createDoomCards(int count) {
+    List<Card> cards = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      cards.add(new Card("doom_" + i, "Doom Hamster", "doom"));
     }
     return cards;
   }

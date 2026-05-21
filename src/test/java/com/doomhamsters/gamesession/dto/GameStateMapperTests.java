@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.doomhamsters.Card;
+import com.doomhamsters.Deck;
 import com.doomhamsters.Game;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.GameSession;
@@ -21,6 +22,8 @@ class GameStateMapperTest {
         new GameSession("game-1", "lobby-1");
 
     Game game = session.getGame();
+    game.setResolvingDoomPlayerId("p2");
+    game.setPendingDoomCard(new Card("doom_pending", "Doom Hamster", "doom"));
 
     Player player1 = new Player("p1", "Alice");
     Player player2 = new Player("p2", "Bob");
@@ -33,20 +36,32 @@ class GameStateMapperTest {
 
     Field playersField =
         Game.class.getDeclaredField("players");
+    Field deckField =
+        Game.class.getDeclaredField("deck");
 
     playersField.setAccessible(true);
+    deckField.setAccessible(true);
 
     List<Player> players = new ArrayList<>();
     players.add(player1);
     players.add(player2);
 
     playersField.set(game, players);
+    deckField.set(game, new Deck(List.of(
+        new Card("d1", "Draw 1", "action"),
+        new Card("d2", "Draw 2", "action"),
+        new Card("d3", "Draw 3", "action"))));
 
     GameStateMapper mapper =
         new GameStateMapper();
 
     GameStateDto dto =
         mapper.toFilteredDto(session, "p1");
+
+    assertEquals(game.getResolvingDoomPlayerId(), dto.getResolvingDoomPlayerId());
+    assertTrue(dto.isPendingDoomRequiresInsertion());
+    assertEquals("doom_pending", dto.getPendingDoomCardId());
+    assertEquals(3, dto.getRemainingDeckSize());
 
     assertEquals(2, dto.getPlayers().size());
 

@@ -1,5 +1,8 @@
 package com.doomhamsters;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,12 +10,16 @@ import java.util.List;
  * Represents the game board and manages its state.
  */
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Board {
 
   private final List<Player> players;
   private final Deck deck;
   private final List<Card> discardPile;
-  private int currentIndex, turnCount, extraTurns;
+  private int currentIndex;
+  private int turnCount;
+  private int extraTurns;
+  private String restoredCurrentPlayerId;
 
   /**
    * Creates a board for the supplied players and deck.
@@ -27,6 +34,7 @@ public class Board {
     this.turnCount = 0;
     this.extraTurns = 0;
     this.discardPile = new ArrayList<>();
+    this.restoredCurrentPlayerId = null;
   }
 
   /**
@@ -42,6 +50,7 @@ public class Board {
     this.currentIndex = other.currentIndex;
     this.turnCount = other.turnCount;
     this.extraTurns = other.extraTurns;
+    this.restoredCurrentPlayerId = other.restoredCurrentPlayerId;
 
     this.discardPile = new ArrayList<>();
     for (Card card : other.discardPile) {
@@ -50,11 +59,37 @@ public class Board {
   }
 
   /**
+   * Recreates a board from persisted JSON and defers binding the player order until the
+   * surrounding game has restored its authoritative player list.
+   *
+   * @param currentPlayer player whose turn was active when the game was saved
+   * @param deck restored deck snapshot
+   * @param discardPile restored board discard pile
+   * @param turnCount restored turn count
+   */
+  @JsonCreator
+  public Board(
+      @JsonProperty("currentPlayer") Player currentPlayer,
+      @JsonProperty("deck") Deck deck,
+      @JsonProperty("discardPile") List<Card> discardPile,
+      @JsonProperty("turnCount") Integer turnCount) {
+    this.players = new ArrayList<>();
+    this.deck = deck == null ? new Deck() : new Deck(deck);
+    this.discardPile = discardPile == null ? new ArrayList<>() : new ArrayList<>(discardPile);
+    this.currentIndex = 0;
+    this.turnCount = turnCount == null ? 0 : turnCount;
+    this.restoredCurrentPlayerId = currentPlayer == null ? null : currentPlayer.getId();
+  }
+
+  /**
    * Returns the player whose turn is currently active.
    *
    * @return current player
    */
   public Player getCurrentPlayer() {
+    if (players.isEmpty()) {
+      return null;
+    }
     return players.get(currentIndex);
   }
 
@@ -138,7 +173,7 @@ public class Board {
     this.currentIndex = index;
   }
 
-  /**
+   /**
    * Grants the current player an additional turn.
    *
    * <p>Extra turns are stacked and consumed one at a time when
@@ -155,5 +190,35 @@ public class Board {
    */
   public int getExtraTurns() {
     return extraTurns;
+  }
+
+  /**
+   * Rebinds restored board state to the authoritative game-level players and deck.
+   *
+   * @param players authoritative game players
+   * @param deck authoritative game deck
+   */
+  void rebindToGameState(List<Player> players, Deck deck) {
+    this.players = new ArrayList<>(players);
+    this.deck = deck;
+
+    if (players.isEmpty()) {
+      currentIndex = 0;
+      return;
+    }
+
+    if (restoredCurrentPlayerId == null) {
+      currentIndex = Math.max(0, Math.min(currentIndex, players.size() - 1));
+      return;
+    }
+
+    for (int i = 0; i < players.size(); i++) {
+      if (restoredCurrentPlayerId.equals(players.get(i).getId())) {
+        currentIndex = i;
+        return;
+      }
+    }
+
+    currentIndex = 0;
   }
 }

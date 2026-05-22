@@ -32,7 +32,7 @@ The backend follows a modular structure
 
 - WebSockets are used instead of REST to support low-latency real-time gameplay.
 - Game logic is server-side to prevent cheating and ensure consistency.
-- Card effects are implemented using functional interfaces for flexibility.
+- CardType effects are implemented using functional interfaces for flexibility.
 
 ## Example Usage
 

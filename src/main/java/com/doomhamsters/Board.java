@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 /**
  * Represents the game board and manages its state.
  */
@@ -13,8 +14,8 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Board {
 
-  private final List<Player> players;
-  private final Deck deck;
+  private List<Player> players;
+  private Deck deck;
   private final List<Card> discardPile;
   private int currentIndex;
   private int turnCount;
@@ -25,7 +26,7 @@ public class Board {
    * Creates a board for the supplied players and deck.
    *
    * @param players players participating in the game
-   * @param deck draw deck used by the board
+   * @param deck    draw deck used by the board
    */
   public Board(List<Player> players, Deck deck) {
     this.players = new ArrayList<>(players);
@@ -40,9 +41,9 @@ public class Board {
   /**
    * Creates a deep copy of another board.
    *
-   * @param other the board to copy
+   * @param other   the board to copy
    * @param players the copied players to use
-   * @param deck the copied deck to use
+   * @param deck    the copied deck to use
    */
   public Board(Board other, List<Player> players, Deck deck) {
     this.players = new ArrayList<>(players);
@@ -59,13 +60,13 @@ public class Board {
   }
 
   /**
-   * Recreates a board from persisted JSON and defers binding the player order until the
-   * surrounding game has restored its authoritative player list.
+   * Recreates a board from persisted JSON and defers binding the player order until the surrounding
+   * game has restored its authoritative player list.
    *
    * @param currentPlayer player whose turn was active when the game was saved
-   * @param deck restored deck snapshot
-   * @param discardPile restored board discard pile
-   * @param turnCount restored turn count
+   * @param deck          restored deck snapshot
+   * @param discardPile   restored board discard pile
+   * @param turnCount     restored turn count
    */
   @JsonCreator
   public Board(
@@ -101,8 +102,8 @@ public class Board {
 
   public List<Player> getActivePlayers() {
     return players.stream()
-      .filter(Player::isAlive)
-      .toList();
+        .filter(Player::isAlive)
+        .toList();
   }
 
 
@@ -173,7 +174,7 @@ public class Board {
     this.currentIndex = index;
   }
 
-   /**
+  /**
    * Grants the current player an additional turn.
    *
    * <p>Extra turns are stacked and consumed one at a time when
@@ -196,7 +197,7 @@ public class Board {
    * Rebinds restored board state to the authoritative game-level players and deck.
    *
    * @param players authoritative game players
-   * @param deck authoritative game deck
+   * @param deck    authoritative game deck
    */
   void rebindToGameState(List<Player> players, Deck deck) {
     this.players = new ArrayList<>(players);

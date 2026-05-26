@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 /**
  * Represents the game board and manages its state.
  */
@@ -15,22 +16,24 @@ public class Board {
 
   private List<Player> players;
   private Deck deck;
-  private List<Card> discardPile;
+  private final List<Card> discardPile;
   private int currentIndex;
   private int turnCount;
+  private int extraTurns;
   private String restoredCurrentPlayerId;
 
   /**
    * Creates a board for the supplied players and deck.
    *
    * @param players players participating in the game
-   * @param deck draw deck used by the board
+   * @param deck    draw deck used by the board
    */
   public Board(List<Player> players, Deck deck) {
     this.players = new ArrayList<>(players);
     this.deck = new Deck(new ArrayList<>(deck.getCards()));
     this.currentIndex = 0;
     this.turnCount = 0;
+    this.extraTurns = 0;
     this.discardPile = new ArrayList<>();
     this.restoredCurrentPlayerId = null;
   }
@@ -38,15 +41,16 @@ public class Board {
   /**
    * Creates a deep copy of another board.
    *
-   * @param other the board to copy
+   * @param other   the board to copy
    * @param players the copied players to use
-   * @param deck the copied deck to use
+   * @param deck    the copied deck to use
    */
   public Board(Board other, List<Player> players, Deck deck) {
     this.players = new ArrayList<>(players);
     this.deck = new Deck(deck);
     this.currentIndex = other.currentIndex;
     this.turnCount = other.turnCount;
+    this.extraTurns = other.extraTurns;
     this.restoredCurrentPlayerId = other.restoredCurrentPlayerId;
 
     this.discardPile = new ArrayList<>();
@@ -56,13 +60,13 @@ public class Board {
   }
 
   /**
-   * Recreates a board from persisted JSON and defers binding the player order until the
-   * surrounding game has restored its authoritative player list.
+   * Recreates a board from persisted JSON and defers binding the player order until the surrounding
+   * game has restored its authoritative player list.
    *
    * @param currentPlayer player whose turn was active when the game was saved
-   * @param deck restored deck snapshot
-   * @param discardPile restored board discard pile
-   * @param turnCount restored turn count
+   * @param deck          restored deck snapshot
+   * @param discardPile   restored board discard pile
+   * @param turnCount     restored turn count
    */
   @JsonCreator
   public Board(
@@ -98,8 +102,8 @@ public class Board {
 
   public List<Player> getActivePlayers() {
     return players.stream()
-      .filter(Player::isAlive)
-      .toList();
+        .filter(Player::isAlive)
+        .toList();
   }
 
 
@@ -132,12 +136,21 @@ public class Board {
   public List<Card> getDiscardPile() {
     return Collections.unmodifiableList(discardPile);
   }
-  /**
-   * Advances turn.
-   */
 
+  /**
+   * Advances the game turn to the next active player.
+   *
+   * <p>If extra turns are available, one extra turn is consumed and the
+   * current player keeps their turn instead of advancing to the next player.
+   */
   public void advanceTurn() {
+    if (extraTurns > 0) {
+      extraTurns--;
+      return;
+    }
+
     turnCount++;
+
     do {
       currentIndex = (currentIndex + 1) % players.size();
     } while (!players.get(currentIndex).isAlive());
@@ -162,10 +175,29 @@ public class Board {
   }
 
   /**
+   * Grants the current player an additional turn.
+   *
+   * <p>Extra turns are stacked and consumed one at a time when
+   * {@link #advanceTurn()} is called.
+   */
+  public void addExtraTurn() {
+    extraTurns++;
+  }
+
+  /**
+   * Returns the number of queued extra turns.
+   *
+   * @return queued extra turn count
+   */
+  public int getExtraTurns() {
+    return extraTurns;
+  }
+
+  /**
    * Rebinds restored board state to the authoritative game-level players and deck.
    *
    * @param players authoritative game players
-   * @param deck authoritative game deck
+   * @param deck    authoritative game deck
    */
   void rebindToGameState(List<Player> players, Deck deck) {
     this.players = new ArrayList<>(players);

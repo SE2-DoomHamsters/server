@@ -41,7 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Game", description = "Game lifecycle — Spiel aus Lobby starten")
 @RestController
 @RequestMapping("/api/game")
-public class GameController {
+public class  GameController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GameController.class);
 
@@ -140,7 +140,7 @@ public class GameController {
             : user.getUsername())
         .collect(Collectors.toList());
 
-    List<Card> actionCards = createDummyActionCards();
+    List<Card> actionCards = createActionCards();
     Card snackStash = new Card("ss_proto", "Snack Stash", "snack_stash");
     List<Card> doomCards = createDoomCards(playerIds.size() - 1);
 
@@ -195,14 +195,78 @@ public class GameController {
     return topCard.getId() + ":" + topCard.getType();
   }
 
-  private List<Card> createDummyActionCards() {
+  private List<Card> createActionCards() {
     List<Card> cards = new ArrayList<>();
-    for (int i = 0; i < 40; i++) {
-      cards.add(new Card("act_" + i, "Aktion " + i, "action"));
-    }
+
+    // ── Defensive cards ──────────────────────────────────────────────
+    // Snack Stash (4): already added separately as the board card; 4 deck copies
     for (int i = 0; i < 4; i++) {
-      cards.add(new Card("ss_deck_" + i, "Snack Stash", "snack_stash"));
+      cards.add(new Card("ss_deck_" + i, "Snack Stash", "snack_stash", (g, p) -> {}));
     }
+    // Sign of Fate (4): +1 life
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("sof_" + i, "Sign of Fate", "sign_of_fate", (g, p) -> {}));
+    }
+
+    // ── Control cards ─────────────────────────────────────────────────
+    // Power Nap (4): skip draw phase
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("pn_" + i, "Power Nap", "power_nap", (g, p) -> {}));
+    }
+    // Hyper Mode (4): next player gets +1 turn
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("hm_" + i, "Hyper Mode", "hyper_mode", (g, p) -> {}));
+    }
+    // Squeak! (4): cancel another player's action
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("sq_" + i, "Squeak!", "squeak", (g, p) -> {}));
+    }
+    // Tunnel Chaos (4): shuffle the deck
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("tc_" + i, "Tunnel Chaos", "tunnel_chaos", (g, p) -> {}));
+    }
+
+    // ── Info cards ────────────────────────────────────────────────────
+    // Sniff Ahead (4): look at top 3 cards
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("sa_" + i, "Sniff Ahead", "sniff_ahead", (g, p) -> {}));
+    }
+    // Quick Peek (4): look at top card
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("qp_" + i, "Quick Peek", "quick_peek", (g, p) -> {}));
+    }
+
+    // ── Action cards ──────────────────────────────────────────────────
+    // Tiny Thief (4): steal a random card from another player
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("tt_" + i, "Tiny Thief", "tiny_thief", (g, p) -> {}));
+    }
+    // Beg for Snacks (4): request a specific card from a player
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("bfs_" + i, "Beg for Snacks", "beg_for_snacks", (g, p) -> {}));
+    }
+    // Cage Swap (4): swap hand with next player
+    for (int i = 0; i < 4; i++) {
+      cards.add(new Card("cs_" + i, "Cage Swap", "cage_swap", (g, p) -> {}));
+    }
+
+    // ── Hamster combo cards (5 types × 4 copies = 20) ────────────────
+    String[][] hamsterTypes = {
+      {"fat",     "Fat Hamster"},
+      {"ninja",   "Ninja Hamster"},
+      {"sleepy",  "Sleepy Hamster"},
+      {"gremlin", "Gremlin Hamster"},
+      {"zombi",   "Zombi Hamster"}
+    };
+    for (String[] h : hamsterTypes) {
+      for (int i = 0; i < 4; i++) {
+        cards.add(new Card("hamster_" + h[0] + "_" + i,
+            h[1],
+            "hamster_" + h[0],   // e.g. "hamster_ninja" — enables combo detection
+            (g, p) -> {}));
+      }
+    }
+
     return cards;
   }
 

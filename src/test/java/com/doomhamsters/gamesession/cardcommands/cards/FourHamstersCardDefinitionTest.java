@@ -189,10 +189,11 @@ class FourHamstersCardDefinitionTest {
   }
 
   @Test
-  void createTestingCard_shouldCreateValidCardForPlayer() {
+  void createTestingCard_shouldReturnNull() {
+    // Act
     Card testCard = cardDefinition.createTestingCard("test-player-1");
-    assertEquals("four_hamsters_test-player-1", testCard.getId());
-    assertEquals("Hamster Combo: 4-of-a-Kind", testCard.getName());
-    assertEquals("hamster_four", testCard.getType());
+
+    // Assert
+    assertNull(testCard, "createTestingCard sollte null zurückgeben, da die Kombo keine physische Karte ist.");
   }
 }

@@ -84,7 +84,7 @@ public class FourHamstersCardDefinition implements CardDefinition {
 
     // 3. Nachricht generieren
     String message = String.format(
-      "%s played four %s cards and stole 1 life from %s!",
+        "%s played four %s cards and stole 1 life from %s!",
         requester.getName(), hamsterType, target.getName());
 
     if (target.isEliminated()) {

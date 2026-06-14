@@ -62,8 +62,9 @@ public StealCardDefinition () {
 
     // Zufällige Karte klauen
     int randomIndex = new Random().nextInt(victim.getHand().size());
-    Card stolenCard = victim.getHand().remove(randomIndex);
-    thief.getHand().add(stolenCard);
+    Card cardToSteal = victim.getHand().get(randomIndex);
+    Card stolenCard = victim.removeFromHand(cardToSteal.getId());
+    thief.addToHand(stolenCard);
 
     // Ergebnis zurückgeben
     return CardCommandResult.withPrivateResult(

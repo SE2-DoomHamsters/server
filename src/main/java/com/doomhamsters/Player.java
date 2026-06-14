@@ -229,8 +229,8 @@ public class Player {
       this.livesRemaining = livesRemaining;
     }
   }
-  /** Decrements lives by one and marks the player eliminated if lives reach zero. */
 
+  /** Decrements lives by one and marks the player eliminated if lives reach zero. */
   public void decrementLives() {
     if (eliminated) {
       return;
@@ -240,6 +240,7 @@ public class Player {
       eliminated = true;
     }
   }
+
   /** Increments lives by one. Only applies if the player is not already eliminated. */
   public void incrementLives() {
     if (eliminated) {

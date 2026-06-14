@@ -5,7 +5,6 @@ import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
-
 import org.springframework.stereotype.Component;
 
 /**
@@ -51,9 +50,9 @@ public class FourHamstersCardDefinition implements CardDefinition {
 
     Player requester = context.getPlayer();
     Player target = context.getGame().getPlayers().stream()
-      .filter(p -> p.getId().equals(targetPlayerId))
-      .findFirst()
-      .orElseThrow(() -> new IllegalArgumentException(
+        .filter(p -> p.getId().equals(targetPlayerId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException(
         "FourHamsters: unknown targetPlayerId=" + targetPlayerId));
 
     if (target.getId().equals(requester.getId())) {
@@ -66,9 +65,9 @@ public class FourHamstersCardDefinition implements CardDefinition {
 
     // 1. Die 4 Karten suchen und abwerfen
     java.util.List<Card> matchingCards = requester.getHand().stream()
-      .filter(c -> hamsterType.equalsIgnoreCase(c.getType()))
-      .limit(REQUIRED_COUNT)
-      .toList();
+        .filter(c -> hamsterType.equalsIgnoreCase(c.getType()))
+        .limit(REQUIRED_COUNT)
+        .toList();
 
     if (matchingCards.size() < REQUIRED_COUNT) {
       throw new IllegalStateException(String.format(
@@ -86,7 +85,7 @@ public class FourHamstersCardDefinition implements CardDefinition {
     // 3. Nachricht generieren
     String message = String.format(
       "%s played four %s cards and stole 1 life from %s!",
-      requester.getName(), hamsterType, target.getName());
+        requester.getName(), hamsterType, target.getName());
 
     if (target.isEliminated()) {
       message += " " + target.getName() + " was eliminated!";

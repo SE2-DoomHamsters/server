@@ -53,14 +53,14 @@ public class StealCardDefinition implements CardDefinition {
     // Spieler-Objekte holen
     Player thief = context.getPlayer();
     Player victim = context.getGame().getPlayers().stream()
-      .filter(p -> p.getId().equals(targetPlayerId))
-      .findFirst()
-      .orElse(null);
+              .filter(p -> p.getId().equals(targetPlayerId))
+              .findFirst()
+              .orElse(null);
 
     if (victim == null || victim.getHand().isEmpty()) {
       return CardCommandResult.publicOnly(
         thief.getName() + " tried to steal, but " +
-          (victim != null ? victim.getName() : "the target") + " had no cards!"
+                  (victim != null ? victim.getName() : "the target") + " had no cards!"
       );
     }
 

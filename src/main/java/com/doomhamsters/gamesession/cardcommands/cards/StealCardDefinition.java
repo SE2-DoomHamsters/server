@@ -5,11 +5,11 @@ import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
-
-import org.springframework.stereotype.Component;
-
 import java.util.Map;
 import java.util.Random;
+import org.springframework.stereotype.Component;
+
+
 
 /**
  * Card definition for Steal Card.

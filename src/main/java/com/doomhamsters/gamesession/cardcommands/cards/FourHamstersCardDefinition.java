@@ -5,6 +5,7 @@ import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
+
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,7 +16,8 @@ public class FourHamstersCardDefinition implements CardDefinition {
 
   private static final int REQUIRED_COUNT = 4;
 
-  public FourHamstersCardDefinition() {}
+  public FourHamstersCardDefinition() {
+  }
 
   @Override
   public String cardType() {
@@ -40,7 +42,7 @@ public class FourHamstersCardDefinition implements CardDefinition {
   @Override
   public CardCommandResult execute(CardCommandContext context) {
     String targetPlayerId = requiredString(context, "targetPlayerId");
-    String hamsterType    = requiredString(context, "hamsterType");
+    String hamsterType = requiredString(context, "hamsterType");
 
     if (!hamsterType.startsWith("hamster_")) {
       throw new IllegalArgumentException(

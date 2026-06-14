@@ -59,8 +59,8 @@ public class StealCardDefinition implements CardDefinition {
 
     if (victim == null || victim.getHand().isEmpty()) {
       return CardCommandResult.publicOnly(
-        thief.getName() + " tried to steal, but " +
-                  (victim != null ? victim.getName() : "the target") + " had no cards!"
+        thief.getName() + " tried to steal, but "
+          + (victim != null ? victim.getName() : "the target") + " had no cards!"
       );
     }
 

@@ -1,21 +1,25 @@
 package com.doomhamsters.gamesession.cardcommands.cards;
+
 import com.doomhamsters.Card;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
+
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Random;
+
 /**
  * Card definition for Steal Card.
  */
 @Component
 public class StealCardDefinition implements CardDefinition {
-public StealCardDefinition () {
+  public StealCardDefinition() {
 
-}
+  }
+
   @Override
   public String cardType() {
     return "StealCard";

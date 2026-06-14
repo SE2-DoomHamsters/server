@@ -34,9 +34,7 @@ public class FourHamstersCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    // Gibt null zurück, da diese Kombo eine Aktion ist und keine physische Karte,
-    // die man auf die Hand ziehen kann.
-    return null;
+    return new Card("four_hamsters_" + playerId, displayName(), cardType());
   }
 
   @Override

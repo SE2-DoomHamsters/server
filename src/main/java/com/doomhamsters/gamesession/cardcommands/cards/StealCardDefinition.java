@@ -5,6 +5,7 @@ import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.Map;
 import java.util.Random;
 import org.springframework.stereotype.Component;
@@ -68,7 +69,7 @@ public class StealCardDefinition implements CardDefinition {
     }
 
     // Zufällige Karte klauen
-    int randomIndex = new Random().nextInt(victim.getHand().size());
+    int randomIndex = ThreadLocalRandom.current().nextInt(victim.getHand().size());
     Card cardToSteal = victim.getHand().get(randomIndex);
     Card stolenCard = victim.removeFromHand(cardToSteal.getId());
     thief.addToHand(stolenCard);

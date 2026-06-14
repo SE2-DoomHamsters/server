@@ -2,8 +2,6 @@ package com.doomhamsters.gamesession.cardcommands;
 import com.doomhamsters.Card;
 import com.doomhamsters.Player;
 import com.doomhamsters.Game;
-import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
-import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.cards.StealCardDefinition;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -28,23 +26,15 @@ class StealCardDefinitionTest {
     mockContext = mock(CardCommandContext.class);
     mockGame = mock(Game.class);
 
-    thief = mock(Player.class);
-    when(thief.getId()).thenReturn("thief-id");
-    when(thief.getName()).thenReturn("Christian");
+    // 1. ECHTE Spieler erstellen (damit die Logik in Player.java funktioniert)
+    thief = new Player("thief-id", "Christian");
+    victim = new Player("victim-id", "Opfer");
 
-    List<Card> thiefHand = new ArrayList<>();
-    when(thief.getHand()).thenReturn(thiefHand);
-
-    victim = mock(Player.class);
-    when(victim.getId()).thenReturn("victim-id");
-    when(victim.getName()).thenReturn("Opfer");
-
-    List<Card> victimHand = new ArrayList<>();
-    victimHand.add(new Card("card-1", "Golden Snack", "Snack"));
-    when(victim.getHand()).thenReturn(victimHand);
+    // 2. ECHTE Karte erstellen (Da victim echt ist, klappt removeFromHand problemlos!)
+    Card testCard = new Card("card-1", "Golden Snack", "Snack");
+    victim.addToHand(testCard);
 
     when(mockGame.getPlayers()).thenReturn(List.of(thief, victim));
-
     when(mockContext.getPlayer()).thenReturn(thief);
     when(mockContext.getGame()).thenReturn(mockGame);
   }
@@ -64,7 +54,7 @@ class StealCardDefinitionTest {
   @Test
   void execute_victimHasNoCards_returnsPublicMessageOnly() {
     when(mockContext.getParameters()).thenReturn(Map.of("targetPlayerId", "victim-id"));
-    victim.getHand().clear();
+    victim.removeFromHand("card-1");
     CardCommandResult result = stealCardDefinition.execute(mockContext);
     assertEquals(0, thief.getHand().size(), "Der Dieb sollte keine Karte bekommen haben.");
     assertNull(result.getPrivateMessage(), "Es sollte keine private Nachricht geben.");
@@ -77,5 +67,32 @@ class StealCardDefinitionTest {
       stealCardDefinition.execute(mockContext);
     });
     assertEquals("Target player ID is missing.", exception.getMessage());
+  }
+  @Test
+  void simpleMethods_returnExpectedValues() {
+    assertEquals("StealCard", stealCardDefinition.cardType(), "cardType sollte 'StealCard' sein.");
+    assertEquals("STEAL_CARD", stealCardDefinition.commandId(), "commandId sollte 'STEAL_CARD' sein.");
+    assertEquals("Steal Card", stealCardDefinition.displayName(), "displayName sollte 'Steal Card' sein.");
+  }
+
+  @Test
+  void createTestingCard_returnsCorrectlyConfiguredCard() {
+    Card testCard = stealCardDefinition.createTestingCard("player-99");
+
+    assertEquals("steal_card_player-99", testCard.getId(), "Die ID sollte die Spieler-ID enthalten.");
+    assertEquals("Steal Card", testCard.getName(), "Der Name sollte passen.");
+    assertEquals("StealCard", testCard.getType(), "Der Typ sollte passen.");
+  }
+
+  @Test
+  void execute_targetPlayerNotFound_returnsPublicMessage() {
+    when(mockContext.getParameters()).thenReturn(Map.of("targetPlayerId", "ghost-player"));
+
+    CardCommandResult result = stealCardDefinition.execute(mockContext);
+
+    assertEquals(0, thief.getHand().size(), "Der Dieb sollte nichts bekommen haben.");
+    assertNull(result.getPrivateMessage(), "Es sollte keine private Nachricht geben.");
+    assertTrue(result.getPublicMessage().contains("the target had no cards!"),
+      "Die Nachricht sollte den Fallback-Namen 'the target' verwenden.");
   }
 }

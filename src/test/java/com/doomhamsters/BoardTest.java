@@ -100,4 +100,41 @@ class BoardTest {
     Deck copiedDeck = board.getDeck();
     assertEquals(30, copiedDeck.getCards().size());
   }
+
+  @Test
+  @DisplayName("advanceTurn() consumes single extra turn")
+  void advanceTurnConsumesSingleExtraTurn() {
+    board.setCurrentIndex(0);
+
+    board.addExtraTurn();
+
+    board.advanceTurn();
+
+    assertEquals("Alice", board.getCurrentPlayer().getName());
+    assertEquals(0, board.getExtraTurns());
+
+    board.advanceTurn();
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+  }
+
+  @Test
+  @DisplayName("advanceTurn() consumes stacked extra turns")
+  void advanceTurnConsumesStackedExtraTurns() {
+    board.setCurrentIndex(0);
+
+    board.addExtraTurn();
+    board.addExtraTurn();
+
+    board.advanceTurn();
+    assertEquals("Alice", board.getCurrentPlayer().getName());
+    assertEquals(1, board.getExtraTurns());
+
+    board.advanceTurn();
+    assertEquals("Alice", board.getCurrentPlayer().getName());
+    assertEquals(0, board.getExtraTurns());
+
+    board.advanceTurn();
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+  }
 }

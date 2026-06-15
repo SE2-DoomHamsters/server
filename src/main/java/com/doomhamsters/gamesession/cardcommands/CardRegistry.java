@@ -57,6 +57,7 @@ public class CardRegistry {
   public static CardRegistry defaultRegistry() {
     return of(
         new PowerNapCardDefinition(),
+        new SignOfFateCardDefinition(),
         new QuickPeekCardDefinition());
   }
 

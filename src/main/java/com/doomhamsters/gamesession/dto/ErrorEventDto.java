@@ -27,27 +27,47 @@ public class ErrorEventDto {
     this.timestamp = Instant.now().toString();
   }
 
-  /** @return event type constant */
+  /**
+   * Returns the event type.
+   *
+   * @return event type constant
+   */
   public String getType() {
     return type;
   }
 
-  /** @return short machine-readable error code */
+  /**
+   * Returns the machine-readable error code.
+   *
+   * @return short machine-readable error code
+   */
   public String getCode() {
     return code;
   }
 
-  /** @return human-readable reason the action was rejected */
+  /**
+   * Returns the human-readable rejection reason.
+   *
+   * @return reason the action was rejected
+   */
   public String getMessage() {
     return message;
   }
 
-  /** @return the affected game session */
+  /**
+   * Returns the affected game session.
+   *
+   * @return the affected game session id
+   */
   public String getGameId() {
     return gameId;
   }
 
-  /** @return ISO-8601 creation time */
+  /**
+   * Returns the creation time.
+   *
+   * @return ISO-8601 creation time
+   */
   public String getTimestamp() {
     return timestamp;
   }

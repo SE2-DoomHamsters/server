@@ -240,4 +240,8 @@ public class Player {
       eliminated = true;
     }
   }
+
+  public void addLives(int lives){
+    this.lives += lives;
+  }
 }

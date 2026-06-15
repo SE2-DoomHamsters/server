@@ -37,7 +37,7 @@ public class GameTurnService {
   public void registerGame(String gameId, List<Player> players) {
     String firstTurn = players.isEmpty() ? "" : players.get(0).getId();
     activeGames.put(
-      gameId,
+        gameId,
       new GameState(gameId, players, firstTurn, false, null));
   }
 
@@ -63,7 +63,7 @@ public class GameTurnService {
 
     synchronized (gameLock) {
       GameState state = findGame(gameId)
-        .orElseThrow(() -> new NoSuchElementException("Game not found: " + gameId));
+          .orElseThrow(() -> new NoSuchElementException("Game not found: " + gameId));
 
       validateTurn(state, playerId);
 
@@ -89,7 +89,8 @@ public class GameTurnService {
         }
       }
 
-      GameState updated = new GameState(gameId, mutablePlayers, nextTurnPlayerId, snackStashPending, pendingPlayerId);
+      GameState updated = new GameState(gameId, mutablePlayers, nextTurnPlayerId,
+          snackStashPending, pendingPlayerId);
       activeGames.put(gameId, updated);
       return updated;
     }
@@ -98,7 +99,8 @@ public class GameTurnService {
   private static void validateTurn(GameState state, String playerId) {
     if (!playerId.equals(state.getCurrentTurnPlayerId())) {
       throw new IllegalArgumentException(
-        String.format("Not player %s's turn. Current turn: %s", playerId, state.getCurrentTurnPlayerId()));
+        String.format("Not player %s's turn. Current turn: %s",
+          playerId, state.getCurrentTurnPlayerId()));
     }
   }
 
@@ -111,18 +113,20 @@ public class GameTurnService {
     players.stream()
       .filter(p -> p.getId().equals(playerId))
       .findFirst()
-      .ifPresent(Player::decrementLives);
+        .ifPresent(Player::decrementLives);
   }
 
   private static String advanceTurn(List<Player> players, String currentPlayerId) {
-    List<Player> active = players.stream().filter(p -> !p.isEliminated()).collect(Collectors.toList());
+    List<Player> active = players.stream()
+        .filter(p -> !p.isEliminated())
+        .collect(Collectors.toList());
     if (active.size() <= 1) {
       return currentPlayerId;
     }
     int currentIndex = IntStream.range(0, active.size())
-      .filter(i -> active.get(i).getId().equals(currentPlayerId))
-      .findFirst()
-      .orElse(0);
+        .filter(i -> active.get(i).getId().equals(currentPlayerId))
+        .findFirst()
+        .orElse(0);
     return active.get((currentIndex + 1) % active.size()).getId();
   }
 }

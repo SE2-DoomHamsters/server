@@ -23,15 +23,16 @@ public class GameSessionPersistenceCoordinator {
    * @param persistenceService Der Handler für die Festplatten-Persistenz
    */
   public GameSessionPersistenceCoordinator(
-    GameSessionRepository repository,
-    GameSessionPersistenceService persistenceService) {
+      GameSessionRepository repository,
+      GameSessionPersistenceService persistenceService) {
     this.repository = repository;
     this.persistenceService = persistenceService;
     this.repository.loadAll(persistenceService.loadSessions());
   }
 
   /**
-   * Markiert den aktuellen Speicherstand als schmutzig (dirty), sodass er beim nächsten Flush gespeichert wird.
+   * Markiert den aktuellen Speicherstand als schmutzig (dirty),
+   * sodass er beim nächsten Flush gespeichert wird.
    */
   public void markDirty() {
     synchronized (monitor) {

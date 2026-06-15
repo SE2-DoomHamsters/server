@@ -52,9 +52,9 @@ public class TwoHamstersCardDefinition implements CardDefinition {
 
     Player requester = context.getPlayer();
     Player target = context.getGame().getPlayers().stream()
-      .filter(p -> p.getId().equals(targetPlayerId))
-      .findFirst()
-      .orElseThrow(() -> new IllegalArgumentException(
+        .filter(p -> p.getId().equals(targetPlayerId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException(
         "TwoHamsters: unknown targetPlayerId=" + targetPlayerId));
 
     if (target.getId().equals(requester.getId())) {
@@ -67,9 +67,9 @@ public class TwoHamstersCardDefinition implements CardDefinition {
 
     // 1. Die 2 Karten suchen
     List<Card> matchingCards = requester.getHand().stream()
-      .filter(c -> hamsterType.equalsIgnoreCase(c.getType()))
-      .limit(REQUIRED_COUNT)
-      .toList();
+        .filter(c -> hamsterType.equalsIgnoreCase(c.getType()))
+        .limit(REQUIRED_COUNT)
+        .toList();
 
     if (matchingCards.size() < REQUIRED_COUNT) {
       throw new IllegalStateException(String.format(
@@ -94,8 +94,8 @@ public class TwoHamstersCardDefinition implements CardDefinition {
 
     // 4. Resultat mit privateResult generieren
     String publicMsg = String.format(
-      "%s played two %s cards and stole a random card from %s!",
-      requester.getName(), hamsterType, target.getName());
+        "%s played two %s cards and stole a random card from %s!",
+        requester.getName(), hamsterType, target.getName());
 
     String privateMsg = "You successfully stole: " + stolenCard.getName();
 

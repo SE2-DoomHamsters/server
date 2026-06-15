@@ -9,6 +9,7 @@ import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
+
 /**
  * Card definition for Cage Swap.
  * Swaps the current player's entire hand with the next active player.

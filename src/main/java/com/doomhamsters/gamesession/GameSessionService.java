@@ -20,8 +20,8 @@ public class GameSessionService {
    * @param persistenceCoordinator Der Persistenz-Koordinator
    */
   public GameSessionService(
-    GameSessionRepository repository,
-    GameSessionPersistenceCoordinator persistenceCoordinator) {
+      GameSessionRepository repository,
+      GameSessionPersistenceCoordinator persistenceCoordinator) {
     this.repository = repository;
     this.persistenceCoordinator = persistenceCoordinator;
   }

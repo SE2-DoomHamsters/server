@@ -10,12 +10,12 @@ import org.springframework.stereotype.Component;
  * Card definition for Sign of Fate.
  */
 @Component
-public class SignOffateCardDefinition implements CardDefinition {
+public class SignOfFateCardDefinition implements CardDefinition {
 
   /**
    * Creates the Sign of Fate card definition.
    */
-  public SignOffateCardDefinition() {}
+  public SignOfFateCardDefinition() {}
 
   @Override
   public String cardType() {

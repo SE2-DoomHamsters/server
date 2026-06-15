@@ -1,8 +1,8 @@
 package com.doomhamsters;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import com.doomhamsters.lobby.LobbyService;
+import com.doomhamsters.lobby.GameTurnService;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -11,11 +11,7 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link LobbyService}.
- *
- * <p>Because {drawCard()} is random, card-specific branches are covered via
- * {@link RepeatedTest} with enough iterations to hit all enum values with very high probability
- * (Birthday-problem bound: 3 values, 20 draws → P(all seen) ≈ 1 − 10⁻⁴).
+ * Unit tests for {@link GameTurnService}.
  */
 final class GameServiceTest {
 
@@ -23,11 +19,13 @@ final class GameServiceTest {
   private static final String PLAYER_1 = "p1";
   private static final String PLAYER_2 = "p2";
 
-  private LobbyService service;
+  // 2. HIER GEÄNDERT
+  private GameTurnService service;
 
   @BeforeEach
   void setUp() {
-    service = new LobbyService();
+    // 3. HIER GEÄNDERT (Wie von dir vermutet)
+    service = new GameTurnService();
   }
 
   // -------------------------------------------------------------------------
@@ -79,7 +77,7 @@ final class GameServiceTest {
   @Test
   void processDraw_throwsWhenNotPlayersTurn() {
     service.registerGame(GAME_ID, GameStateTest.twoPlayers());
-    // p2 tries to draw but it is p1's turn.
+    // p2 tries to draw, but it is p1's turn.
     IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
       () -> service.processDraw(GAME_ID, PLAYER_2));
     assertThat(exception.getMessage()).contains(PLAYER_2);

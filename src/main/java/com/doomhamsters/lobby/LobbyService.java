@@ -49,24 +49,24 @@ public class LobbyService {
   @Autowired
   @SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
   public LobbyService(
-    @Value("${doomhamsters.lobby.max-players:6}") int defaultMaxPlayers,
-    @Value("${doomhamsters.lobby.member-timeout-ms:120000}") long memberTimeoutMillis,
-    ObjectProvider<LobbyRealtimePublisher> publisherProvider,
-    QrCodeGeneratorService qrCodeGenerator) {
+      @Value("${doomhamsters.lobby.max-players:6}") int defaultMaxPlayers,
+      @Value("${doomhamsters.lobby.member-timeout-ms:120000}") long memberTimeoutMillis,
+      ObjectProvider<LobbyRealtimePublisher> publisherProvider,
+      QrCodeGeneratorService qrCodeGenerator) {
     this(
-      defaultMaxPlayers,
-      Duration.ofMillis(memberTimeoutMillis),
-      Clock.systemUTC(),
-      publisherProvider.getIfAvailable(),
-      qrCodeGenerator);
+        defaultMaxPlayers,
+        Duration.ofMillis(memberTimeoutMillis),
+        Clock.systemUTC(),
+        publisherProvider.getIfAvailable(),
+        qrCodeGenerator);
   }
 
   LobbyService(
-    int defaultMaxPlayers,
-    Duration memberTimeout,
-    Clock clock,
-    LobbyRealtimePublisher realtimePublisher,
-    QrCodeGeneratorService qrCodeGenerator) {
+      int defaultMaxPlayers,
+      Duration memberTimeout,
+      Clock clock,
+      LobbyRealtimePublisher realtimePublisher,
+      QrCodeGeneratorService qrCodeGenerator) {
     this.defaultMaxPlayers = Math.max(6, defaultMaxPlayers);
     this.memberTimeout = memberTimeout;
     this.clock = clock;
@@ -99,12 +99,16 @@ public class LobbyService {
     return new Lobby(lobby);
   }
 
+  /**
+   * Joins an existing lobby or updates member details.
+   */
   public Optional<Lobby> joinOrUpdateLobby(String lobbyId, User user) {
     validateUser(user);
 
     Lobby lobby = getCanonicalLobby(lobbyId);
     if (lobby == null) {
-      LOGGER.warn("join rejected: lobbyId={}, userId={}, reason=not_found", lobbyId, user.getId());
+      LOGGER.warn("join rejected: lobbyId={}, userId={}, reason=not_found",
+          lobbyId, user.getId());
       return Optional.empty();
     }
 
@@ -112,12 +116,15 @@ public class LobbyService {
       removeExpiredMembersLocked(lobby, Instant.now(clock));
 
       if (lobby.isGameStarted()) {
-        LOGGER.warn("join rejected: lobbyId={}, userId={}, reason=already_started", lobby.getLobbyId(), user.getId());
+        LOGGER.warn("join rejected: lobbyId={}, userId={}, reason=already_started",
+            lobby.getLobbyId(), user.getId());
         throw new IllegalStateException("Game already started");
       }
 
       List<User> members = new ArrayList<>(lobby.getMembers());
-      Optional<User> existing = members.stream().filter(member -> member.getId().equals(user.getId())).findFirst();
+      Optional<User> existing = members.stream()
+          .filter(member -> member.getId().equals(user.getId()))
+          .findFirst();
 
       if (existing.isPresent()) {
         User member = existing.get();
@@ -126,7 +133,8 @@ public class LobbyService {
         member.markSeen(Instant.now(clock));
         lobby.setMembers(members);
         lobby.incrementVersion();
-        LOGGER.info("reconnect accepted: lobbyId={}, userId={}, memberCount={}", lobby.getLobbyId(), user.getId(), members.size());
+        LOGGER.info("reconnect accepted: lobbyId={}, userId={}, memberCount={}",
+            lobby.getLobbyId(), user.getId(), members.size());
         return Optional.of(new Lobby(lobby));
       }
 
@@ -134,11 +142,15 @@ public class LobbyService {
       lobby.setMembers(members);
       lobby.incrementVersion();
 
-      LOGGER.info("join accepted: lobbyId={}, userId={}, memberCount={}", lobby.getLobbyId(), user.getId(), members.size());
+      LOGGER.info("join accepted: lobbyId={}, userId={}, memberCount={}",
+          lobby.getLobbyId(), user.getId(), members.size());
       return Optional.of(new Lobby(lobby));
     }
   }
 
+  /**
+   * Updates the last seen timestamp for a user.
+   */
   public Optional<Lobby> heartbeat(String lobbyId, String userId) {
     if (userId == null || userId.isBlank()) {
       throw new IllegalArgumentException("userId is required");
@@ -152,18 +164,24 @@ public class LobbyService {
     synchronized (lobby) {
       removeExpiredMembersLocked(lobby, Instant.now(clock));
       List<User> members = new ArrayList<>(lobby.getMembers());
-      Optional<User> member = members.stream().filter(candidate -> candidate.getId().equals(userId)).findFirst();
+      Optional<User> member = members.stream()
+          .filter(candidate -> candidate.getId().equals(userId))
+          .findFirst();
       if (member.isEmpty()) {
         return Optional.empty();
       }
       member.get().markSeen(Instant.now(clock));
       lobby.setMembers(members);
       lobby.incrementVersion();
-      LOGGER.info("heartbeat accepted: lobbyId={}, userId={}", lobby.getLobbyId(), userId);
+      LOGGER.info("heartbeat accepted: lobbyId={}, userId={}",
+          lobby.getLobbyId(), userId);
       return Optional.of(new Lobby(lobby));
     }
   }
 
+  /**
+   * Removes a user from the specified lobby.
+   */
   public Optional<Lobby> leaveLobby(String lobbyId, String userId) {
     if (lobbyId == null || userId == null) {
       return Optional.empty();
@@ -186,7 +204,8 @@ public class LobbyService {
 
       if (members.isEmpty()) {
         activeLobbies.remove(lobby.getLobbyId(), lobby);
-        LOGGER.info("lobby removed after last member left: lobbyId={}", lobby.getLobbyId());
+        LOGGER.info("lobby removed after last member left: lobbyId={}",
+            lobby.getLobbyId());
         return Optional.empty();
       }
 
@@ -197,7 +216,11 @@ public class LobbyService {
     }
   }
 
-  public Optional<GameStartOutcome> startGame(String lobbyId, String userId, Function<Lobby, String> gameCreator) {
+  /**
+   * Initiates the game start process for a lobby.
+   */
+  public Optional<GameStartOutcome> startGame(String lobbyId, String userId,
+             Function<Lobby, String> gameCreator) {
     if (userId == null || userId.isBlank()) {
       throw new IllegalArgumentException("A lobby member id is required");
     }
@@ -211,19 +234,24 @@ public class LobbyService {
       removeExpiredMembersLocked(lobby, Instant.now(clock));
       List<User> activeMembers = activeMembers(lobby);
 
-      boolean initiatedByMember = activeMembers.stream().anyMatch(member -> userId.equals(member.getId()));
+      boolean initiatedByMember = activeMembers.stream()
+          .anyMatch(member -> userId.equals(member.getId()));
       if (!initiatedByMember) {
-        LOGGER.warn("start rejected: lobbyId={}, userId={}, reason=not_member", lobby.getLobbyId(), userId);
+        LOGGER.warn("start rejected: lobbyId={}, userId={}, reason=not_member",
+            lobby.getLobbyId(), userId);
         throw new SecurityException("Only lobby members can start the game");
       }
 
       if (lobby.isGameStarted() && lobby.getGameId() != null) {
-        LOGGER.info("start accepted idempotent: lobbyId={}, userId={}, gameId={}", lobby.getLobbyId(), userId, lobby.getGameId());
+        LOGGER.info("start accepted idempotent: lobbyId={}, userId={}, gameId={}",
+            lobby.getLobbyId(), userId, lobby.getGameId());
         return Optional.of(new GameStartOutcome(new Lobby(lobby), lobby.getGameId(), false));
       }
 
       if (activeMembers.size() < 2) {
-        LOGGER.warn("start rejected: lobbyId={}, userId={}, reason=too_few_active_players, activeCount={}", lobby.getLobbyId(), userId, activeMembers.size());
+        LOGGER.warn("start rejected: lobbyId={}, userId={}, "
+            + "reason=too_few_active_players, activeCount={}",
+            lobby.getLobbyId(), userId, activeMembers.size());
         throw new IllegalStateException("At least 2 active players are required");
       }
 
@@ -236,11 +264,15 @@ public class LobbyService {
       lobby.setGameStarted(true);
       lobby.incrementVersion();
 
-      LOGGER.info("start accepted: lobbyId={}, userId={}, gameId={}, activeCount={}", lobby.getLobbyId(), userId, gameId, activeMembers.size());
+      LOGGER.info("start accepted: lobbyId={}, userId={}, gameId={}, activeCount={}",
+          lobby.getLobbyId(), userId, gameId, activeMembers.size());
       return Optional.of(new GameStartOutcome(new Lobby(lobby), gameId, true));
     }
   }
 
+  /**
+   * Marks a specific game as started within the lobby.
+   */
   @SuppressWarnings("UnusedReturnValue")
   public Optional<Lobby> markGameStarted(String lobbyId, String gameId) {
     Lobby lobby = getCanonicalLobby(lobbyId);
@@ -256,6 +288,9 @@ public class LobbyService {
     }
   }
 
+  /**
+   * Retrieves a canonical copy of the given lobby.
+   */
   public Lobby getLobby(String lobbyId) {
     Lobby lobby = getCanonicalLobby(lobbyId);
     if (lobby == null) {
@@ -268,6 +303,9 @@ public class LobbyService {
     }
   }
 
+  /**
+   * Cleans up members who have timed out.
+   */
   public List<Lobby> cleanupExpiredMembers() {
     Instant now = Instant.now(clock);
     List<Lobby> changed = new ArrayList<>();
@@ -328,9 +366,9 @@ public class LobbyService {
 
     List<User> members = new ArrayList<>(lobby.getMembers());
     List<String> removedIds = members.stream()
-      .filter(member -> isExpired(member, now))
-      .map(User::getId)
-      .toList();
+        .filter(member -> isExpired(member, now))
+        .map(User::getId)
+        .toList();
 
     if (removedIds.isEmpty()) {
       return;
@@ -338,18 +376,21 @@ public class LobbyService {
 
     members.removeIf(member -> removedIds.contains(member.getId()));
     for (String removedId : removedIds) {
-      LOGGER.info("stale member removed: lobbyId={}, userId={}, timeoutMs={}", lobby.getLobbyId(), removedId, memberTimeout.toMillis());
+      LOGGER.info("stale member removed: lobbyId={}, userId={}, timeoutMs={}",
+          lobby.getLobbyId(), removedId, memberTimeout.toMillis());
     }
 
     if (members.isEmpty()) {
       activeLobbies.remove(lobby.getLobbyId(), lobby);
-      LOGGER.info("lobby removed after stale cleanup: lobbyId={}", lobby.getLobbyId());
+      LOGGER.info("lobby removed after stale cleanup: lobbyId={}",
+          lobby.getLobbyId());
       return;
     }
 
     if (removedIds.contains(lobby.getHostId())) {
       lobby.setHostId(members.getFirst().getId());
-      LOGGER.info("host reassigned: lobbyId={}, newHostId={}, reason=host_expired", lobby.getLobbyId(), lobby.getHostId());
+      LOGGER.info("host reassigned: lobbyId={}, newHostId={}, reason=host_expired",
+          lobby.getLobbyId(), lobby.getHostId());
     }
 
     lobby.setMembers(members);
@@ -367,7 +408,8 @@ public class LobbyService {
     }
 
     lobby.setHostId(members.getFirst().getId());
-    LOGGER.info("host reassigned: lobbyId={}, newHostId={}, reason=host_left", lobby.getLobbyId(), lobby.getHostId());
+    LOGGER.info("host reassigned: lobbyId={}, newHostId={}, reason=host_left",
+        lobby.getLobbyId(), lobby.getHostId());
   }
 
   private List<User> activeMembers(Lobby lobby) {
@@ -388,10 +430,18 @@ public class LobbyService {
     }
   }
 
+  /**
+   * Record containing the outcome of a game start.
+   *
+   * @param lobby   The updated lobby snapshot.
+   * @param gameId  The assigned game ID.
+   * @param created Whether a new game was created.
+   */
   public record GameStartOutcome(Lobby lobby, String gameId, boolean created) {
     public GameStartOutcome {
       lobby = new Lobby(lobby);
     }
+
     @Override
     public Lobby lobby() {
       return new Lobby(lobby);

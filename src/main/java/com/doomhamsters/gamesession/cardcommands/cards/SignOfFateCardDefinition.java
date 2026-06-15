@@ -43,6 +43,8 @@ public class SignOffateCardDefinition implements CardDefinition {
   @Override
   public CardCommandResult execute(CardCommandContext context) {
 
+    context.getPlayer().addLives(1);
+
     return CardCommandResult.publicOnly(
         context.getPlayer().getName()
             + " activated Sign of Fate and gained +1 life.");

@@ -7,7 +7,7 @@ import java.time.Instant;
  */
 public class ErrorEventDto {
 
-  private final String type = "GAME_ERROR";
+  private static final String TYPE = "GAME_ERROR";
   private final String code;
   private final String message;
   private final String gameId;
@@ -33,7 +33,7 @@ public class ErrorEventDto {
    * @return event type constant
    */
   public String getType() {
-    return type;
+    return TYPE;
   }
 
   /**

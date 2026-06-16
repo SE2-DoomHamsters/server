@@ -1,5 +1,6 @@
 package com.doomhamsters.gamesession.dto;
 
+import com.doomhamsters.gamesession.snackstash.SnackStashClaimEventDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,9 @@ public class GameStateDto {
 
   @Schema(description = "ID of the neutralized Doom card waiting for insertion", example = "doom_0")
   private String pendingDoomCardId;
+
+  @Schema(description = "Pending Snack Stash claim awaiting votes, if any")
+  private SnackStashClaimEventDto pendingSnackStashClaim;
 
   @Schema(description = "Number of cards left in the draw deck", example = "31")
   private int remainingDeckSize;

@@ -8,7 +8,7 @@ import java.time.Instant;
 public class ErrorEventDto {
 
   private static final String TYPE = "GAME_ERROR";
-  private final String code;
+  private final ErrorCode code;
   private final String message;
   private final String gameId;
   private final String timestamp;
@@ -20,7 +20,7 @@ public class ErrorEventDto {
    * @param message human-readable reason the action was rejected
    * @param gameId the affected game session
    */
-  public ErrorEventDto(String code, String message, String gameId) {
+  public ErrorEventDto(ErrorCode code, String message, String gameId) {
     this.code = code;
     this.message = message;
     this.gameId = gameId;
@@ -39,9 +39,9 @@ public class ErrorEventDto {
   /**
    * Returns the machine-readable error code.
    *
-   * @return short machine-readable error code
+   * @return the error code
    */
-  public String getCode() {
+  public ErrorCode getCode() {
     return code;
   }
 

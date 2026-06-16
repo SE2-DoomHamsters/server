@@ -12,6 +12,7 @@ import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardRegistry;
 import com.doomhamsters.gamesession.dto.CardDto;
 import com.doomhamsters.gamesession.dto.DoomDrawnEventDto;
+import com.doomhamsters.gamesession.dto.ErrorCode;
 import com.doomhamsters.gamesession.dto.ErrorEventDto;
 import com.doomhamsters.gamesession.dto.GameStateDto;
 import com.doomhamsters.gamesession.dto.GameStateMapper;
@@ -540,7 +541,9 @@ public class GameActionController {
     String gameId = extractGameId(accessor.getDestination());
     String playerId = extractPlayerIdOrNull(message.getPayload());
 
-    String code = (exception instanceof IllegalStateException) ? "ILLEGAL_STATE" : "INVALID_ACTION";
+    ErrorCode code = (exception instanceof IllegalStateException)
+        ? ErrorCode.ILLEGAL_STATE
+        : ErrorCode.INVALID_ACTION;
 
     LOGGER.warn(
         "rejected action: gameId={}, playerId={}, code={}, reason={}",
@@ -580,6 +583,9 @@ public class GameActionController {
     } else if (payload instanceof String text) {
       json = text;
     } else {
+      LOGGER.warn(
+          "Unsupported payload type for error routing: {}",
+          payload == null ? "null" : payload.getClass().getName());
       return null;
     }
 

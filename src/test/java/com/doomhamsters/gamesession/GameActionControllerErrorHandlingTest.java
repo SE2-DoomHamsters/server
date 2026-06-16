@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.doomhamsters.gamesession.dto.ErrorCode;
 import com.doomhamsters.gamesession.dto.ErrorEventDto;
 import com.doomhamsters.gamesession.dto.GameStateMapper;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +53,7 @@ class GameActionControllerErrorHandlingTest {
 
     ErrorEventDto event = captor.getValue();
     assertEquals("GAME_ERROR", event.getType());
-    assertEquals("INVALID_ACTION", event.getCode());
+    assertEquals(ErrorCode.INVALID_ACTION, event.getCode());
     assertEquals("g1", event.getGameId());
     assertEquals("It is not player p1's turn.", event.getMessage());
   }
@@ -70,7 +71,7 @@ class GameActionControllerErrorHandlingTest {
         eq("/queue/game/g1/p1/errors"),
         captor.capture());
 
-    assertEquals("ILLEGAL_STATE", captor.getValue().getCode());
+    assertEquals(ErrorCode.ILLEGAL_STATE, captor.getValue().getCode());
   }
 
   @Test
@@ -79,6 +80,38 @@ class GameActionControllerErrorHandlingTest {
 
     controller.handleInvalidAction(new IllegalArgumentException("Action payload must be valid JSON."),
         message);
+
+    verify(messagingTemplate, never()).convertAndSend(anyString(), any(ErrorEventDto.class));
+  }
+
+  @Test
+  void missingDestinationIsNotRouted() {
+    Message<byte[]> message = MessageBuilder
+        .withPayload("{\"playerId\":\"p1\"}".getBytes(StandardCharsets.UTF_8))
+        .build();
+
+    controller.handleInvalidAction(new IllegalArgumentException("boom"), message);
+
+    verify(messagingTemplate, never()).convertAndSend(anyString(), any(ErrorEventDto.class));
+  }
+
+  @Test
+  void missingPlayerIdIsNotRouted() {
+    Message<byte[]> message = actionMessage("/app/game/g1/draw", "{}");
+
+    controller.handleInvalidAction(new IllegalArgumentException("boom"), message);
+
+    verify(messagingTemplate, never()).convertAndSend(anyString(), any(ErrorEventDto.class));
+  }
+
+  @Test
+  void unsupportedPayloadTypeIsNotRouted() {
+    Message<Integer> message = MessageBuilder
+        .withPayload(123)
+        .setHeader(SimpMessageHeaderAccessor.DESTINATION_HEADER, "/app/game/g1/draw")
+        .build();
+
+    controller.handleInvalidAction(new IllegalArgumentException("boom"), message);
 
     verify(messagingTemplate, never()).convertAndSend(anyString(), any(ErrorEventDto.class));
   }

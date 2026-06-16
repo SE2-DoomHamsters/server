@@ -51,19 +51,23 @@ class GameActionControllerTest {
 
   @BeforeEach
   void setUp() {
-    gameSessionService =
-        new GameSessionService(
-            new GameSessionPersistenceService(
-                tempDir.resolve("game-action-sessions.json").toString()));
+    // 1. Die neuen Bauteile initialisieren
+    String sessionFilePath = tempDir.resolve("game-action-sessions.json").toString();
+    GameSessionPersistenceService persistenceService = new GameSessionPersistenceService(sessionFilePath);
+    GameSessionRepository repository = new GameSessionRepository();
+    GameSessionPersistenceCoordinator coordinator = new GameSessionPersistenceCoordinator(repository, persistenceService);
+
+    // 2. Den Service mit den Bauteilen zusammenbauen
+    gameSessionService = new GameSessionService(repository, coordinator);
 
     messagingTemplate = mock(SimpMessagingTemplate.class);
 
     controller =
-        new GameActionController(
-            gameSessionService,
-            new GameStateMapper(),
-            messagingTemplate,
-            new ObjectMapper());
+      new GameActionController(
+        gameSessionService,
+        new GameStateMapper(),
+        messagingTemplate,
+        new ObjectMapper());
   }
 
   @Test

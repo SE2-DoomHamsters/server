@@ -59,8 +59,8 @@ public class CardRegistry {
   public static CardRegistry defaultRegistry() {
     return of(
         new PowerNapCardDefinition(),
-        new QuickPeekCardDefinition(),
-        new StealCardDefinition()
+        new BegForSnacksCardDefinition(),
+        new QuickPeekCardDefinition()
     );
   }
 

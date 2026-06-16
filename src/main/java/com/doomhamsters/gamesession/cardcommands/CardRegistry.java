@@ -1,6 +1,7 @@
 package com.doomhamsters.gamesession.cardcommands;
 
 import com.doomhamsters.Card;
+import com.doomhamsters.gamesession.cardcommands.cards.BegForSnacksCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.PowerNapCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.QuickPeekCardDefinition;
 import com.doomhamsters.gamesession.dto.CardDto;
@@ -57,7 +58,9 @@ public class CardRegistry {
   public static CardRegistry defaultRegistry() {
     return of(
         new PowerNapCardDefinition(),
-        new QuickPeekCardDefinition());
+        new BegForSnacksCardDefinition(),
+        new QuickPeekCardDefinition()
+    );
   }
 
   /**

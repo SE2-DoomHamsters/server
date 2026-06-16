@@ -12,15 +12,21 @@ import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardRegistry;
 import com.doomhamsters.gamesession.dto.CardDto;
 import com.doomhamsters.gamesession.dto.DoomDrawnEventDto;
+import com.doomhamsters.gamesession.dto.ErrorCode;
+import com.doomhamsters.gamesession.dto.ErrorEventDto;
 import com.doomhamsters.gamesession.dto.GameStateDto;
 import com.doomhamsters.gamesession.dto.GameStateMapper;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import tools.jackson.core.JacksonException;
@@ -518,5 +524,76 @@ public class GameActionController {
             Player::getId,
             player -> player.getHand().size()))
         .toString();
+  }
+
+  /**
+   * Reports a rejected game action back to the originating player.
+   *
+   * <p>Catches expected validation failures from this controller's message mappings, logs them at
+   * WARN, and sends a private error event to {@code /queue/game/{gameId}/{playerId}/errors}.
+   *
+   * @param exception the validation failure
+   * @param message the original STOMP message
+   */
+  @MessageExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+  public void handleInvalidAction(RuntimeException exception, Message<?> message) {
+    SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(message);
+    String gameId = extractGameId(accessor.getDestination());
+    String playerId = extractPlayerIdOrNull(message.getPayload());
+
+    ErrorCode code = (exception instanceof IllegalStateException)
+        ? ErrorCode.ILLEGAL_STATE
+        : ErrorCode.INVALID_ACTION;
+
+    LOGGER.warn(
+        "rejected action: gameId={}, playerId={}, code={}, reason={}",
+        gameId,
+        playerId,
+        code,
+        exception.getMessage());
+
+    if (gameId == null || playerId == null) {
+      return;
+    }
+
+    messagingTemplate.convertAndSend(
+        "/queue/game/" + gameId + "/" + playerId + "/errors",
+        new ErrorEventDto(code, exception.getMessage(), gameId));
+  }
+
+  private String extractGameId(String destination) {
+    if (destination == null) {
+      return null;
+    }
+
+    String[] parts = destination.split("/");
+    for (int index = 0; index < parts.length - 1; index++) {
+      if ("game".equals(parts[index])) {
+        return parts[index + 1];
+      }
+    }
+
+    return null;
+  }
+
+  private String extractPlayerIdOrNull(Object payload) {
+    String json;
+    if (payload instanceof byte[] bytes) {
+      json = new String(bytes, StandardCharsets.UTF_8);
+    } else if (payload instanceof String text) {
+      json = text;
+    } else {
+      LOGGER.warn(
+          "Unsupported payload type for error routing: {}",
+          payload == null ? "null" : payload.getClass().getName());
+      return null;
+    }
+
+    try {
+      JsonNode playerId = objectMapper.readTree(json).get("playerId");
+      return (playerId != null && playerId.isTextual()) ? playerId.asText() : null;
+    } catch (JacksonException exception) {
+      return null;
+    }
   }
 }

@@ -3,6 +3,7 @@ package com.doomhamsters.gamesession.snackstash;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.doomhamsters.Card;
@@ -86,6 +87,195 @@ class SnackStashClaimServiceTest {
     assertNull(game.getPendingSnackStashClaim());
   }
 
+  @Test
+  void claimRejectsWhenNoDoomResolutionIsPending() {
+    GameSession session = runningSession(List.of("Alice", "Bob"));
+    Player claimant = session.getGame().getPlayers().get(0);
+    Card snackStash = firstSnackStash(claimant);
+    String claimantId = claimant.getId();
+    String snackStashId = snackStash.getId();
+    SnackStashClaimService service = new SnackStashClaimService();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> service.claimSnackStash(session, claimantId, snackStashId, 1_000L));
+  }
+
+  @Test
+  void claimRejectsWhenDifferentPlayerIsResolvingDoom() {
+    GameSession session = runningSession(List.of("Alice", "Bob"));
+    Game game = session.getGame();
+    Player claimant = game.getPlayers().get(0);
+    Player otherPlayer = game.getPlayers().get(1);
+    Card otherSnackStash = firstSnackStash(otherPlayer);
+    String otherPlayerId = otherPlayer.getId();
+    String otherSnackStashId = otherSnackStash.getId();
+    game.startDoomResolution(claimant, new Card("doom_drawn", "Doom", "doom"));
+    SnackStashClaimService service = new SnackStashClaimService();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.claimSnackStash(session, otherPlayerId, otherSnackStashId, 1_000L));
+  }
+
+  @Test
+  void claimRejectsWhenNoDrawnDoomCardIsPending() {
+    GameSession session = runningSession(List.of("Alice", "Bob"));
+    Game game = session.getGame();
+    Player claimant = game.getPlayers().get(0);
+    Card snackStash = firstSnackStash(claimant);
+    String claimantId = claimant.getId();
+    String snackStashId = snackStash.getId();
+    game.setResolvingDoomPlayerId(claimantId);
+    SnackStashClaimService service = new SnackStashClaimService();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> service.claimSnackStash(session, claimantId, snackStashId, 1_000L));
+  }
+
+  @Test
+  void claimRejectsWhenAnotherClaimIsAlreadyPending() {
+    GameSession session = runningSession(List.of("Alice", "Bob"));
+    Game game = session.getGame();
+    Player claimant = game.getPlayers().get(0);
+    Card snackStash = firstSnackStash(claimant);
+    String claimantId = claimant.getId();
+    String snackStashId = snackStash.getId();
+    game.startDoomResolution(claimant, new Card("doom_drawn", "Doom", "doom"));
+    SnackStashClaimService service = new SnackStashClaimService();
+    service.claimSnackStash(session, claimantId, snackStashId, 1_000L);
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> service.claimSnackStash(session, claimantId, snackStashId, 2_000L));
+  }
+
+  @Test
+  void claimRejectsCardThatIsNotInHand() {
+    GameSession session = runningSession(List.of("Alice", "Bob"));
+    Game game = session.getGame();
+    Player claimant = game.getPlayers().get(0);
+    String claimantId = claimant.getId();
+    game.startDoomResolution(claimant, new Card("doom_drawn", "Doom", "doom"));
+    SnackStashClaimService service = new SnackStashClaimService();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.claimSnackStash(session, claimantId, "missing-card", 1_000L));
+  }
+
+  @Test
+  void voteRejectsWhenNoClaimIsPending() {
+    GameSession session = runningSession(List.of("Alice", "Bob"));
+    SnackStashClaimService service = new SnackStashClaimService();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> service.vote(session, "p1", "claim-1", SnackStashVote.YES));
+  }
+
+  @Test
+  void voteRejectsMismatchedClaimId() {
+    GameSession session = runningSession(List.of("Alice", "Bob"));
+    Game game = session.getGame();
+    Player claimant = game.getPlayers().get(0);
+    Player voter = game.getPlayers().get(1);
+    Card snackStash = firstSnackStash(claimant);
+    String claimantId = claimant.getId();
+    String voterId = voter.getId();
+    String snackStashId = snackStash.getId();
+    game.startDoomResolution(claimant, new Card("doom_drawn", "Doom", "doom"));
+    SnackStashClaimService service = new SnackStashClaimService();
+    service.claimSnackStash(session, claimantId, snackStashId, 1_000L);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.vote(session, voterId, "wrong-claim", SnackStashVote.YES));
+  }
+
+  @Test
+  void voteRejectsClaimingPlayer() {
+    GameSession session = runningSession(List.of("Alice", "Bob"));
+    Game game = session.getGame();
+    Player claimant = game.getPlayers().get(0);
+    Card snackStash = firstSnackStash(claimant);
+    String claimantId = claimant.getId();
+    String snackStashId = snackStash.getId();
+    game.startDoomResolution(claimant, new Card("doom_drawn", "Doom", "doom"));
+    SnackStashClaimService service = new SnackStashClaimService();
+    SnackStashClaim claim = service.claimSnackStash(session, claimantId, snackStashId, 1_000L);
+    String claimId = claim.getClaimId();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.vote(session, claimantId, claimId, SnackStashVote.YES));
+  }
+
+  @Test
+  void voteRejectsIneligiblePlayer() {
+    GameSession session = runningSession(List.of("Alice", "Bob", "Cara"));
+    Game game = session.getGame();
+    Player claimant = game.getPlayers().get(0);
+    Player ineligiblePlayer = game.getPlayers().get(2);
+    String claimantId = claimant.getId();
+    String ineligiblePlayerId = ineligiblePlayer.getId();
+    while (ineligiblePlayer.isAlive()) {
+      ineligiblePlayer.decrementLives();
+    }
+    Card snackStash = firstSnackStash(claimant);
+    String snackStashId = snackStash.getId();
+    game.startDoomResolution(claimant, new Card("doom_drawn", "Doom", "doom"));
+    SnackStashClaimService service = new SnackStashClaimService();
+    SnackStashClaim claim = service.claimSnackStash(session, claimantId, snackStashId, 1_000L);
+    String claimId = claim.getClaimId();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.vote(session, ineligiblePlayerId, claimId, SnackStashVote.YES));
+  }
+
+  @Test
+  void voteRejectsDuplicateVoteBeforeClaimIsResolved() {
+    GameSession session = runningSession(List.of("Alice", "Bob", "Cara"));
+    Game game = session.getGame();
+    Player claimant = game.getPlayers().get(0);
+    Player voter = game.getPlayers().get(1);
+    Card snackStash = firstSnackStash(claimant);
+    String claimantId = claimant.getId();
+    String voterId = voter.getId();
+    String snackStashId = snackStash.getId();
+    game.startDoomResolution(claimant, new Card("doom_drawn", "Doom", "doom"));
+    SnackStashClaimService service = new SnackStashClaimService();
+    SnackStashClaim claim = service.claimSnackStash(session, claimantId, snackStashId, 1_000L);
+    String claimId = claim.getClaimId();
+    service.vote(session, voterId, claimId, SnackStashVote.YES);
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> service.vote(session, voterId, claimId, SnackStashVote.NO));
+  }
+
+  @Test
+  void voteRejectsMissingVoterEvenWhenClaimListsVoterAsEligible() {
+    GameSession session = runningSession(List.of("Alice", "Bob"));
+    Game game = session.getGame();
+    Player claimant = game.getPlayers().get(0);
+    game.setPendingSnackStashClaim(
+        new SnackStashClaim(
+            "claim-1",
+            claimant.getId(),
+            firstSnackStash(claimant).getId(),
+            1_000L,
+            List.of("missing-player"),
+            java.util.Map.of()));
+    SnackStashClaimService service = new SnackStashClaimService();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.vote(session, "missing-player", "claim-1", SnackStashVote.YES));
+  }
+
   private static GameSession runningSession(List<String> players) {
     GameSession session = new GameSession("game", "lobby");
     session
@@ -96,6 +286,13 @@ class SnackStashClaimServiceTest {
             new Card("snack_proto", "Snack Stash", "snack_stash"),
             doomCards(6));
     return session;
+  }
+
+  private static Card firstSnackStash(Player player) {
+    return player.getHand().stream()
+        .filter(Card::isSnackStash)
+        .findFirst()
+        .orElseThrow();
   }
 
   private static List<Card> actionCards(int count) {

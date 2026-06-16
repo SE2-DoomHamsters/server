@@ -4,6 +4,8 @@ import com.doomhamsters.Card;
 import com.doomhamsters.gamesession.cardcommands.cards.BegForSnacksCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.PowerNapCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.QuickPeekCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.SignOfFateCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.StealCardDefinition;
 import com.doomhamsters.gamesession.dto.CardDto;
 import java.util.Collection;
 import java.util.Comparator;
@@ -58,6 +60,8 @@ public class CardRegistry {
   public static CardRegistry defaultRegistry() {
     return of(
         new PowerNapCardDefinition(),
+        new SignOfFateCardDefinition(),
+        new StealCardDefinition(),
         new BegForSnacksCardDefinition(),
         new QuickPeekCardDefinition()
     );

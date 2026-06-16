@@ -177,7 +177,7 @@ class GameControllerTest {
     assertEquals(31, testSession.getGame().getDeck().size());
     assertEquals(7, snackStashCardsInGame);
     testSession.getGame().getPlayers().forEach(player ->
-        assertEquals(12, player.getHand().size()));
+        assertEquals(13, player.getHand().size()));
   }
 
   @Test

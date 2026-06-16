@@ -248,7 +248,9 @@ public class Player {
    * @param lives the number of lives to add; must be non-negative
    */
   public void addLives(int lives) {
-    if (lives < 0) return;
+    if (lives < 0){
+      return;
+    }
     this.lives += lives;
   }
 }

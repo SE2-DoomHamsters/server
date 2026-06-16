@@ -51,7 +51,7 @@ class TwoHamstersCardDefinitionTest {
 
   @Test
   void testMetadata() {
-    assertEquals("hamster_two", definition.cardType());
+    assertEquals("HamsterTwo", definition.cardType()); // HIER ÄNDERN
     assertEquals("TWO_HAMSTERS", definition.commandId());
     assertEquals("Hamster Combo: 2-of-a-Kind", definition.displayName());
   }
@@ -62,7 +62,7 @@ class TwoHamstersCardDefinitionTest {
     assertNotNull(testingCard);
     assertEquals("two_hamsters_player1", testingCard.getId());
     assertEquals("Hamster Combo: 2-of-a-Kind", testingCard.getName());
-    assertEquals("hamster_two", testingCard.getType());
+    assertEquals("HamsterTwo", testingCard.getType()); // HIER ÄNDERN
   }
 
   @Test

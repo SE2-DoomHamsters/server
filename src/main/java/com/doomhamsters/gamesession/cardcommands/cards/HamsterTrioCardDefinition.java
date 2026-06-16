@@ -35,12 +35,12 @@ public class HamsterTrioCardDefinition implements CardDefinition {
 
   @Override
   public String cardType() {
-    return "hamster_trio";
+    return "HamsterTrio";
   }
 
   @Override
   public String commandId() {
-    return "HAMSTER_TRIO";
+    return "HamsterTrio";
   }
 
   @Override

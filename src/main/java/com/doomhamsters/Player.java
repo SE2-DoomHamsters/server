@@ -229,8 +229,8 @@ public class Player {
       this.livesRemaining = livesRemaining;
     }
   }
-
   /** Decrements lives by one and marks the player eliminated if lives reach zero. */
+
   public void decrementLives() {
     if (eliminated) {
       return;
@@ -247,5 +247,18 @@ public class Player {
       return;
     }
     lives++;
+  }
+
+  /**
+   * Adds the specified number of lives to the player.
+   * Negative values are ignored.
+   *
+   * @param lives the number of lives to add; must be non-negative
+   */
+  public void addLives(int lives) {
+    if (lives < 0) {
+      return;
+    }
+    this.lives += lives;
   }
 }

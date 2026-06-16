@@ -14,30 +14,30 @@ public class SnackStashResolutionEventDto {
   private static final String TYPE = "SNACK_STASH_RESOLVED";
 
   @Schema(description = "Resolution outcome", example = "CHEATER")
-  private String outcome;
+  private final String outcome;
   @Schema(description = "Resolved claim identifier", example = "claim-123")
-  private String claimId;
+  private final String claimId;
   @Schema(description = "ID of the player whose Snack Stash claim resolved", example = "player-1")
-  private String claimingPlayerId;
+  private final String claimingPlayerId;
   @Schema(description = "Display name of the claiming player", example = "Alice")
-  private String claimingPlayerName;
+  private final String claimingPlayerName;
   @Schema(description = "IDs of players who voted NO against the claim")
-  private List<String> accusingPlayerIds = List.of();
+  private final List<String> accusingPlayerIds;
   @Schema(description = "Life total changes caused by the resolution")
-  private List<SnackStashLifeChange> lifeChanges = List.of();
+  private final List<SnackStashLifeChange> lifeChanges;
   @Schema(description = "ID of the first affected player for legacy clients", example = "player-1")
-  private String affectedPlayerId;
+  private final String affectedPlayerId;
   @Schema(description = "Display name of the first affected player", example = "Alice")
-  private String affectedPlayerName;
+  private final String affectedPlayerName;
   @Schema(description = "First affected player's lives before resolution", example = "3")
-  private int livesBefore;
+  private final int livesBefore;
   @Schema(description = "First affected player's lives after resolution", example = "2")
-  private int livesAfter;
+  private final int livesAfter;
   @Schema(description = "Whether the pending Doom card was defused", example = "false")
-  private boolean doomDefused;
+  private final boolean doomDefused;
   @Schema(description = "Public resolution message",
       example = "Alice was caught cheating and loses 1 life.")
-  private String message;
+  private final String message;
 
   /**
    * Creates an event from a domain resolution.

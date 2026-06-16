@@ -34,7 +34,7 @@ class FourHamstersCardDefinitionTest {
 
     gameMock = mock(Game.class);
     sessionMock = mock(GameSession.class);
-    dummyCard = new Card("card-1", "Hamster Combo", "hamster_four");
+    dummyCard = new Card("card-1", "Hamster Combo", "HAMSTER_FOUR");
 
     when(gameMock.getPlayers()).thenReturn(List.of(initiator, target));
   }
@@ -175,7 +175,7 @@ class FourHamstersCardDefinitionTest {
 
   @Test
   void cardType_shouldReturnHamsterFour() {
-    assertEquals("hamster_four", cardDefinition.cardType());
+    assertEquals("HAMSTER_FOUR", cardDefinition.cardType());
   }
 
   @Test
@@ -193,6 +193,6 @@ class FourHamstersCardDefinitionTest {
     Card testCard = cardDefinition.createTestingCard("test-player-1");
     assertEquals("four_hamsters_test-player-1", testCard.getId());
     assertEquals("Hamster Combo: 4-of-a-Kind", testCard.getName());
-    assertEquals("hamster_four", testCard.getType());
+    assertEquals("HAMSTER_FOUR", testCard.getType());
   }
 }

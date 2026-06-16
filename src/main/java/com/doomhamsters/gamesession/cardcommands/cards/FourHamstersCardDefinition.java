@@ -20,7 +20,7 @@ public class FourHamstersCardDefinition implements CardDefinition {
 
   @Override
   public String cardType() {
-    return "hamster_four";
+    return "HAMSTER_FOUR";
   }
 
   @Override

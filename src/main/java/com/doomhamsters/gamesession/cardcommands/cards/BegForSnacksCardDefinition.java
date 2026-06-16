@@ -29,12 +29,12 @@ public class BegForSnacksCardDefinition implements CardDefinition {
 
   @Override
   public String cardType() {
-    return "beg_for_snacks";
+    return "BegForSnacks";
   }
 
   @Override
   public String commandId() {
-    return "BEG_FOR_SNACKS";
+    return "BegForSnacks";
   }
 
   @Override
@@ -44,7 +44,7 @@ public class BegForSnacksCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card("beg_for_snacks_" + playerId, displayName(), cardType());
+    return new Card("BegForSnacks" + playerId, displayName(), cardType());
   }
 
   @Override

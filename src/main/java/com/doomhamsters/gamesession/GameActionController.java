@@ -168,6 +168,13 @@ public class GameActionController {
 
     Game.DrawResult drawResult = game.drawForCurrentPlayerWithResult();
 
+    if (!drawResult.cardDrawn()) {
+      throw new IllegalStateException(
+          game.getState() != Game.State.RUNNING
+              ? "The game is already over."
+              : "The deck is empty; there is no card to draw.");
+    }
+
     LOGGER.info(
         "after draw: currentPlayerId={}, turnCount={}, handSizes={}",
         currentPlayerId(game),

@@ -116,6 +116,19 @@ class GameActionControllerErrorHandlingTest {
     verify(messagingTemplate, never()).convertAndSend(anyString(), any(ErrorEventDto.class));
   }
 
+  @Test
+  void unexpectedExceptionSendsInternalErrorToPlayer() {
+    Message<byte[]> message = actionMessage("/app/game/g1/draw", "{\"playerId\":\"p1\"}");
+
+    controller.handleUnexpected(new RuntimeException("boom"), message);
+
+    ArgumentCaptor<ErrorEventDto> captor = ArgumentCaptor.forClass(ErrorEventDto.class);
+    verify(messagingTemplate).convertAndSend(
+        eq("/queue/game/g1/p1/errors"),
+        captor.capture());
+    assertEquals(ErrorCode.INTERNAL_ERROR, captor.getValue().getCode());
+  }
+
   private Message<byte[]> actionMessage(String destination, String payload) {
     return MessageBuilder
         .withPayload(payload.getBytes(StandardCharsets.UTF_8))

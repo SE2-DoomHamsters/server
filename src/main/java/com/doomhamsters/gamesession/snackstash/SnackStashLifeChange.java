@@ -1,16 +1,22 @@
 package com.doomhamsters.gamesession.snackstash;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
 /**
  * Life total delta caused by a resolved Snack Stash claim.
  */
+@Schema(description = "One player's life total change after a Snack Stash resolution")
 @Getter
 public class SnackStashLifeChange {
 
+  @Schema(description = "Affected player identifier", example = "player-1")
   private final String playerId;
+  @Schema(description = "Affected player display name", example = "Alice")
   private final String playerName;
+  @Schema(description = "Life total before the resolution", example = "3")
   private final int livesBefore;
+  @Schema(description = "Life total after the resolution", example = "2")
   private final int livesAfter;
 
   /**

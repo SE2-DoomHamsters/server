@@ -240,4 +240,17 @@ public class Player {
       eliminated = true;
     }
   }
+
+  /**
+   * Adds the specified number of lives to the player.
+   * Negative values are ignored.
+   *
+   * @param lives the number of lives to add; must be non-negative
+   */
+  public void addLives(int lives) {
+    if (lives < 0) {
+      return;
+    }
+    this.lives += lives;
+  }
 }

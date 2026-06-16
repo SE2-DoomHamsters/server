@@ -206,6 +206,138 @@ class GameActionControllerTest {
   }
 
   @Test
+  void sniffAheadDiscardsCardSendsPublicAndPrivateEventsWithTopThreeCardsAndDoesNotChangeDeckOrder() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    Player current = session.getGame().getBoard().getCurrentPlayer();
+    current.addToHand(new Card("sniff_1", "Sniff Ahead", "SniffAhead"));
+
+    replaceDeck(session, List.of(
+        new Card("top_1", "Top One", "action"),
+        new Card("top_2", "Top Two", "action"),
+        new Card("top_3", "Top Three", "action")));
+
+    controller.activateCard(
+        session.getGameId(),
+        """
+            {
+              "playerId": "p1",
+              "cardId": "sniff_1",
+              "cardType": "SniffAhead",
+              "commandId": "SNIFF_AHEAD",
+              "parameters": {}
+            }
+            """);
+
+    GameSession saved =
+        gameSessionService
+            .getSession(session.getGameId())
+            .orElseThrow();
+
+    assertEquals("top_1", saved.getGame().getDeck().getCards().get(0).getId());
+    assertEquals("top_2", saved.getGame().getDeck().getCards().get(1).getId());
+    assertEquals("top_3", saved.getGame().getDeck().getCards().get(2).getId());
+    assertTrue(
+        saved.getGame().getBoard().getDiscardPile().stream()
+            .anyMatch(card -> card.getId().equals("sniff_1")));
+
+    ArgumentCaptor<CardCommandPlayedEventDto> publicCaptor =
+        ArgumentCaptor.forClass(CardCommandPlayedEventDto.class);
+    ArgumentCaptor<CardCommandResultEventDto> privateCaptor =
+        ArgumentCaptor.forClass(CardCommandResultEventDto.class);
+
+    InOrder inOrder = inOrder(messagingTemplate);
+    inOrder.verify(messagingTemplate).convertAndSend(
+        eq("/topic/game/" + session.getGameId()),
+        publicCaptor.capture());
+    inOrder.verify(messagingTemplate).convertAndSend(
+        eq("/queue/game/" + session.getGameId() + "/p1"),
+        privateCaptor.capture());
+
+    assertEquals("CARD_COMMAND_PLAYED", publicCaptor.getValue().getType());
+    assertEquals("SNIFF_AHEAD", publicCaptor.getValue().getCommandId());
+    assertEquals("ty activated Sniff Ahead.", publicCaptor.getValue().getMessage());
+
+    CardCommandResultEventDto privateEvent = privateCaptor.getValue();
+    assertEquals("CARD_COMMAND_RESULT", privateEvent.getType());
+    assertEquals("p1", privateEvent.getPlayerId());
+    assertEquals("SNIFF_AHEAD", privateEvent.getCommandId());
+    assertEquals(3, privateEvent.getRevealedCards().size());
+    assertEquals("top_1", privateEvent.getRevealedCards().get(0).getId());
+    assertEquals("top_2", privateEvent.getRevealedCards().get(1).getId());
+    assertEquals("top_3", privateEvent.getRevealedCards().get(2).getId());
+    assertEquals("Top 3 card(s): Top One, Top Two, Top Three.", privateEvent.getMessage());
+  }
+
+  @Test
+  void sniffAheadRevealsFewerCardsWhenDeckSmallerThanThree() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    Player current = session.getGame().getBoard().getCurrentPlayer();
+    current.addToHand(new Card("sniff_2", "Sniff Ahead", "SniffAhead"));
+
+    replaceDeck(session, List.of(
+        new Card("only_1", "Only One", "action")));
+
+    controller.activateCard(
+        session.getGameId(),
+        """
+            {
+              "playerId": "p1",
+              "cardId": "sniff_2",
+              "cardType": "SniffAhead",
+              "commandId": "SNIFF_AHEAD",
+              "parameters": {}
+            }
+            """);
+
+    ArgumentCaptor<CardCommandResultEventDto> privateCaptor =
+        ArgumentCaptor.forClass(CardCommandResultEventDto.class);
+
+    verify(messagingTemplate).convertAndSend(
+        eq("/queue/game/" + session.getGameId() + "/p1"),
+        privateCaptor.capture());
+
+    CardCommandResultEventDto privateEvent = privateCaptor.getValue();
+    assertEquals(1, privateEvent.getRevealedCards().size());
+    assertEquals("only_1", privateEvent.getRevealedCards().get(0).getId());
+    assertEquals("Top 1 card(s): Only One.", privateEvent.getMessage());
+  }
+
+  @Test
+  void sniffAheadSendsEmptyDeckMessageWhenDeckIsEmpty() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    Player current = session.getGame().getBoard().getCurrentPlayer();
+    current.addToHand(new Card("sniff_3", "Sniff Ahead", "SniffAhead"));
+
+    replaceDeck(session, List.of());
+
+    controller.activateCard(
+        session.getGameId(),
+        """
+            {
+              "playerId": "p1",
+              "cardId": "sniff_3",
+              "cardType": "SniffAhead",
+              "commandId": "SNIFF_AHEAD",
+              "parameters": {}
+            }
+            """);
+
+    ArgumentCaptor<CardCommandResultEventDto> privateCaptor =
+        ArgumentCaptor.forClass(CardCommandResultEventDto.class);
+
+    verify(messagingTemplate).convertAndSend(
+        eq("/queue/game/" + session.getGameId() + "/p1"),
+        privateCaptor.capture());
+
+    CardCommandResultEventDto privateEvent = privateCaptor.getValue();
+    assertNull(privateEvent.getRevealedCards());
+    assertEquals("The deck is empty.", privateEvent.getMessage());
+  }
+
+  @Test
   void drawMutatesSavedSessionAndBroadcastsUpdatedState() {
     GameSession session = runningSession();
     session.getGame().getBoard().setCurrentIndex(1);

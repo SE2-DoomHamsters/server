@@ -177,7 +177,7 @@ class GameControllerTest {
     assertEquals(31, testSession.getGame().getDeck().size());
     assertEquals(7, snackStashCardsInGame);
     testSession.getGame().getPlayers().forEach(player ->
-        assertEquals(8, player.getHand().size()));
+        assertEquals(9, player.getHand().size()));
   }
 
   @Test
@@ -196,6 +196,9 @@ class GameControllerTest {
       long quickPeekCount = player.getHand().stream()
           .filter(card -> "QuickPeek".equals(card.getType()))
           .count();
+      long sniffAheadCount = player.getHand().stream()
+          .filter(card -> "SniffAhead".equals(card.getType()))
+          .count();
       long stablePowerNapIdCount = player.getHand().stream()
           .filter(card -> ("power_nap_" + player.getId()).equals(card.getId()))
           .filter(card -> "Power Nap".equals(card.getName()))
@@ -204,11 +207,17 @@ class GameControllerTest {
           .filter(card -> ("quick_peek_" + player.getId()).equals(card.getId()))
           .filter(card -> "Quick Peek".equals(card.getName()))
           .count();
+      long stableSniffAheadIdCount = player.getHand().stream()
+          .filter(card -> ("sniff_ahead_" + player.getId()).equals(card.getId()))
+          .filter(card -> "Sniff Ahead".equals(card.getName()))
+          .count();
 
       assertEquals(1, powerNapCount);
       assertEquals(1, quickPeekCount);
+      assertEquals(1, sniffAheadCount);
       assertEquals(1, stablePowerNapIdCount);
       assertEquals(1, stableQuickPeekIdCount);
+      assertEquals(1, stableSniffAheadIdCount);
     });
   }
 

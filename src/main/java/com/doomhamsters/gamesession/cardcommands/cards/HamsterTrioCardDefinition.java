@@ -5,6 +5,7 @@ import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
@@ -75,18 +76,23 @@ public class HamsterTrioCardDefinition implements CardDefinition {
       throw new IllegalArgumentException("HamsterTrio: cannot target yourself");
     }
 
-    long discarded = requester.getHand().stream()
+    if (target.isEliminated()) {
+      throw new IllegalStateException("HamsterTrio: target player is already eliminated");
+    }
+
+    // Collect the three matching cards first, then discard them
+    List<Card> matchingCards = requester.getHand().stream()
         .filter(c -> hamsterType.equalsIgnoreCase(c.getType()))
         .limit(REQUIRED_COUNT)
-        .map(c -> requester.removeFromHand(c.getId()))
-        .filter(c -> c != null)
-        .count();
+        .toList();
 
-    if (discarded < REQUIRED_COUNT) {
+    if (matchingCards.size() < REQUIRED_COUNT) {
       throw new IllegalStateException(String.format(
-        "HamsterTrio: requester does not hold %d cards of type %s (found %d)",
-        REQUIRED_COUNT, hamsterType, discarded));
+        "HamsterTrio: requester does not hold %d cards of type %s",
+        REQUIRED_COUNT, hamsterType));
     }
+
+    matchingCards.forEach(c -> requester.removeFromHand(c.getId()));
 
     Card found = target.getHand().stream()
         .filter(c -> requestedType.equalsIgnoreCase(c.getType()))

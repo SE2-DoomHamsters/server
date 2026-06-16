@@ -1,6 +1,7 @@
 package com.doomhamsters.gamesession.cardcommands;
 
 import com.doomhamsters.Card;
+import com.doomhamsters.gamesession.cardcommands.cards.BegForSnacksCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.PowerNapCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.QuickPeekCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.SignOfFateCardDefinition;
@@ -60,8 +61,9 @@ public class CardRegistry {
     return of(
         new PowerNapCardDefinition(),
         new SignOfFateCardDefinition(),
-        new QuickPeekCardDefinition(),
-        new StealCardDefinition()
+        new StealCardDefinition(),
+        new BegForSnacksCardDefinition(),
+        new QuickPeekCardDefinition()
     );
   }
 

@@ -53,6 +53,7 @@ public class Board {
     this.turnCount = other.turnCount;
     this.extraTurns = other.extraTurns;
     this.restoredCurrentPlayerId = other.restoredCurrentPlayerId;
+    this.currentPlayerHasExtraTurns = other.currentPlayerHasExtraTurns;
 
     this.discardPile = new ArrayList<>();
     for (Card card : other.discardPile) {
@@ -65,22 +66,38 @@ public class Board {
    * game has restored its authoritative player list.
    *
    * @param currentPlayer player whose turn was active when the game was saved
-   * @param deck          restored deck snapshot
-   * @param discardPile   restored board discard pile
-   * @param turnCount     restored turn count
+   * @param deck restored deck snapshot
+   * @param discardPile restored board discard pile
+   * @param turnCount restored turn count
+   * @param extraTurns restored number of extra turns queued for the next active player
+   * @param currentPlayerHasExtraTurns whether the active player was consuming queued extra turns
+   *     when the game was saved
    */
   @JsonCreator
   public Board(
       @JsonProperty("currentPlayer") Player currentPlayer,
       @JsonProperty("deck") Deck deck,
       @JsonProperty("discardPile") List<Card> discardPile,
-      @JsonProperty("turnCount") Integer turnCount) {
+      @JsonProperty("turnCount") Integer turnCount,
+      @JsonProperty("extraTurns") Integer extraTurns,
+      @JsonProperty("currentPlayerHasExtraTurns")
+      Boolean currentPlayerHasExtraTurns) {
+
     this.players = new ArrayList<>();
     this.deck = deck == null ? new Deck() : new Deck(deck);
     this.discardPile = discardPile == null ? new ArrayList<>() : new ArrayList<>(discardPile);
     this.currentIndex = 0;
     this.turnCount = turnCount == null ? 0 : turnCount;
-    this.restoredCurrentPlayerId = currentPlayer == null ? null : currentPlayer.getId();
+
+    this.extraTurns =
+        extraTurns == null ? 0 : extraTurns;
+
+    this.currentPlayerHasExtraTurns =
+        currentPlayerHasExtraTurns != null
+            && currentPlayerHasExtraTurns;
+
+    this.restoredCurrentPlayerId =
+        currentPlayer == null ? null : currentPlayer.getId();
   }
 
   /**
@@ -200,6 +217,15 @@ public class Board {
    */
   public int getExtraTurns() {
     return extraTurns;
+  }
+
+  /**
+   * Returns true if the current player has extra turns
+   *
+   * @return true if current player has queued extra turns
+   */
+  public boolean isCurrentPlayerHasExtraTurns() {
+    return currentPlayerHasExtraTurns;
   }
 
   /**

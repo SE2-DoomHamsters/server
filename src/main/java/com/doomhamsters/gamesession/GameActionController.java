@@ -168,6 +168,13 @@ public class GameActionController {
 
     Game.DrawResult drawResult = game.drawForCurrentPlayerWithResult();
 
+    if (!drawResult.cardDrawn()) {
+      throw new IllegalStateException(
+          game.getState() != Game.State.RUNNING
+              ? "The game is already over."
+              : "The deck is empty; there is no card to draw.");
+    }
+
     LOGGER.info(
         "after draw: currentPlayerId={}, turnCount={}, handSizes={}",
         currentPlayerId(game),
@@ -563,6 +570,32 @@ public class GameActionController {
     messagingTemplate.convertAndSend(
         "/queue/game/" + gameId + "/" + playerId + "/errors",
         new ErrorEventDto(code, exception.getMessage(), gameId));
+  }
+
+  /**
+   * Reports an unexpected server error to the originating player.
+   *
+   * <p>Catches anything not handled by {@link #handleInvalidAction}, logs it at ERROR with the
+   * stack trace, and sends a generic error event without leaking internal details.
+   *
+   * @param exception the unexpected exception
+   * @param message the original STOMP message
+   */
+  @MessageExceptionHandler(Exception.class)
+  public void handleUnexpected(Exception exception, Message<?> message) {
+    SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.wrap(message);
+    String gameId = extractGameId(accessor.getDestination());
+    String playerId = extractPlayerIdOrNull(message.getPayload());
+
+    LOGGER.error("unexpected action error: gameId={}, playerId={}", gameId, playerId, exception);
+
+    if (gameId == null || playerId == null) {
+      return;
+    }
+
+    messagingTemplate.convertAndSend(
+        "/queue/game/" + gameId + "/" + playerId + "/errors",
+        new ErrorEventDto(ErrorCode.INTERNAL_ERROR, "An unexpected error occurred.", gameId));
   }
 
   private String extractGameId(String destination) {

@@ -1,10 +1,7 @@
 package com.doomhamsters.gamesession;
 
-import jakarta.annotation.PreDestroy;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
@@ -13,22 +10,20 @@ import org.springframework.stereotype.Service;
 @Service
 public class GameSessionService {
 
-  private final ConcurrentHashMap<String, GameSession> sessions;
-
-  private final GameSessionPersistenceService persistenceService;
-  private final Object persistenceMonitor = new Object();
-  private boolean persistenceDirty;
+  private final GameSessionRepository repository;
+  private final GameSessionPersistenceCoordinator persistenceCoordinator;
 
   /**
-   * Initialisiert den Service und stellt gespeicherte Sitzungen wieder her.
+   * Initialisiert den Service mit seinen Abhängigkeiten.
    *
-   * @param persistenceService Der Handler für die Persistenz
+   * @param repository             Das in-memory Repository
+   * @param persistenceCoordinator Der Persistenz-Koordinator
    */
-  public GameSessionService(GameSessionPersistenceService persistenceService) {
-
-    this.persistenceService = persistenceService;
-
-    this.sessions = new ConcurrentHashMap<>(persistenceService.loadSessions());
+  public GameSessionService(
+      GameSessionRepository repository,
+      GameSessionPersistenceCoordinator persistenceCoordinator) {
+    this.repository = repository;
+    this.persistenceCoordinator = persistenceCoordinator;
   }
 
   /**
@@ -38,14 +33,11 @@ public class GameSessionService {
    * @return Die neu erstellte Spielsitzung
    */
   public GameSession createSession(String lobbyId) {
-
     String gameId = UUID.randomUUID().toString();
-
     GameSession newSession = new GameSession(gameId, lobbyId);
 
-    sessions.put(gameId, newSession);
-
-    persistSessionsNow();
+    repository.store(newSession);
+    persistenceCoordinator.saveNow();
 
     return newSession;
   }
@@ -57,8 +49,7 @@ public class GameSessionService {
    * @return Ein Optional, das die Sitzung enthält, falls gefunden
    */
   public Optional<GameSession> getSession(String gameId) {
-
-    return Optional.ofNullable(sessions.get(gameId));
+    return repository.findById(gameId);
   }
 
   /**
@@ -67,56 +58,7 @@ public class GameSessionService {
    * @param session Die zu speichernde Sitzung
    */
   public void saveSession(GameSession session) {
-
-    sessions.put(session.getGameId(), session);
-
-    markPersistenceDirty();
-  }
-
-  /**
-   * Persists pending session changes to disk on a timer instead of blocking every game action.
-   */
-  @Scheduled(fixedDelayString = "${doomhamsters.game.persistence-interval-ms:2000}")
-  void flushDirtySessions() {
-    persistSessionsIfDirty();
-  }
-
-  @PreDestroy
-  void flushSessionsOnShutdown() {
-    persistSessionsIfDirty();
-  }
-
-  private void markPersistenceDirty() {
-    synchronized (persistenceMonitor) {
-      persistenceDirty = true;
-    }
-  }
-
-  private void persistSessionsNow() {
-    ConcurrentHashMap<String, GameSession> snapshot = new ConcurrentHashMap<>(sessions);
-    persistenceService.saveSessions(snapshot);
-    synchronized (persistenceMonitor) {
-      persistenceDirty = false;
-    }
-  }
-
-  private void persistSessionsIfDirty() {
-    ConcurrentHashMap<String, GameSession> snapshot;
-    synchronized (persistenceMonitor) {
-      if (!persistenceDirty) {
-        return;
-      }
-      snapshot = new ConcurrentHashMap<>(sessions);
-      persistenceDirty = false;
-    }
-
-    try {
-      persistenceService.saveSessions(snapshot);
-    } catch (RuntimeException error) {
-      synchronized (persistenceMonitor) {
-        persistenceDirty = true;
-      }
-      throw error;
-    }
+    repository.store(session);
+    persistenceCoordinator.markDirty();
   }
 }

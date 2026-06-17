@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Deck;
+import com.doomhamsters.Game;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandPlayedEventDto;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResultEventDto;
@@ -51,19 +52,23 @@ class GameActionControllerTest {
 
   @BeforeEach
   void setUp() {
-    gameSessionService =
-        new GameSessionService(
-            new GameSessionPersistenceService(
-                tempDir.resolve("game-action-sessions.json").toString()));
+    // 1. Die neuen Bauteile initialisieren
+    String sessionFilePath = tempDir.resolve("game-action-sessions.json").toString();
+    GameSessionPersistenceService persistenceService = new GameSessionPersistenceService(sessionFilePath);
+    GameSessionRepository repository = new GameSessionRepository();
+    GameSessionPersistenceCoordinator coordinator = new GameSessionPersistenceCoordinator(repository, persistenceService);
+
+    // 2. Den Service mit den Bauteilen zusammenbauen
+    gameSessionService = new GameSessionService(repository, coordinator);
 
     messagingTemplate = mock(SimpMessagingTemplate.class);
 
     controller =
-        new GameActionController(
-            gameSessionService,
-            new GameStateMapper(),
-            messagingTemplate,
-            new ObjectMapper());
+      new GameActionController(
+        gameSessionService,
+        new GameStateMapper(),
+        messagingTemplate,
+        new ObjectMapper());
   }
 
   @Test
@@ -405,6 +410,30 @@ class GameActionControllerTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> controller.draw(gameId, "{\"playerId\":\"p0\"}"));
+  }
+
+  @Test
+  void drawOnEmptyDeckThrows() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    replaceDeck(session, List.of());
+    String gameId = session.getGameId();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> controller.draw(gameId, "{\"playerId\":\"p1\"}"));
+  }
+
+  @Test
+  void drawAfterGameOverThrows() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    session.getGame().setState(Game.State.FINISHED);
+    String gameId = session.getGameId();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> controller.draw(gameId, "{\"playerId\":\"p1\"}"));
   }
 
   @Test

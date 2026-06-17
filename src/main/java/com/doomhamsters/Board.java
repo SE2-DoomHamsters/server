@@ -220,7 +220,7 @@ public class Board {
   }
 
   /**
-   * Returns true if the current player has extra turns
+   * Returns true if the current player has extra turns.
    *
    * @return true if current player has queued extra turns
    */

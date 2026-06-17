@@ -144,16 +144,16 @@ public class Board {
    * current player keeps their turn instead of advancing to the next player.
    */
   public void advanceTurn() {
-    if (extraTurns > 0) {
-      extraTurns--;
-      return;
-    }
 
     turnCount++;
 
     do {
       currentIndex = (currentIndex + 1) % players.size();
     } while (!players.get(currentIndex).isAlive());
+
+    if (extraTurns > 0) {
+      extraTurns--;
+    }
   }
 
   /**

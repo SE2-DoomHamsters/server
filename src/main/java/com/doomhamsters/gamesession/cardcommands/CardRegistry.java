@@ -66,7 +66,6 @@ public class CardRegistry {
         new SniffAheadCardDefinition(),
         new SignOfFateCardDefinition(),
         new StealCardDefinition(),
-        new BegForSnacksCardDefinition(),
         new QuickPeekCardDefinition(),
         new HamsterTrioCardDefinition(),
         new BegForSnacksCardDefinition()

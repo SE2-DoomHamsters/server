@@ -2,6 +2,8 @@ package com.doomhamsters.gamesession;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Game;
+import com.doomhamsters.gamesession.snackstash.SnackStashClaim;
+import com.doomhamsters.gamesession.snackstash.SnackStashVote;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -11,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.junit.jupiter.api.Test;
@@ -96,6 +99,51 @@ class GameSessionPersistenceServiceTests {
     assertEquals(GameSession.GameStatus.RUNNING, restored.getStatus());
     assertEquals(2, restored.getGame().getPlayers().size());
     assertEquals(currentPlayerId, restored.getGame().getBoard().getCurrentPlayer().getId());
+  }
+
+  @Test
+  void saveAndLoadPendingDoomResolutionShouldRestoreSnackStashState() {
+    String filePath = new File(tempDir, "sessions.json").getAbsolutePath();
+    GameSessionPersistenceService persistence =
+        new GameSessionPersistenceService(filePath);
+
+    GameSession session = new GameSession("game-1", "lobby-1");
+    Game game = new Game();
+    game.setupWithPlayers(
+        List.of("p1", "p2"),
+        List.of("Alpha", "Bravo"),
+        createActionCards(),
+        new Card("snack-proto", "Snack Stash", "snack_stash"),
+        List.of(new Card("doom-1", "Doom Hamster", "doom")));
+    game.setResolvingDoomPlayerId("p1");
+    game.setDrawnDoomCardId("doom-pending");
+    game.setDrawnDoomCardName("Doom Hamster");
+    game.setDrawnDoomCardType("doom");
+    game.setPendingSnackStashClaim(
+        new SnackStashClaim(
+            "claim-1",
+            "p1",
+            "ss_p1",
+            1_000L,
+            List.of("p2"),
+            Map.of("p2", SnackStashVote.NO)));
+    session.setGame(game);
+    session.setStatus(GameSession.GameStatus.RUNNING);
+
+    ConcurrentMap<String, GameSession> sessions = new ConcurrentHashMap<>();
+    sessions.put(session.getGameId(), session);
+
+    persistence.saveSessions(sessions);
+
+    Game restored = persistence.loadSessions().get("game-1").getGame();
+
+    assertEquals("p1", restored.getResolvingDoomPlayerId());
+    assertEquals("doom-pending", restored.getDrawnDoomCardId());
+    assertEquals("Doom Hamster", restored.getDrawnDoomCardName());
+    assertEquals("doom", restored.getDrawnDoomCardType());
+    assertEquals("claim-1", restored.getPendingSnackStashClaim().getClaimId());
+    assertEquals(Map.of("p2", SnackStashVote.NO), restored.getPendingSnackStashClaim()
+        .getVotesByPlayerId());
   }
 
   private List<Card> createActionCards() {

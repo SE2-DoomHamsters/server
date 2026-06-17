@@ -1,5 +1,6 @@
 package com.doomhamsters;
 
+import com.doomhamsters.gamesession.snackstash.SnackStashClaim;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -22,24 +23,18 @@ public class Game {
 
   private final SecureRandom random = new SecureRandom();
 
+  private DoomResolutionState doomResolutionState;
   private State state;
   private Player winner;
-  private String resolvingDoomPlayerId;
-  private String pendingDoomCardId;
-  private String pendingDoomCardName;
-  private String pendingDoomCardType;
   private List<Player> players;
   private Deck deck;
   private Board board;
 
   /** Creates a new Game instance in the {@link State#SETUP} state. */
   public Game() {
+    this.doomResolutionState = new DoomResolutionState();
     this.state = State.SETUP;
     this.winner = null;
-    this.resolvingDoomPlayerId = null;
-    this.pendingDoomCardId = null;
-    this.pendingDoomCardName = null;
-    this.pendingDoomCardType = null;
     this.players = new ArrayList<>();
   }
 
@@ -49,11 +44,8 @@ public class Game {
    * @param other the game to copy
    */
   public Game(Game other) {
+    this.doomResolutionState = new DoomResolutionState(other.doomResolutionState);
     this.state = other.state;
-    this.resolvingDoomPlayerId = other.resolvingDoomPlayerId;
-    this.pendingDoomCardId = other.pendingDoomCardId;
-    this.pendingDoomCardName = other.pendingDoomCardName;
-    this.pendingDoomCardType = other.pendingDoomCardType;
 
     this.players = new ArrayList<>();
     for (Player player : other.players) {
@@ -190,7 +182,7 @@ public class Game {
    * @return resolving player id, or {@code null}
    */
   public String getResolvingDoomPlayerId() {
-    return resolvingDoomPlayerId;
+    return doomResolutionState.getResolvingPlayerId();
   }
 
   /**
@@ -199,14 +191,99 @@ public class Game {
    * @param resolvingDoomPlayerId resolving player id, or {@code null}
    */
   public void setResolvingDoomPlayerId(String resolvingDoomPlayerId) {
-    this.resolvingDoomPlayerId = resolvingDoomPlayerId;
+    doomResolutionState.setResolvingPlayerId(resolvingDoomPlayerId);
   }
 
   /**
    * Clears the pending Doom-resolution UI state.
    */
   public void clearResolvingDoomPlayerId() {
-    resolvingDoomPlayerId = null;
+    doomResolutionState.clearResolvingPlayerId();
+  }
+
+  /**
+   * Returns whether a drawn Doom card is waiting for a player decision.
+   *
+   * @return {@code true} when Doom has been drawn but not accepted or defused
+   */
+  public boolean hasDrawnDoomPendingResolution() {
+    return doomResolutionState.hasDrawnDoomCard();
+  }
+
+  /**
+   * Returns the Doom card currently waiting for resolution.
+   *
+   * @return pending drawn Doom card, or {@code null}
+   */
+  public Card getDrawnDoomCard() {
+    return doomResolutionState.getDrawnDoomCard();
+  }
+
+  /**
+   * Returns the id of the drawn Doom card awaiting resolution.
+   *
+   * @return drawn Doom card id, or {@code null}
+   */
+  public String getDrawnDoomCardId() {
+    Card drawnDoomCard = doomResolutionState.getDrawnDoomCard();
+    return drawnDoomCard == null ? null : drawnDoomCard.getId();
+  }
+
+  /**
+   * Returns the name of the drawn Doom card awaiting resolution.
+   *
+   * @return drawn Doom card name, or {@code null}
+   */
+  public String getDrawnDoomCardName() {
+    Card drawnDoomCard = doomResolutionState.getDrawnDoomCard();
+    return drawnDoomCard == null ? null : drawnDoomCard.getName();
+  }
+
+  /**
+   * Returns the type of the drawn Doom card awaiting resolution.
+   *
+   * @return drawn Doom card type, or {@code null}
+   */
+  public String getDrawnDoomCardType() {
+    Card drawnDoomCard = doomResolutionState.getDrawnDoomCard();
+    return drawnDoomCard == null ? null : drawnDoomCard.getType();
+  }
+
+  /**
+   * Restores the pending drawn Doom card id from JSON.
+   *
+   * @param drawnDoomCardId drawn Doom id, or {@code null}
+   */
+  public void setDrawnDoomCardId(String drawnDoomCardId) {
+    setDrawnDoomCardFields(drawnDoomCardId, getDrawnDoomCardName(), getDrawnDoomCardType());
+  }
+
+  /**
+   * Restores the pending drawn Doom card name from JSON.
+   *
+   * @param drawnDoomCardName drawn Doom name, or {@code null}
+   */
+  public void setDrawnDoomCardName(String drawnDoomCardName) {
+    setDrawnDoomCardFields(getDrawnDoomCardId(), drawnDoomCardName, getDrawnDoomCardType());
+  }
+
+  /**
+   * Restores the pending drawn Doom card type from JSON.
+   *
+   * @param drawnDoomCardType drawn Doom type, or {@code null}
+   */
+  public void setDrawnDoomCardType(String drawnDoomCardType) {
+    setDrawnDoomCardFields(getDrawnDoomCardId(), getDrawnDoomCardName(), drawnDoomCardType);
+  }
+
+  /**
+   * Starts explicit Doom resolution for the supplied player.
+   *
+   * @param player resolving player
+   * @param doomCard drawn Doom card
+   */
+  public void startDoomResolution(Player player, Card doomCard) {
+    doomResolutionState.startDoomResolution(player, doomCard);
   }
 
   /**
@@ -215,7 +292,7 @@ public class Game {
    * @return {@code true} when the resolving player must choose an insertion depth
    */
   public boolean isPendingDoomRequiresInsertion() {
-    return pendingDoomCardId != null;
+    return doomResolutionState.hasPendingDoomCard();
   }
 
   /**
@@ -224,7 +301,8 @@ public class Game {
    * @return pending Doom card id, or {@code null}
    */
   public String getPendingDoomCardId() {
-    return pendingDoomCardId;
+    Card pendingDoomCard = doomResolutionState.getPendingDoomCard();
+    return pendingDoomCard == null ? null : pendingDoomCard.getId();
   }
 
   /**
@@ -233,7 +311,7 @@ public class Game {
    * @param pendingDoomCardId pending Doom card id, or {@code null}
    */
   public void setPendingDoomCardId(String pendingDoomCardId) {
-    this.pendingDoomCardId = pendingDoomCardId;
+    setPendingDoomCardFields(pendingDoomCardId, getPendingDoomCardName(), getPendingDoomCardType());
   }
 
   /**
@@ -242,7 +320,8 @@ public class Game {
    * @return pending Doom card name, or {@code null}
    */
   public String getPendingDoomCardName() {
-    return pendingDoomCardName;
+    Card pendingDoomCard = doomResolutionState.getPendingDoomCard();
+    return pendingDoomCard == null ? null : pendingDoomCard.getName();
   }
 
   /**
@@ -251,7 +330,7 @@ public class Game {
    * @param pendingDoomCardName pending Doom card name, or {@code null}
    */
   public void setPendingDoomCardName(String pendingDoomCardName) {
-    this.pendingDoomCardName = pendingDoomCardName;
+    setPendingDoomCardFields(getPendingDoomCardId(), pendingDoomCardName, getPendingDoomCardType());
   }
 
   /**
@@ -260,7 +339,8 @@ public class Game {
    * @return pending Doom card type, or {@code null}
    */
   public String getPendingDoomCardType() {
-    return pendingDoomCardType;
+    Card pendingDoomCard = doomResolutionState.getPendingDoomCard();
+    return pendingDoomCard == null ? null : pendingDoomCard.getType();
   }
 
   /**
@@ -269,7 +349,33 @@ public class Game {
    * @param pendingDoomCardType pending Doom card type, or {@code null}
    */
   public void setPendingDoomCardType(String pendingDoomCardType) {
-    this.pendingDoomCardType = pendingDoomCardType;
+    setPendingDoomCardFields(getPendingDoomCardId(), getPendingDoomCardName(), pendingDoomCardType);
+  }
+
+  private void setDrawnDoomCardFields(
+      String id,
+      String name,
+      String type) {
+
+    if (id == null && name == null && type == null) {
+      doomResolutionState.clearDrawnDoomCard();
+      return;
+    }
+
+    doomResolutionState.setDrawnDoomCard(new Card(id, name, type));
+  }
+
+  private void setPendingDoomCardFields(
+      String id,
+      String name,
+      String type) {
+
+    if (id == null && name == null && type == null) {
+      doomResolutionState.clearPendingDoomCard();
+      return;
+    }
+
+    doomResolutionState.setPendingDoomCard(new Card(id, name, type));
   }
 
   private void rebindRestoredState() {
@@ -292,16 +398,88 @@ public class Game {
    * @param pendingDoomCard pending Doom card, or {@code null}
    */
   public void setPendingDoomCard(Card pendingDoomCard) {
-    if (pendingDoomCard == null) {
-      pendingDoomCardId = null;
-      pendingDoomCardName = null;
-      pendingDoomCardType = null;
-      return;
+    doomResolutionState.setPendingDoomCard(pendingDoomCard);
+  }
+
+  /**
+   * Returns the pending Snack Stash claim.
+   *
+   * @return defensive claim copy, or {@code null}
+   */
+  public SnackStashClaim getPendingSnackStashClaim() {
+    return doomResolutionState.getPendingSnackStashClaim();
+  }
+
+  /**
+   * Sets the pending Snack Stash claim.
+   *
+   * @param pendingSnackStashClaim pending claim, or {@code null}
+   */
+  public void setPendingSnackStashClaim(SnackStashClaim pendingSnackStashClaim) {
+    doomResolutionState.setPendingSnackStashClaim(pendingSnackStashClaim);
+  }
+
+  /**
+   * Clears the pending Snack Stash claim.
+   */
+  public void clearPendingSnackStashClaim() {
+    doomResolutionState.clearPendingSnackStashClaim();
+  }
+
+  /**
+   * Resolves the pending Doom card as life loss.
+   *
+   * @return player lives before and after damage
+   */
+  public Player.DoomResult acceptPendingDoomWithLifeLoss() {
+    Player resolvingPlayer = findResolvingDoomPlayer();
+    Card doomCard = requireDrawnDoomCard();
+
+    resolvingPlayer.decrementLives();
+    deck.insertDoomCards(List.of(doomCard));
+    doomResolutionState.clearDoomResolution();
+    checkWinCondition();
+
+    return new Player.DoomResult(false, resolvingPlayer.getLives());
+  }
+
+  /**
+   * Consumes the claimed hand card and makes the drawn Doom ready for insertion.
+   *
+   * @param claimedCardId selected card id
+   * @return consumed claimed card
+   */
+  public Card defusePendingDoomWithClaimedCard(String claimedCardId) {
+    Player resolvingPlayer = findResolvingDoomPlayer();
+    Card doomCard = requireDrawnDoomCard();
+    Card claimedCard = resolvingPlayer.removeFromHand(claimedCardId);
+    if (claimedCard == null) {
+      throw new IllegalArgumentException("Claimed card is no longer in hand.");
     }
 
-    pendingDoomCardId = pendingDoomCard.getId();
-    pendingDoomCardName = pendingDoomCard.getName();
-    pendingDoomCardType = pendingDoomCard.getType();
+    doomResolutionState.moveDrawnDoomToPendingInsertion(doomCard);
+
+    return claimedCard;
+  }
+
+  private Card requireDrawnDoomCard() {
+    Card doomCard = getDrawnDoomCard();
+    if (doomCard == null) {
+      throw new IllegalStateException("No drawn Doom card is pending resolution.");
+    }
+    return doomCard;
+  }
+
+  private Player findResolvingDoomPlayer() {
+    String resolvingDoomPlayerId = getResolvingDoomPlayerId();
+    if (resolvingDoomPlayerId == null) {
+      throw new IllegalStateException("No doom resolution is pending.");
+    }
+
+    return players.stream()
+        .filter(player -> player.getId().equals(resolvingDoomPlayerId))
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("Resolving player is missing."));
   }
 
   /**
@@ -310,18 +488,14 @@ public class Game {
    * @param position zero-based deck position, where 0 is the top of the deck
    */
   public void insertPendingDoom(int position) {
-    if (pendingDoomCardId == null) {
+    Card pendingDoomCard = doomResolutionState.getPendingDoomCard();
+    if (pendingDoomCard == null) {
       throw new IllegalStateException("No pending Doom card requires insertion.");
     }
 
-    Card pendingDoomCard =
-        new Card(pendingDoomCardId, pendingDoomCardName, pendingDoomCardType);
-
     deck.reinsertDoomCard(pendingDoomCard, position);
-    pendingDoomCardId = null;
-    pendingDoomCardName = null;
-    pendingDoomCardType = null;
-    resolvingDoomPlayerId = null;
+    doomResolutionState.clearPendingDoomCard();
+    doomResolutionState.clearResolvingPlayerId();
   }
 
   /**
@@ -424,6 +598,8 @@ public class Game {
     board = new Board(players, deck);
     board.setCurrentIndex(random.nextInt(players.size()));
 
+    doomResolutionState.clearAll();
+
     state = State.RUNNING;
   }
 
@@ -484,13 +660,7 @@ public class Game {
     }
 
     if (drawn.isDoom()) {
-      Player.DoomResult result = player.handleDoom();
-      if (result.neutralized) {
-        setPendingDoomCard(drawn);
-      } else {
-        deck.insertDoomCards(List.of(drawn));
-      }
-      resolvingDoomPlayerId = player.getId();
+      startDoomResolution(player, drawn);
     } else {
       player.addToHand(drawn);
     }
@@ -499,7 +669,7 @@ public class Game {
       return;
     }
 
-    if (resolvingDoomPlayerId != null) {
+    if (getResolvingDoomPlayerId() != null) {
       return;
     }
 
@@ -536,22 +706,15 @@ public class Game {
       return DrawResult.noCard();
     }
 
-    Player.DoomResult doomResult = null;
     if (drawn.isDoom()) {
-      doomResult = player.handleDoom();
-      if (doomResult.neutralized) {
-        setPendingDoomCard(drawn);
-      } else {
-        deck.insertDoomCards(List.of(drawn));
-      }
-      resolvingDoomPlayerId = player.getId();
+      startDoomResolution(player, drawn);
     } else {
       player.addToHand(drawn);
     }
 
     checkWinCondition();
 
-    return new DrawResult(drawn, doomResult);
+    return new DrawResult(drawn);
   }
 
   /**
@@ -562,7 +725,7 @@ public class Game {
       return;
     }
 
-    if (resolvingDoomPlayerId != null || pendingDoomCardId != null) {
+    if (getResolvingDoomPlayerId() != null || isPendingDoomRequiresInsertion()) {
       throw new IllegalStateException("Doom resolution must be acknowledged before next turn.");
     }
 
@@ -592,18 +755,14 @@ public class Game {
   public static class DrawResult {
 
     private final Card drawnCard;
-    private final Player.DoomResult doomResult;
 
-    private DrawResult(
-        Card drawnCard,
-        Player.DoomResult doomResult) {
+    private DrawResult(Card drawnCard) {
 
       this.drawnCard = drawnCard == null ? null : new Card(drawnCard);
-      this.doomResult = doomResult;
     }
 
     private static DrawResult noCard() {
-      return new DrawResult(null, null);
+      return new DrawResult(null);
     }
 
     /**
@@ -631,15 +790,6 @@ public class Game {
      */
     public Card getDrawnCard() {
       return drawnCard == null ? null : new Card(drawnCard);
-    }
-
-    /**
-     * Returns the Doom resolution result for the draw.
-     *
-     * @return Doom result, or {@code null} when no Doom card was drawn
-     */
-    public Player.DoomResult getDoomResult() {
-      return doomResult;
     }
   }
 }

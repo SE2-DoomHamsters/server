@@ -117,28 +117,43 @@ class GameTest {
     @DisplayName("throws IllegalArgumentException for fewer than 2 players")
     void throwsForFewerThanTwoPlayers() {
       Game game = new Game();
+      List<String> playerNames = List.of("Alice");
+      List<Card> actionCardPool = actionCards(20);
+      Card snackStash = snackStashProto();
+      List<Card> doomCardPool = doomCards(5);
+
       assertThrows(IllegalArgumentException.class, () ->
-        game.setup(List.of("Alice"), actionCards(20), snackStashProto(), doomCards(5)));
+        game.setup(playerNames, actionCardPool, snackStash, doomCardPool));
     }
 
     @Test
     @DisplayName("throws IllegalArgumentException for empty player list")
     void throwsForEmptyPlayerList() {
       Game game = new Game();
+      List<String> playerNames = List.of();
+      List<Card> actionCardPool = actionCards(20);
+      Card snackStash = snackStashProto();
+      List<Card> doomCardPool = doomCards(5);
+
       assertThrows(IllegalArgumentException.class, () ->
-        game.setup(List.of(), actionCards(20), snackStashProto(), doomCards(5)));
+        game.setup(playerNames, actionCardPool, snackStash, doomCardPool));
     }
 
     @Test
     @DisplayName("throws IllegalArgumentException when Doom card pool is too small")
     void throwsForTooFewDoomCards() {
       Game game = new Game();
+      List<String> playerNames = List.of("Alice", "Bob", "Carol");
+      List<Card> actionCardPool = actionCards(30);
+      Card snackStash = snackStashProto();
+      List<Card> doomCardPool = doomCards(1);
+
       assertThrows(IllegalArgumentException.class, () ->
         game.setup(
-          List.of("Alice", "Bob", "Carol"),
-          actionCards(30),
-          snackStashProto(),
-          doomCards(1)));
+          playerNames,
+          actionCardPool,
+          snackStash,
+          doomCardPool));
     }
 
     @Test
@@ -325,7 +340,9 @@ class GameTest {
     @DisplayName("is a no-op when state is SETUP")
     void noOpInSetupState() {
       Game freshGame = new Game();
-      assertDoesNotThrow(() -> freshGame.executeTurn(List.of()));
+      List<String> cardIds = List.of();
+
+      assertDoesNotThrow(() -> freshGame.executeTurn(cardIds));
     }
 
     @Test
@@ -334,7 +351,9 @@ class GameTest {
       eliminate(game.getPlayers().get(1));
       game.checkWinCondition();
       assertEquals(Game.State.FINISHED, game.getState());
-      assertDoesNotThrow(() -> game.executeTurn(List.of()));
+      List<String> cardIds = List.of();
+
+      assertDoesNotThrow(() -> game.executeTurn(cardIds));
     }
 
     @Test
@@ -354,7 +373,6 @@ class GameTest {
       Card toPlay = firstActionCard(current);
       org.junit.jupiter.api.Assumptions.assumeTrue(toPlay != null);
 
-      int handBefore = current.getHand().size();
       game.executeTurn(List.of(toPlay.getId()));
 
       assertFalse(current.getHand().contains(toPlay));
@@ -413,8 +431,10 @@ class GameTest {
     @Test
     @DisplayName("throws IllegalArgumentException when playing a card not in hand")
     void throwsForCardNotInHand() {
+      List<String> missingCardIds = List.of("nonexistent_card_id");
+
       assertThrows(IllegalArgumentException.class, () ->
-        game.executeTurn(List.of("nonexistent_card_id")));
+        game.executeTurn(missingCardIds));
     }
 
     @Test
@@ -548,7 +568,7 @@ class GameTest {
     }
 
     @Test
-    @DisplayName("executeTurn() handles neutralized doom cards correctly")
+    @DisplayName("executeTurn() waits for explicit Snack Stash claim after Doom")
     void executeTurnDoomNeutralized() {
       Game game = buildGame(List.of("Alice", "Bob"));
       Player current = game.getBoard().getCurrentPlayer();
@@ -570,10 +590,10 @@ class GameTest {
       game.executeTurn(List.of());
 
       assertEquals(livesBefore, current.getLives());
-      assertFalse(current.hasSnackStash());
+      assertTrue(current.hasSnackStash());
       assertEquals(discardsBefore, game.getDeck().getDiscards().size());
-      assertTrue(game.isPendingDoomRequiresInsertion());
-      assertEquals("doom_inj", game.getPendingDoomCardId());
+      assertFalse(game.isPendingDoomRequiresInsertion());
+      assertEquals("doom_inj", game.getDrawnDoomCardId());
       assertEquals(current.getId(), game.getResolvingDoomPlayerId());
     }
   }
@@ -590,7 +610,7 @@ class GameTest {
   }
 
   @Test
-  @DisplayName("executeTurn() shuffles doom card back into deck if not neutralized")
+  @DisplayName("executeTurn() waits for explicit Doom acceptance without Snack Stash")
   void executeTurnDoomNotNeutralized() {
     Game game = buildGame(List.of("Alice", "Bob"));
     Player current = game.getBoard().getCurrentPlayer();
@@ -613,11 +633,10 @@ class GameTest {
 
     game.executeTurn(List.of());
 
-    assertEquals(livesBefore - 1, current.getLives());
-
+    assertEquals(livesBefore, current.getLives());
     assertEquals(discardsBefore, game.getDeck().getDiscards().size());
-    assertTrue(game.getDeck().getCards().stream()
-      .anyMatch(c -> c.getId().equals("doom_inj_no_shield")));
+    assertEquals("doom_inj_no_shield", game.getDrawnDoomCardId());
+    assertEquals(current.getId(), game.getResolvingDoomPlayerId());
   }
   @Test
   @DisplayName("executeTurn() ends early if the drawn doom card eliminates the current player")
@@ -640,6 +659,7 @@ class GameTest {
     game.getDeck().insertDoomCards(List.of(doom));
 
     game.executeTurn(List.of());
+    game.acceptPendingDoomWithLifeLoss();
 
     assertEquals(Game.State.FINISHED, game.getState());
     assertFalse(current.isAlive());

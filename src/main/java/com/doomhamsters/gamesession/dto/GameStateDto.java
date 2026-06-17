@@ -1,5 +1,6 @@
 package com.doomhamsters.gamesession.dto;
 
+import com.doomhamsters.gamesession.snackstash.SnackStashClaimEventDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,9 @@ public class GameStateDto {
 
   @Schema(description = "ID of the neutralized Doom card waiting for insertion", example = "doom_0")
   private String pendingDoomCardId;
+
+  @Schema(description = "Pending Snack Stash claim awaiting votes, if any")
+  private SnackStashClaimEventDto pendingSnackStashClaim;
 
   @Schema(description = "Number of cards left in the draw deck", example = "31")
   private int remainingDeckSize;
@@ -67,5 +71,27 @@ public class GameStateDto {
     this.players = players == null
         ? new ArrayList<>()
         : new ArrayList<>(players);
+  }
+
+  /**
+   * Returns the pending Snack Stash claim, if any.
+   *
+   * @return defensive copy of the pending claim, or null
+   */
+  public SnackStashClaimEventDto getPendingSnackStashClaim() {
+    return pendingSnackStashClaim == null
+        ? null
+        : new SnackStashClaimEventDto(pendingSnackStashClaim);
+  }
+
+  /**
+   * Sets the pending Snack Stash claim.
+   *
+   * @param pendingSnackStashClaim the pending claim, or null
+   */
+  public void setPendingSnackStashClaim(SnackStashClaimEventDto pendingSnackStashClaim) {
+    this.pendingSnackStashClaim = pendingSnackStashClaim == null
+        ? null
+        : new SnackStashClaimEventDto(pendingSnackStashClaim);
   }
 }

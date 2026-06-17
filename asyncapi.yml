@@ -57,6 +57,10 @@ channels:
     messages:
       cardCommandPlayed.message:
         $ref: '#/components/messages/CardCommandPlayedMessage'
+      snackStashClaim.message:
+        $ref: '#/components/messages/SnackStashClaimMessage'
+      snackStashResolution.message:
+        $ref: '#/components/messages/SnackStashResolutionMessage'
     description: Public game events that are not full state snapshots.
     parameters:
       gameId:
@@ -131,6 +135,24 @@ channels:
     parameters:
       gameId:
         description: Game session identifier.
+  '/app/game/{gameId}/snack-stash/claim':
+    address: '/app/game/{gameId}/snack-stash/claim'
+    messages:
+      snackStashClaimCommand.message:
+        $ref: '#/components/messages/SnackStashClaimCommandMessage'
+    description: Claims a selected hand card as Snack Stash during Doom resolution.
+    parameters:
+      gameId:
+        description: Game session identifier.
+  '/app/game/{gameId}/snack-stash/vote':
+    address: '/app/game/{gameId}/snack-stash/vote'
+    messages:
+      snackStashVoteCommand.message:
+        $ref: '#/components/messages/SnackStashVoteCommandMessage'
+    description: Votes YES or NO on another player's pending Snack Stash claim.
+    parameters:
+      gameId:
+        description: Game session identifier.
   '/app/game/{gameId}/nextTurn':
     address: '/app/game/{gameId}/nextTurn'
     messages:
@@ -171,6 +193,18 @@ operations:
       $ref: '#/channels/~1topic~1game~1{gameId}'
     messages:
       - $ref: '#/channels/~1topic~1game~1{gameId}/messages/cardCommandPlayed.message'
+  receiveSnackStashClaim:
+    action: send
+    channel:
+      $ref: '#/channels/~1topic~1game~1{gameId}'
+    messages:
+      - $ref: '#/channels/~1topic~1game~1{gameId}/messages/snackStashClaim.message'
+  receiveSnackStashResolution:
+    action: send
+    channel:
+      $ref: '#/channels/~1topic~1game~1{gameId}'
+    messages:
+      - $ref: '#/channels/~1topic~1game~1{gameId}/messages/snackStashResolution.message'
   receiveGameStateUpdate:
     action: send
     channel:
@@ -219,6 +253,18 @@ operations:
       $ref: '#/channels/~1app~1game~1{gameId}~1doom~1accept'
     messages:
       - $ref: '#/channels/~1app~1game~1{gameId}~1doom~1accept/messages/acceptDoom.message'
+  sendSnackStashClaim:
+    action: receive
+    channel:
+      $ref: '#/channels/~1app~1game~1{gameId}~1snack-stash~1claim'
+    messages:
+      - $ref: '#/channels/~1app~1game~1{gameId}~1snack-stash~1claim/messages/snackStashClaimCommand.message'
+  sendSnackStashVote:
+    action: receive
+    channel:
+      $ref: '#/channels/~1app~1game~1{gameId}~1snack-stash~1vote'
+    messages:
+      - $ref: '#/channels/~1app~1game~1{gameId}~1snack-stash~1vote/messages/snackStashVoteCommand.message'
   sendNextTurn:
     action: receive
     channel:
@@ -260,6 +306,16 @@ components:
       summary: Public event emitted when a visible card command is played.
       payload:
         $ref: '#/components/schemas/CardCommandPlayedEventDto'
+    SnackStashClaimMessage:
+      name: SnackStashClaimEventDto
+      summary: Public event emitted when a player claims Snack Stash.
+      payload:
+        $ref: '#/components/schemas/SnackStashClaimEventDto'
+    SnackStashResolutionMessage:
+      name: SnackStashResolutionEventDto
+      summary: Public event emitted when a Snack Stash claim resolves.
+      payload:
+        $ref: '#/components/schemas/SnackStashResolutionEventDto'
     CardCommandResultMessage:
       name: CardCommandResultEventDto
       summary: Private event emitted to the player who activated a card command.
@@ -281,6 +337,14 @@ components:
       name: DoomInsertCommand
       payload:
         $ref: '#/components/schemas/DoomInsertCommand'
+    SnackStashClaimCommandMessage:
+      name: SnackStashClaimCommand
+      payload:
+        $ref: '#/components/schemas/SnackStashClaimCommand'
+    SnackStashVoteCommandMessage:
+      name: SnackStashVoteCommand
+      payload:
+        $ref: '#/components/schemas/SnackStashVoteCommand'
     NextTurnMessage:
       name: NextTurnCommand
       payload:
@@ -445,6 +509,108 @@ components:
         position:
           type: integer
           minimum: 0
+    SnackStashClaimCommand:
+      type: object
+      required:
+        - playerId
+        - cardId
+      properties:
+        playerId:
+          type: string
+        cardId:
+          type: string
+          description: Hand card id the Doom-resolving player is claiming as Snack Stash.
+    SnackStashVoteCommand:
+      type: object
+      required:
+        - playerId
+        - claimId
+        - vote
+      properties:
+        playerId:
+          type: string
+        claimId:
+          type: string
+        vote:
+          type: string
+          enum:
+            - YES
+            - NO
+    SnackStashClaimEventDto:
+      type: object
+      properties:
+        type:
+          type: string
+          const: SNACK_STASH_CLAIM_PENDING
+        claimId:
+          type: string
+        playerId:
+          type: string
+        playerName:
+          type: string
+        votesRequired:
+          type: integer
+          minimum: 0
+        votesReceived:
+          type: integer
+          minimum: 0
+        votedPlayerIds:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+    SnackStashResolutionEventDto:
+      type: object
+      properties:
+        type:
+          type: string
+          const: SNACK_STASH_RESOLVED
+        outcome:
+          type: string
+          enum:
+            - UNCHALLENGED
+            - CHEATER
+            - LEGITIMATE_CALL
+        claimId:
+          type: string
+        claimingPlayerId:
+          type: string
+        claimingPlayerName:
+          type: string
+        accusingPlayerIds:
+          type: array
+          items:
+            type: string
+        lifeChanges:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnackStashLifeChange'
+        affectedPlayerId:
+          type: string
+          nullable: true
+        affectedPlayerName:
+          type: string
+          nullable: true
+        livesBefore:
+          type: integer
+        livesAfter:
+          type: integer
+        doomDefused:
+          type: boolean
+        message:
+          type: string
+    SnackStashLifeChange:
+      type: object
+      properties:
+        playerId:
+          type: string
+        playerName:
+          type: string
+        livesBefore:
+          type: integer
+        livesAfter:
+          type: integer
     DoomDrawnEventDto:
       type: object
       properties:

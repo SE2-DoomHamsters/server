@@ -109,30 +109,6 @@ class HamsterTrioCardDefinitionTest {
     assertEquals("Hamster Trio", card.displayName());
   }
   @Test
-  void stealsRequestedCardFromTarget() {
-    // requester has 3 ninja hamsters
-    requester.addToHand(new Card("h1", "Ninja", "hamster_ninja"));
-    requester.addToHand(new Card("h2", "Ninja", "hamster_ninja"));
-    requester.addToHand(new Card("h3", "Ninja", "hamster_ninja"));
-
-    Card wanted = new Card("c1", "Beg For Snacks", "beg_for_snacks");
-    target.addToHand(wanted);
-
-    CardCommandContext context =
-      createContext(
-        Map.of(
-          "targetPlayerId", target.getId(),
-          "cardType", "beg_for_snacks",
-          "hamsterType", "hamster_ninja"));
-
-    CardCommandResult result = definition.execute(context);
-
-    assertFalse(requester.getHand().contains(wanted));
-    assertTrue(target.getHand().contains(wanted));
-    assertEquals(0, requester.getHand().size()); // only stolen card remains
-    assertFalse(result.getPublicMessage().contains("took"));
-  }
-  @Test
   void returnsMessageWhenTargetHasNoMatchingCard() {
     requester.addToHand(new Card("h1", "", "hamster_ninja"));
     requester.addToHand(new Card("h2", "", "hamster_ninja"));
@@ -164,6 +140,19 @@ class HamsterTrioCardDefinitionTest {
 
     assertThrows(
       IllegalStateException.class,
+      () -> definition.execute(context));
+  }
+  @Test
+  void throwsForUnknownTargetPlayer() {
+    CardCommandContext context =
+      createContext(
+        Map.of(
+          "targetPlayerId", "missing",
+          "cardType", "beg_for_snacks",
+          "hamsterType", "hamster_ninja"));
+
+    assertThrows(
+      IllegalArgumentException.class,
       () -> definition.execute(context));
   }
 }

@@ -20,6 +20,7 @@ public class Board {
   private int currentIndex;
   private int turnCount;
   private int extraTurns;
+  private boolean currentPlayerHasExtraTurns;
   private String restoredCurrentPlayerId;
 
   /**
@@ -138,12 +139,20 @@ public class Board {
   }
 
   /**
-   * Advances the game turn to the next active player.
+   * Advances the turn to the next active player.
    *
-   * <p>If extra turns are available, one extra turn is consumed and the
-   * current player keeps their turn instead of advancing to the next player.
+   * <p>Queued extra turns apply to the next player who becomes active. While the
+   * active player has remaining extra turns, one is consumed and the turn does
+   * not advance. Once all extra turns have been used, play proceeds to the next
+   * active player as normal.
    */
   public void advanceTurn() {
+
+    if (currentPlayerHasExtraTurns) {
+      extraTurns--;
+      currentPlayerHasExtraTurns = false;
+      return;
+    }
 
     turnCount++;
 
@@ -152,7 +161,7 @@ public class Board {
     } while (!players.get(currentIndex).isAlive());
 
     if (extraTurns > 0) {
-      extraTurns--;
+      currentPlayerHasExtraTurns = true;
     }
   }
 

@@ -7,6 +7,7 @@ import com.doomhamsters.gamesession.cardcommands.cards.QuickPeekCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.SignOfFateCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.SniffAheadCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.StealCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.HyperModeCardDefinition;
 import com.doomhamsters.gamesession.dto.CardDto;
 import java.util.Collection;
 import java.util.Comparator;
@@ -65,6 +66,7 @@ public class CardRegistry {
         new SniffAheadCardDefinition(),
         new SignOfFateCardDefinition(),
         new StealCardDefinition(),
+        new HyperModeCardDefinition(),
         new BegForSnacksCardDefinition()
     );
   }

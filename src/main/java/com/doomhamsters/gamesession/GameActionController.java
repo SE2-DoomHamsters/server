@@ -14,8 +14,6 @@ import com.doomhamsters.gamesession.dto.CardDto;
 import com.doomhamsters.gamesession.dto.DoomDrawnEventDto;
 import com.doomhamsters.gamesession.dto.ErrorCode;
 import com.doomhamsters.gamesession.dto.ErrorEventDto;
-import com.doomhamsters.gamesession.dto.GameStateDto;
-import com.doomhamsters.gamesession.dto.GameStateMapper;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -44,7 +42,7 @@ public class GameActionController {
 
   private final GameSessionService gameSessionService;
 
-  private final GameStateMapper gameStateMapper;
+  private final GameSessionBroadcaster gameSessionBroadcaster;
 
   private final SimpMessagingTemplate messagingTemplate;
 
@@ -56,7 +54,7 @@ public class GameActionController {
    * Constructs the action controller.
    *
    * @param gameSessionService session service
-   * @param gameStateMapper state mapper
+   * @param gameSessionBroadcaster session broadcaster
    * @param messagingTemplate broker publisher
    * @param objectMapper JSON parser
    * @param cardRegistry card registry
@@ -64,38 +62,16 @@ public class GameActionController {
   @Autowired
   public GameActionController(
       GameSessionService gameSessionService,
-      GameStateMapper gameStateMapper,
+      GameSessionBroadcaster gameSessionBroadcaster,
       SimpMessagingTemplate messagingTemplate,
       ObjectMapper objectMapper,
       CardRegistry cardRegistry) {
 
     this.gameSessionService = gameSessionService;
-    this.gameStateMapper = gameStateMapper;
+    this.gameSessionBroadcaster = gameSessionBroadcaster;
     this.messagingTemplate = messagingTemplate;
     this.objectMapper = objectMapper;
     this.cardRegistry = cardRegistry;
-  }
-
-  /**
-   * Constructs the action controller with the built-in card command registry.
-   *
-   * @param gameSessionService session service
-   * @param gameStateMapper state mapper
-   * @param messagingTemplate broker publisher
-   * @param objectMapper JSON parser
-   */
-  public GameActionController(
-      GameSessionService gameSessionService,
-      GameStateMapper gameStateMapper,
-      SimpMessagingTemplate messagingTemplate,
-      ObjectMapper objectMapper) {
-
-    this(
-        gameSessionService,
-        gameStateMapper,
-        messagingTemplate,
-        objectMapper,
-        CardRegistry.defaultRegistry());
   }
 
   /**
@@ -159,6 +135,7 @@ public class GameActionController {
     Game game = session.getGame();
 
     assertCurrentPlayer(game, playerId);
+    assertNoResolvingDoom(game);
 
     LOGGER.info(
         "before draw: gameId={}, currentPlayerId={}, turnCount={}",
@@ -186,10 +163,7 @@ public class GameActionController {
   }
 
   /**
-   * Acknowledges the already-resolved doom result and clears public doom-resolution state.
-   *
-   * <p>Doom life loss is applied during draw so clients that need an explicit "accept doom" action
-   * can call this endpoint to close their UI and refresh state without applying damage twice.
+   * Accepts pending Doom, applies life loss, and clears public Doom-resolution state.
    *
    * @param gameId destination game id
    * @param payload action payload containing playerId
@@ -206,7 +180,8 @@ public class GameActionController {
     assertPlayerExists(game, playerId);
     assertResolvingDoomPlayer(game, playerId);
     assertNoPendingDoomInsertion(game);
-    game.clearResolvingDoomPlayerId();
+    assertNoPendingSnackStashClaim(game);
+    game.acceptPendingDoomWithLifeLoss();
     saveAndBroadcast(session, playerId);
   }
 
@@ -284,22 +259,7 @@ public class GameActionController {
       GameSession session,
       String requestingPlayerId) {
 
-    gameSessionService.saveSession(session);
-
-    LOGGER.info(
-        "after session save: gameId={}, currentPlayerId={}, turnCount={}",
-        session.getGameId(),
-        currentPlayerId(session.getGame()),
-        turnCount(session.getGame()));
-
-    GameStateDto dto =
-        gameStateMapper.toFilteredDto(
-            session,
-            requestingPlayerId);
-
-    messagingTemplate.convertAndSend(
-        "/topic/game-state/" + session.getGameId(),
-        dto);
+    gameSessionBroadcaster.saveAndBroadcast(session, requestingPlayerId);
   }
 
   private void sendPrivateDoomEventIfNeeded(
@@ -404,11 +364,11 @@ public class GameActionController {
     }
 
     JsonNode playerId = root.get("playerId");
-    if (playerId == null || !playerId.isTextual()) {
+    if (playerId == null || !playerId.isString() || playerId.stringValue().isBlank()) {
       throw new IllegalArgumentException("Action payload must contain playerId.");
     }
 
-    return playerId.asText();
+    return playerId.stringValue();
   }
 
   private int readPosition(String payload) {
@@ -469,6 +429,12 @@ public class GameActionController {
   private void assertNoPendingDoomInsertion(Game game) {
     if (game.isPendingDoomRequiresInsertion()) {
       throw new IllegalStateException("Pending Doom insertion must be completed with doom/insert.");
+    }
+  }
+
+  private void assertNoPendingSnackStashClaim(Game game) {
+    if (game.getPendingSnackStashClaim() != null) {
+      throw new IllegalStateException("Pending Snack Stash claim must resolve first.");
     }
   }
 

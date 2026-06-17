@@ -8,9 +8,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.doomhamsters.gamesession.cardcommands.CardRegistry;
 import com.doomhamsters.gamesession.dto.ErrorCode;
 import com.doomhamsters.gamesession.dto.ErrorEventDto;
-import com.doomhamsters.gamesession.dto.GameStateMapper;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,9 +34,10 @@ class GameActionControllerErrorHandlingTest {
     controller =
         new GameActionController(
             mock(GameSessionService.class),
-            new GameStateMapper(),
+            mock(GameSessionBroadcaster.class),
             messagingTemplate,
-            new ObjectMapper());
+            new ObjectMapper(),
+            CardRegistry.defaultRegistry());
   }
 
   @Test

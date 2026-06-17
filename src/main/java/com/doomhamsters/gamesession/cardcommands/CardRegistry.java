@@ -2,6 +2,7 @@ package com.doomhamsters.gamesession.cardcommands;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.gamesession.cardcommands.cards.BegForSnacksCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.HamsterTrioCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.HyperModeCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.PowerNapCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.QuickPeekCardDefinition;
@@ -66,6 +67,8 @@ public class CardRegistry {
         new SniffAheadCardDefinition(),
         new SignOfFateCardDefinition(),
         new StealCardDefinition(),
+        new QuickPeekCardDefinition(),
+        new HamsterTrioCardDefinition(),
         new HyperModeCardDefinition(),
         new BegForSnacksCardDefinition()
     );

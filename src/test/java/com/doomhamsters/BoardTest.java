@@ -102,39 +102,67 @@ class BoardTest {
   }
 
   @Test
-  @DisplayName("advanceTurn() consumes single extra turn")
-  void advanceTurnConsumesSingleExtraTurn() {
-    board.setCurrentIndex(0);
+  @DisplayName("next player receives single extra turn")
+  void nextPlayerReceivesSingleExtraTurn() {
+    board.setCurrentIndex(0); // Alice
 
     board.addExtraTurn();
-
-    board.advanceTurn();
-
-    assertEquals("Alice", board.getCurrentPlayer().getName());
-    assertEquals(0, board.getExtraTurns());
 
     board.advanceTurn();
 
     assertEquals("Bob", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Carol", board.getCurrentPlayer().getName());
   }
 
   @Test
-  @DisplayName("advanceTurn() consumes stacked extra turns")
-  void advanceTurnConsumesStackedExtraTurns() {
-    board.setCurrentIndex(0);
+  @DisplayName("next player receives stacked extra turns")
+  void nextPlayerReceivesStackedExtraTurns() {
+    board.setCurrentIndex(0); // Alice
 
     board.addExtraTurn();
     board.addExtraTurn();
 
     board.advanceTurn();
-    assertEquals("Alice", board.getCurrentPlayer().getName());
-    assertEquals(1, board.getExtraTurns());
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
 
     board.advanceTurn();
-    assertEquals("Alice", board.getCurrentPlayer().getName());
-    assertEquals(0, board.getExtraTurns());
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
 
     board.advanceTurn();
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Carol", board.getCurrentPlayer().getName());
+  }
+
+  @Test
+  @DisplayName("extra turn wraps from last player to first player")
+  void extraTurnWrapsToFirstPlayer() {
+    board.setCurrentIndex(2); // Carol
+
+    board.addExtraTurn();
+
+    board.advanceTurn();
+
+    assertEquals("Alice", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Alice", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
     assertEquals("Bob", board.getCurrentPlayer().getName());
   }
 }

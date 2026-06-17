@@ -5,5 +5,6 @@ package com.doomhamsters.gamesession.dto;
  */
 public enum ErrorCode {
   INVALID_ACTION,
-  ILLEGAL_STATE
+  ILLEGAL_STATE,
+  INTERNAL_ERROR
 }

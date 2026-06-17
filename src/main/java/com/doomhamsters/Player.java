@@ -241,6 +241,14 @@ public class Player {
     }
   }
 
+  /** Increments lives by one. Only applies if the player is not already eliminated. */
+  public void incrementLives() {
+    if (eliminated) {
+      return;
+    }
+    lives++;
+  }
+
   /**
    * Adds the specified number of lives to the player.
    * Negative values are ignored.

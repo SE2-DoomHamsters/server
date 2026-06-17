@@ -7,6 +7,7 @@ import com.doomhamsters.Card;
 import com.doomhamsters.Deck;
 import com.doomhamsters.Game;
 import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.cards.HyperModeCardDefinition;
 import java.util.List;
 import java.util.Map;

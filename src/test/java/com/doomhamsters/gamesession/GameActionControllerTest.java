@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Deck;
+import com.doomhamsters.Game;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandPlayedEventDto;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResultEventDto;
@@ -277,6 +278,30 @@ class GameActionControllerTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> controller.draw(gameId, "{\"playerId\":\"p0\"}"));
+  }
+
+  @Test
+  void drawOnEmptyDeckThrows() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    replaceDeck(session, List.of());
+    String gameId = session.getGameId();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> controller.draw(gameId, "{\"playerId\":\"p1\"}"));
+  }
+
+  @Test
+  void drawAfterGameOverThrows() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    session.getGame().setState(Game.State.FINISHED);
+    String gameId = session.getGameId();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> controller.draw(gameId, "{\"playerId\":\"p1\"}"));
   }
 
   @Test

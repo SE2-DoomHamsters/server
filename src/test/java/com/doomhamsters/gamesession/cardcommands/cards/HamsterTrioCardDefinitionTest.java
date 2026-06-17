@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class HamsterTrioCardDefinitionTest {
 
@@ -154,5 +156,94 @@ class HamsterTrioCardDefinitionTest {
     assertThrows(
       IllegalArgumentException.class,
       () -> definition.execute(context));
+  }
+
+  @Test
+  void execute_throwsWhenTargetIsSelf() {
+    Map<String, Object> params = new HashMap<>();
+    params.put("targetPlayerId", "p1");
+    params.put("cardType", "beg_for_snacks");
+    params.put("hamsterType", "hamster_ninja");
+
+    IllegalArgumentException ex = assertThrows(
+      IllegalArgumentException.class,
+      () -> definition.execute(createContext(params)));
+
+    assertTrue(ex.getMessage().contains("cannot target yourself"));
+  }
+
+  @Test
+  void execute_throwsWhenTargetIsEliminated() {
+    requester.addToHand(new Card("h1", "Ninja", "hamster_ninja"));
+    requester.addToHand(new Card("h2", "Ninja", "hamster_ninja"));
+    requester.addToHand(new Card("h3", "Ninja", "hamster_ninja"));
+
+    // setPlayers() deep-copies, so decrement lives on the game's copy
+    Player gameTarget = game.getPlayers().stream()
+        .filter(p -> p.getId().equals(target.getId()))
+        .findFirst().orElseThrow();
+    gameTarget.decrementLives();
+    gameTarget.decrementLives();
+    gameTarget.decrementLives();
+
+    Map<String, Object> params = new HashMap<>();
+    params.put("targetPlayerId", "p2");
+    params.put("cardType", "beg_for_snacks");
+    params.put("hamsterType", "hamster_ninja");
+
+    assertThrows(
+      IllegalStateException.class,
+      () -> definition.execute(createContext(params)));
+  }
+
+  @Test
+  void stealsRequestedCardFromTarget() {
+    requester.addToHand(new Card("h1", "Ninja", "hamster_ninja"));
+    requester.addToHand(new Card("h2", "Ninja", "hamster_ninja"));
+    requester.addToHand(new Card("h3", "Ninja", "hamster_ninja"));
+
+    // setPlayers() deep-copies, so add the wanted card to the game's copy of target
+    Player gameTarget = game.getPlayers().stream()
+        .filter(p -> p.getId().equals(target.getId()))
+        .findFirst().orElseThrow();
+    Card wanted = new Card("c1", "Beg For Snacks", "beg_for_snacks");
+    gameTarget.addToHand(wanted);
+
+    CardCommandResult result = definition.execute(
+      createContext(Map.of(
+        "targetPlayerId", target.getId(),
+        "cardType", "beg_for_snacks",
+        "hamsterType", "hamster_ninja")));
+
+    assertTrue(requester.getHand().contains(wanted));
+    assertTrue(gameTarget.getHand().isEmpty());
+    assertEquals(1, requester.getHand().size());
+    assertTrue(result.getPublicMessage().contains("took"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"hamster_ninja", "hamster_viking", "hamster_wizard", "hamster_knight", "hamster_pirate"})
+  void stealsRequestedCardForAllHamsterTypes(String hamsterType) {
+    requester.addToHand(new Card("h1", "Hamster", hamsterType));
+    requester.addToHand(new Card("h2", "Hamster", hamsterType));
+    requester.addToHand(new Card("h3", "Hamster", hamsterType));
+
+    // setPlayers() deep-copies, so add the wanted card to the game's copy of target
+    Player gameTarget = game.getPlayers().stream()
+        .filter(p -> p.getId().equals(target.getId()))
+        .findFirst().orElseThrow();
+    Card wanted = new Card("c1", "Beg For Snacks", "beg_for_snacks");
+    gameTarget.addToHand(wanted);
+
+    CardCommandResult result = definition.execute(
+      createContext(Map.of(
+        "targetPlayerId", target.getId(),
+        "cardType", "beg_for_snacks",
+        "hamsterType", hamsterType)));
+
+    assertTrue(requester.getHand().contains(wanted));
+    assertTrue(gameTarget.getHand().isEmpty());
+    assertEquals(1, requester.getHand().size());
+    assertTrue(result.getPublicMessage().contains("took"));
   }
 }

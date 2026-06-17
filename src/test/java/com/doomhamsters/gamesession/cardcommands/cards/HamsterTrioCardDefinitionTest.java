@@ -33,7 +33,12 @@ class HamsterTrioCardDefinitionTest {
     requester = new Player("p1", "Alice");
     target = new Player("p2", "Bob");
 
-
+    game.setPlayers(
+      java.util.List.of(
+        requester,
+        target
+      )
+    );
   }
 
   private CardCommandContext createContext(Map<String, Object> params) {
@@ -94,5 +99,71 @@ class HamsterTrioCardDefinitionTest {
         () -> definition.execute(createContext(params)));
 
     assertTrue(ex.getMessage().contains("missing required parameter"));
+  }
+  @Test
+  void metadataIsCorrect() {
+    HamsterTrioCardDefinition card = new HamsterTrioCardDefinition();
+
+    assertEquals("HamsterTrio", card.cardType());
+    assertEquals("HAMSTER_TRIO", card.commandId());
+    assertEquals("Hamster Trio", card.displayName());
+  }
+  @Test
+  void stealsRequestedCardFromTarget() {
+    // requester has 3 ninja hamsters
+    requester.addToHand(new Card("h1", "Ninja", "hamster_ninja"));
+    requester.addToHand(new Card("h2", "Ninja", "hamster_ninja"));
+    requester.addToHand(new Card("h3", "Ninja", "hamster_ninja"));
+
+    Card wanted = new Card("c1", "Beg For Snacks", "beg_for_snacks");
+    target.addToHand(wanted);
+
+    CardCommandContext context =
+      createContext(
+        Map.of(
+          "targetPlayerId", target.getId(),
+          "cardType", "beg_for_snacks",
+          "hamsterType", "hamster_ninja"));
+
+    CardCommandResult result = definition.execute(context);
+
+    assertFalse(requester.getHand().contains(wanted));
+    assertTrue(target.getHand().contains(wanted));
+    assertEquals(0, requester.getHand().size()); // only stolen card remains
+    assertFalse(result.getPublicMessage().contains("took"));
+  }
+  @Test
+  void returnsMessageWhenTargetHasNoMatchingCard() {
+    requester.addToHand(new Card("h1", "", "hamster_ninja"));
+    requester.addToHand(new Card("h2", "", "hamster_ninja"));
+    requester.addToHand(new Card("h3", "", "hamster_ninja"));
+
+    CardCommandContext context =
+      createContext(
+        Map.of(
+          "targetPlayerId", target.getId(),
+          "cardType", "beg_for_snacks",
+          "hamsterType", "hamster_ninja"));
+
+    CardCommandResult result = definition.execute(context);
+
+    assertEquals(0, requester.getHand().size());
+    assertTrue(result.getPublicMessage().contains("had none"));
+  }
+  @Test
+  void throwsWhenRequesterHasTooFewMatchingHamsters() {
+    requester.addToHand(new Card("h1", "", "hamster_ninja"));
+    requester.addToHand(new Card("h2", "", "hamster_ninja"));
+
+    CardCommandContext context =
+      createContext(
+        Map.of(
+          "targetPlayerId", target.getId(),
+          "cardType", "beg_for_snacks",
+          "hamsterType", "hamster_ninja"));
+
+    assertThrows(
+      IllegalStateException.class,
+      () -> definition.execute(context));
   }
 }

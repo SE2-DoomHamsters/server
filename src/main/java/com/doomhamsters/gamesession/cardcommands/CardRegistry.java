@@ -6,6 +6,7 @@ import com.doomhamsters.gamesession.cardcommands.cards.HamsterTrioCardDefinition
 import com.doomhamsters.gamesession.cardcommands.cards.PowerNapCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.QuickPeekCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.SignOfFateCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.SniffAheadCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.StealCardDefinition;
 import com.doomhamsters.gamesession.dto.CardDto;
 import java.util.Collection;
@@ -61,12 +62,15 @@ public class CardRegistry {
   public static CardRegistry defaultRegistry() {
     return of(
         new PowerNapCardDefinition(),
+        new QuickPeekCardDefinition(),
+        new SniffAheadCardDefinition(),
         new SignOfFateCardDefinition(),
         new StealCardDefinition(),
         new BegForSnacksCardDefinition(),
         new QuickPeekCardDefinition(),
         new HamsterTrioCardDefinition(),
-        new QuickPeekCardDefinition());
+        new BegForSnacksCardDefinition()
+    );
   }
 
   /**

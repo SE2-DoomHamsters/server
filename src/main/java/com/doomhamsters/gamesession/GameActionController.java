@@ -374,6 +374,10 @@ public class GameActionController {
     event.setCommandId(request.getCommandId());
     event.setCard(cardRegistry.toCardDto(playedCard, definition));
     event.setRevealedCard(toCardDto(result.getRevealedCard()));
+    event.setRevealedCards(
+        result.getRevealedCards().isEmpty()
+            ? null
+            : result.getRevealedCards().stream().map(this::toCardDto).toList());
     event.setMessage(result.getPrivateMessage());
 
     messagingTemplate.convertAndSend(

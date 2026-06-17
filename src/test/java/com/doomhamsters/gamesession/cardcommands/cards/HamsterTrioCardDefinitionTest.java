@@ -9,6 +9,7 @@ import com.doomhamsters.gamesession.GameSession;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,8 +31,27 @@ class HamsterTrioCardDefinitionTest {
     session = new GameSession("game-1", "lobby-1");
     game = session.getGame();
 
+
+
     requester = new Player("p1", "Alice");
     target = new Player("p2", "Bob");
+
+    game.setPlayers(List.of(requester, target));
+
+    requester = game.getPlayers().get(0);
+    target = game.getPlayers().get(1);
+
+    requester =
+      game.getPlayers().stream()
+        .filter(p -> p.getId().equals("p1"))
+        .findFirst()
+        .orElseThrow();
+
+    target =
+      game.getPlayers().stream()
+        .filter(p -> p.getId().equals("p2"))
+        .findFirst()
+        .orElseThrow();
 
     game.setPlayers(
       java.util.List.of(
@@ -155,4 +175,5 @@ class HamsterTrioCardDefinitionTest {
       IllegalArgumentException.class,
       () -> definition.execute(context));
   }
+
 }

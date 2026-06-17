@@ -167,7 +167,11 @@ public class Board {
 
     if (currentPlayerHasExtraTurns) {
       extraTurns--;
-      currentPlayerHasExtraTurns = false;
+
+      if (extraTurns == 0) {
+        currentPlayerHasExtraTurns = false;
+      }
+
       return;
     }
 

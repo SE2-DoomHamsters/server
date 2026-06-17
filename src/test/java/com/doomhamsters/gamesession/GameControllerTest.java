@@ -177,7 +177,7 @@ class GameControllerTest {
     assertEquals(31, testSession.getGame().getDeck().size());
     assertEquals(7, snackStashCardsInGame);
     testSession.getGame().getPlayers().forEach(player ->
-        assertEquals(15, player.getHand().size()));
+        assertEquals(16, player.getHand().size()));
   }
 
   @Test
@@ -199,6 +199,9 @@ class GameControllerTest {
       long sniffAheadCount = player.getHand().stream()
           .filter(card -> "SniffAhead".equals(card.getType()))
           .count();
+      long tunnelChaosCount = player.getHand().stream()
+          .filter(card -> "TunnelChaos".equals(card.getType()))
+          .count();
       long stablePowerNapIdCount = player.getHand().stream()
           .filter(card -> ("power_nap_" + player.getId()).equals(card.getId()))
           .filter(card -> "Power Nap".equals(card.getName()))
@@ -211,13 +214,19 @@ class GameControllerTest {
           .filter(card -> ("sniff_ahead_" + player.getId()).equals(card.getId()))
           .filter(card -> "Sniff Ahead".equals(card.getName()))
           .count();
+      long stableTunnelChaosIdCount = player.getHand().stream()
+          .filter(card -> ("tunnel_chaos_" + player.getId()).equals(card.getId()))
+          .filter(card -> "Tunnel Chaos".equals(card.getName()))
+          .count();
 
       assertEquals(1, powerNapCount);
       assertEquals(1, quickPeekCount);
       assertEquals(1, sniffAheadCount);
+      assertEquals(1, tunnelChaosCount);
       assertEquals(1, stablePowerNapIdCount);
       assertEquals(1, stableQuickPeekIdCount);
       assertEquals(1, stableSniffAheadIdCount);
+      assertEquals(1, stableTunnelChaosIdCount);
     });
   }
 

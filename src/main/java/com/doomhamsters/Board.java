@@ -1,6 +1,7 @@
 package com.doomhamsters;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
@@ -22,6 +23,9 @@ public class Board {
   private int extraTurns;
   private boolean currentPlayerHasExtraTurns;
   private String restoredCurrentPlayerId;
+
+  @JsonIgnore
+  private LastActionSnapshot lastActionSnapshot;
 
   /**
    * Creates a board for the supplied players and deck.
@@ -59,6 +63,7 @@ public class Board {
     for (Card card : other.discardPile) {
       this.discardPile.add(new Card(card));
     }
+    this.lastActionSnapshot = null; // snapshots are transient; not carried into copies
   }
 
   /**
@@ -230,6 +235,33 @@ public class Board {
    */
   public boolean isCurrentPlayerHasExtraTurns() {
     return currentPlayerHasExtraTurns;
+  }
+
+  /**
+   * Records the game state before a card command runs so Squick can restore it.
+   *
+   * @param snapshot game state before the command ran
+   * @param commandId command id of the action being recorded
+   */
+  public void recordLastAction(Game snapshot, String commandId) {
+    this.lastActionSnapshot = new LastActionSnapshot(snapshot, commandId);
+  }
+
+  /**
+   * Returns the last recorded pre-command snapshot, or {@code null} if none exists.
+   *
+   * @return last action snapshot, or {@code null}
+   */
+  @JsonIgnore
+  public LastActionSnapshot getLastActionSnapshot() {
+    return lastActionSnapshot;
+  }
+
+  /**
+   * Clears the last action snapshot so it cannot be reused.
+   */
+  public void clearLastAction() {
+    this.lastActionSnapshot = null;
   }
 
   /**

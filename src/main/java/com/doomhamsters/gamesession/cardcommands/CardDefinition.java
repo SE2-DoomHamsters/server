@@ -38,6 +38,17 @@ public interface CardDefinition extends CardCommand {
   }
 
   /**
+   * Returns whether this command can be undone by Squick.
+   *
+   * <p>All cards return {@code true} except Squick itself.
+   *
+   * @return {@code false} only for Squick
+   */
+  default boolean isUndoable() {
+    return true;
+  }
+
+  /**
    * Creates this card for a player's testing starting hand.
    *
    * @param playerId owning player id

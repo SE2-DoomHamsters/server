@@ -102,6 +102,12 @@ public class GameActionController {
             request.getCommandId(),
             request.getCardType());
 
+    // Snapshot state before mutations so Squick can restore it.
+    // Squick itself is never recorded — it must not be undoable.
+    if (definition.isUndoable()) {
+      game.getBoard().recordLastAction(new Game(game), definition.commandId());
+    }
+
     Card playedCard = player.removeFromHand(request.getCardId());
     game.getBoard().discardCard(playedCard);
 

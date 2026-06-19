@@ -2,6 +2,8 @@ package com.doomhamsters.gamesession.cardcommands;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.gamesession.cardcommands.cards.BegForSnacksCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.CageSwapCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.FourHamstersCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.HamsterTrioCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.HyperModeCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.PowerNapCardDefinition;
@@ -10,7 +12,10 @@ import com.doomhamsters.gamesession.cardcommands.cards.SignOfFateCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.SniffAheadCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.SquickCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.StealCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.TunnelChaosCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.TwoHamstersCardDefinition;
 import com.doomhamsters.gamesession.dto.CardDto;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -71,7 +76,11 @@ public class CardRegistry {
         new HamsterTrioCardDefinition(),
         new HyperModeCardDefinition(),
         new BegForSnacksCardDefinition(),
-        new SquickCardDefinition()
+        new SquickCardDefinition(),
+        new TunnelChaosCardDefinition(),
+        new TwoHamstersCardDefinition(),
+        new CageSwapCardDefinition(),
+        new FourHamstersCardDefinition()
     );
   }
 

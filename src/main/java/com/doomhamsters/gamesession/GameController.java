@@ -44,6 +44,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class GameController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GameController.class);
+  private static final int COPIES_PER_COMMAND_CARD = 4;
 
   private final GameSessionService gameSessionService;
   private final LobbyService lobbyService;
@@ -140,12 +141,11 @@ public class GameController {
             : user.getUsername())
         .collect(Collectors.toList());
 
-    List<Card> actionCards = createDummyActionCards();
+    List<Card> deckCards = cardRegistry.createDeckCards(COPIES_PER_COMMAND_CARD);
     Card snackStash = new Card("ss_proto", "Snack Stash", "snack_stash");
     List<Card> doomCards = createDoomCards(playerIds.size() - 1);
 
-    session.getGame().setupWithPlayers(playerIds, playerNames, actionCards, snackStash, doomCards);
-    addTestingCommandCardsToHands(session.getGame());
+    session.getGame().setupWithPlayers(playerIds, playerNames, deckCards, snackStash, doomCards);
     session.setStatus(GameSession.GameStatus.RUNNING);
 
     logInitialGameState(session);
@@ -193,25 +193,6 @@ public class GameController {
     }
     Card topCard = game.getDeck().getCards().get(0);
     return topCard.getId() + ":" + topCard.getType();
-  }
-
-  private List<Card> createDummyActionCards() {
-    List<Card> cards = new ArrayList<>();
-    for (int i = 0; i < 40; i++) {
-      cards.add(new Card("act_" + i, "Aktion " + i, "action"));
-    }
-    for (int i = 0; i < 4; i++) {
-      cards.add(new Card("ss_deck_" + i, "Snack Stash", "snack_stash"));
-    }
-    return cards;
-  }
-
-  private void addTestingCommandCardsToHands(Game game) {
-    for (Player player : game.getPlayers()) {
-      for (Card card : cardRegistry.createTestingCardsForPlayer(player.getId())) {
-        player.addToHand(card);
-      }
-    }
   }
 
   private List<Card> createDoomCards(int count) {

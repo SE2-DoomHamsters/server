@@ -31,9 +31,6 @@ public class HamsterTrioCardDefinition implements CardDefinition {
 
   private static final int REQUIRED_COUNT = 3;
 
-  /** Creates the Hamster Trio card definition. */
-  public HamsterTrioCardDefinition() {}
-
   @Override
   public String cardType() {
     return "HamsterTrio";

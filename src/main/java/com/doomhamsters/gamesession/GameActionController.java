@@ -40,7 +40,8 @@ public class GameActionController {
   private static final Logger LOGGER =
       LoggerFactory.getLogger(GameActionController.class);
 
-  private static final String PRIVATE_QUEUE_PREFIX = PRIVATE_QUEUE_PREFIX;
+  private static final String PRIVATE_QUEUE_PREFIX = "/queue/game/";
+  private static final String FIELD_PLAYER_ID = "playerId";
 
   private final GameSessionService gameSessionService;
 
@@ -295,7 +296,7 @@ public class GameActionController {
               payload,
               ActivateCardCommandRequest.class);
 
-      assertTextPresent(request.getPlayerId(), "playerId");
+      assertTextPresent(request.getPlayerId(), FIELD_PLAYER_ID);
       assertTextPresent(request.getCardId(), "cardId");
       assertTextPresent(request.getCardType(), "cardType");
       assertTextPresent(request.getCommandId(), "commandId");
@@ -371,7 +372,7 @@ public class GameActionController {
       throw new IllegalArgumentException("Action payload must be valid JSON.", exception);
     }
 
-    JsonNode playerId = root.get("playerId");
+    JsonNode playerId = root.get(FIELD_PLAYER_ID);
     if (playerId == null || !playerId.isString() || playerId.stringValue().isBlank()) {
       throw new IllegalArgumentException("Action payload must contain playerId.");
     }
@@ -601,7 +602,7 @@ public class GameActionController {
     }
 
     try {
-      JsonNode playerId = objectMapper.readTree(json).get("playerId");
+      JsonNode playerId = objectMapper.readTree(json).get(FIELD_PLAYER_ID);
       return (playerId != null && playerId.isTextual()) ? playerId.asText() : null;
     } catch (JacksonException exception) {
       return null;

@@ -8,6 +8,22 @@ import com.doomhamsters.Card;
 public interface CardDefinition extends CardCommand {
 
   /**
+   * Extracts a required string parameter from the context.
+   *
+   * @param context execution context
+   * @param key parameter name
+   * @return non-blank string value
+   * @throws IllegalArgumentException if the parameter is absent or blank
+   */
+  default String requiredParam(CardCommandContext context, String key) {
+    Object value = context.getParameters().get(key);
+    if (value == null || value.toString().isBlank()) {
+      throw new IllegalArgumentException(commandId() + ": missing required parameter: " + key);
+    }
+    return value.toString();
+  }
+
+  /**
    * Returns the frontend card type id.
    *
    * @return card type id

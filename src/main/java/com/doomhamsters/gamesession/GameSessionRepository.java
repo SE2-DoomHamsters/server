@@ -3,6 +3,7 @@ package com.doomhamsters.gamesession;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -37,7 +38,7 @@ public class GameSessionRepository {
    *
    * @return a map of all sessions
    */
-  public ConcurrentHashMap<String, GameSession> getAll() {
+  public ConcurrentMap<String, GameSession> getAll() {
     return new ConcurrentHashMap<>(sessions);
   }
 

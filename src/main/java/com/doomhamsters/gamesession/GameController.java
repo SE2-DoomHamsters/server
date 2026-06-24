@@ -117,13 +117,14 @@ public class GameController {
             return ResponseEntity.ok(new GameStartResponse(outcome.gameId()));
           }).orElseGet(() -> ResponseEntity.notFound().build());
     } catch (SecurityException e) {
-      LOGGER.warn("start rejected: lobbyId={}, userId={}, reason=not_member", lobbyId, userId);
+      LOGGER.warn("start rejected: lobbyId={}, userId={}, reason=not_member",
+          sanitize(lobbyId), sanitize(userId));
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     } catch (IllegalArgumentException | IllegalStateException e) {
       LOGGER.warn(
           "start rejected: lobbyId={}, userId={}, reason={}",
-          lobbyId,
-          userId,
+          sanitize(lobbyId),
+          sanitize(userId),
           e.getMessage());
       return ResponseEntity.badRequest().build();
     }
@@ -193,6 +194,13 @@ public class GameController {
     }
     Card topCard = game.getDeck().getCards().get(0);
     return topCard.getId() + ":" + topCard.getType();
+  }
+
+  private static String sanitize(String value) {
+    if (value == null) {
+      return null;
+    }
+    return value.replace('\n', '_').replace('\r', '_');
   }
 
   private List<Card> createDoomCards(int count) {

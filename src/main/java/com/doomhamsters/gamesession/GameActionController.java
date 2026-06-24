@@ -40,6 +40,9 @@ public class GameActionController {
   private static final Logger LOGGER =
       LoggerFactory.getLogger(GameActionController.class);
 
+  private static final String PRIVATE_QUEUE_PREFIX = "/queue/game/";
+  private static final String FIELD_PLAYER_ID = "playerId";
+
   private final GameSessionService gameSessionService;
 
   private final GameSessionBroadcaster gameSessionBroadcaster;
@@ -278,7 +281,7 @@ public class GameActionController {
     }
 
     messagingTemplate.convertAndSend(
-        "/queue/game/" + gameId + "/" + playerId,
+        PRIVATE_QUEUE_PREFIX + gameId + "/" + playerId,
         new DoomDrawnEventDto(cardRegistry.toCardDto(drawResult.getDrawnCard())));
   }
 
@@ -293,7 +296,7 @@ public class GameActionController {
               payload,
               ActivateCardCommandRequest.class);
 
-      assertTextPresent(request.getPlayerId(), "playerId");
+      assertTextPresent(request.getPlayerId(), FIELD_PLAYER_ID);
       assertTextPresent(request.getCardId(), "cardId");
       assertTextPresent(request.getCardType(), "cardType");
       assertTextPresent(request.getCommandId(), "commandId");
@@ -341,13 +344,11 @@ public class GameActionController {
     event.setCard(cardRegistry.toCardDto(playedCard, definition));
     event.setRevealedCard(toCardDto(result.getRevealedCard()));
     event.setRevealedCards(
-        result.getRevealedCards().isEmpty()
-            ? null
-            : result.getRevealedCards().stream().map(this::toCardDto).toList());
+        result.getRevealedCards().stream().map(this::toCardDto).toList());
     event.setMessage(result.getPrivateMessage());
 
     messagingTemplate.convertAndSend(
-        "/queue/game/" + gameId + "/" + request.getPlayerId(),
+        PRIVATE_QUEUE_PREFIX + gameId + "/" + request.getPlayerId(),
         event);
   }
 
@@ -369,7 +370,7 @@ public class GameActionController {
       throw new IllegalArgumentException("Action payload must be valid JSON.", exception);
     }
 
-    JsonNode playerId = root.get("playerId");
+    JsonNode playerId = root.get(FIELD_PLAYER_ID);
     if (playerId == null || !playerId.isString() || playerId.stringValue().isBlank()) {
       throw new IllegalArgumentException("Action payload must contain playerId.");
     }
@@ -540,7 +541,7 @@ public class GameActionController {
     }
 
     messagingTemplate.convertAndSend(
-        "/queue/game/" + gameId + "/" + playerId + "/errors",
+        PRIVATE_QUEUE_PREFIX + gameId + "/" + playerId + "/errors",
         new ErrorEventDto(code, exception.getMessage(), gameId));
   }
 
@@ -566,7 +567,7 @@ public class GameActionController {
     }
 
     messagingTemplate.convertAndSend(
-        "/queue/game/" + gameId + "/" + playerId + "/errors",
+        PRIVATE_QUEUE_PREFIX + gameId + "/" + playerId + "/errors",
         new ErrorEventDto(ErrorCode.INTERNAL_ERROR, "An unexpected error occurred.", gameId));
   }
 
@@ -586,20 +587,22 @@ public class GameActionController {
   }
 
   private String extractPlayerIdOrNull(Object payload) {
-    String json;
-    if (payload instanceof byte[] bytes) {
-      json = new String(bytes, StandardCharsets.UTF_8);
-    } else if (payload instanceof String text) {
-      json = text;
-    } else {
-      LOGGER.warn(
-          "Unsupported payload type for error routing: {}",
-          payload == null ? "null" : payload.getClass().getName());
+    String json = switch (payload) {
+      case byte[] bytes -> new String(bytes, StandardCharsets.UTF_8);
+      case String text -> text;
+      case null, default -> {
+        LOGGER.warn(
+            "Unsupported payload type for error routing: {}",
+            payload == null ? "null" : payload.getClass().getName());
+        yield null;
+      }
+    };
+    if (json == null) {
       return null;
     }
 
     try {
-      JsonNode playerId = objectMapper.readTree(json).get("playerId");
+      JsonNode playerId = objectMapper.readTree(json).get(FIELD_PLAYER_ID);
       return (playerId != null && playerId.isTextual()) ? playerId.asText() : null;
     } catch (JacksonException exception) {
       return null;

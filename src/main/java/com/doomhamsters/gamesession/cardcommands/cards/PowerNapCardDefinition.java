@@ -12,12 +12,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class PowerNapCardDefinition implements CardDefinition {
 
-  /**
-   * Creates the Power Nap card definition.
-   */
-  public PowerNapCardDefinition() {
-    // Required by Spring component scanning for this stateless card definition.
-  }
+  /** Creates the Power Nap card definition. */
+  public PowerNapCardDefinition() {}
 
   @Override
   public String cardType() {
@@ -36,10 +32,7 @@ public class PowerNapCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card(
-        "power_nap_" + playerId,
-        displayName(),
-        cardType());
+    return new Card("power_nap_" + playerId, displayName(), cardType());
   }
 
   @Override

@@ -12,10 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class SignOfFateCardDefinition implements CardDefinition {
 
-  /**
-   * Creates the Sign of Fate card definition.
-   */
-  public SignOfFateCardDefinition() {}
 
   @Override
   public String cardType() {
@@ -34,15 +30,11 @@ public class SignOfFateCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card(
-        "sign_of_fate_" + playerId,
-        displayName(),
-        cardType());
+    return new Card("sign_of_fate_" + playerId, displayName(), cardType());
   }
 
   @Override
   public CardCommandResult execute(CardCommandContext context) {
-
     context.getPlayer().addLives(1);
 
     return CardCommandResult.publicOnly(

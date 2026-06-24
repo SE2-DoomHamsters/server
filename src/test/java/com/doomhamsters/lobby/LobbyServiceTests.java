@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -161,9 +160,11 @@ class LobbyServiceTests {
     join(lobby, "p2");
     lobbyService.startGame(lobby.getLobbyId(), "host-id", ignored -> "game-1");
 
+    String lobbyId = lobby.getLobbyId();
+    User newPlayer = new User("p3", "P3", "cat");
     assertThrows(
         IllegalStateException.class,
-        () -> lobbyService.joinOrUpdateLobby(lobby.getLobbyId(), new User("p3", "P3", "cat")));
+        () -> lobbyService.joinOrUpdateLobby(lobbyId, newPlayer));
   }
 
   @Test
@@ -171,9 +172,10 @@ class LobbyServiceTests {
     Lobby lobby = lobbyService.createLobby("Room", host);
     join(lobby, "p2");
 
+    String lobbyId = lobby.getLobbyId();
     assertThrows(
         SecurityException.class,
-        () -> lobbyService.startGame(lobby.getLobbyId(), "outsider", ignored -> "game-1"));
+        () -> lobbyService.startGame(lobbyId, "outsider", ignored -> "game-1"));
   }
 
   @Test
@@ -277,8 +279,9 @@ class LobbyServiceTests {
     Lobby lobby = lobbyService.createLobby("Room", host);
 
     // Only the host is inside (< 2 players) -> expected exception
+    String lobbyId = lobby.getLobbyId();
     assertThrows(IllegalStateException.class, () ->
-      lobbyService.startGame(lobby.getLobbyId(), "host-id", ignored -> "game-1")
+      lobbyService.startGame(lobbyId, "host-id", ignored -> "game-1")
     );
   }
 
@@ -351,18 +354,19 @@ class LobbyServiceTests {
   @Test
   void createLobbyWithInvalidUserThrows() {
     assertThrows(IllegalArgumentException.class, () -> lobbyService.createLobby("Room", null));
-    assertThrows(IllegalArgumentException.class, () -> lobbyService.createLobby("Room", new User("", "Name", "cat")));
+    User invalidUser = new User("", "Name", "cat");
+    assertThrows(IllegalArgumentException.class, () -> lobbyService.createLobby("Room", invalidUser));
   }
 
   @Test
   void joinOrUpdateLobbyWithInvalidUserThrows() {
     Lobby lobby = lobbyService.createLobby("Room", host);
-    assertThrows(IllegalArgumentException.class, () -> lobbyService.joinOrUpdateLobby(lobby.getLobbyId(), null));
+    String lobbyId = lobby.getLobbyId();
+    assertThrows(IllegalArgumentException.class, () -> lobbyService.joinOrUpdateLobby(lobbyId, null));
   }
 
   @Test
   void getLobbyExplicitlyWithNullReturnsNull() {
-    // Covers: if (lobbyId == null) { return null; }
     assertNull(lobbyService.getLobby(null));
   }
 
@@ -430,7 +434,6 @@ class LobbyServiceTests {
 
   @Test
   void isExpiredReturnsFalseIfLastSeenAtIsNull() {
-    // Covers: if (lastSeenAt != null && ...) -> the case where it is null
     Lobby lobby = lobbyService.createLobby("Room", host);
     Lobby fetched = lobbyService.getLobby(lobby.getLobbyId());
     fetched.getMembers().get(0).markSeen(null);
@@ -441,7 +444,6 @@ class LobbyServiceTests {
 
   @Test
   void nonHostLeavingDoesNotReassignHost() {
-    // Covers: if (!removedUserId.equals(lobby.getHostId())) { return; }
     Lobby lobby = lobbyService.createLobby("Room", host);
     join(lobby, "p2");
 

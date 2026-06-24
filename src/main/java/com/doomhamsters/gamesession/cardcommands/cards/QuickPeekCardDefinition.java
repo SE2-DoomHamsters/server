@@ -13,12 +13,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class QuickPeekCardDefinition implements CardDefinition {
 
-  /**
-   * Creates the Quick Peek card definition.
-   */
-  public QuickPeekCardDefinition() {
-    // Required by Spring component scanning for this stateless card definition.
-  }
+  /** Creates the Quick Peek card definition. */
+  public QuickPeekCardDefinition() {}
 
   @Override
   public String cardType() {
@@ -37,10 +33,7 @@ public class QuickPeekCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card(
-        "quick_peek_" + playerId,
-        displayName(),
-        cardType());
+    return new Card("quick_peek_" + playerId, displayName(), cardType());
   }
 
   @Override

@@ -368,7 +368,7 @@ class GameActionControllerTest {
         privateCaptor.capture());
 
     CardCommandResultEventDto privateEvent = privateCaptor.getValue();
-    assertNull(privateEvent.getRevealedCards());
+    assertTrue(privateEvent.getRevealedCards().isEmpty());
     assertEquals("The deck is empty.", privateEvent.getMessage());
   }
 
@@ -835,12 +835,12 @@ class GameActionControllerTest {
                 List.of("p0"),
                 Map.of()));
 
+    String gameId = session.getGameId();
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            controllerWithMockService.claimSnackStash(
-                session.getGameId(),
-                "{\"playerId\":\"missing-player\",\"cardId\":\"card-1\"}"));
+        () -> controllerWithMockService.claimSnackStash(
+            gameId,
+            "{\"playerId\":\"missing-player\",\"cardId\":\"card-1\"}"));
   }
 
   @Test

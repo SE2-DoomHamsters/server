@@ -145,13 +145,15 @@ class SquickCardDefinitionTest {
   @Test
   void execute_throwsWhenNoSnapshotExists() {
     // No recordLastAction call — snapshot is null
-    assertThrows(IllegalStateException.class, () -> DEFINITION.execute(ctx(alice)));
+    CardCommandContext ctxNoSnapshot = ctx(alice);
+    assertThrows(IllegalStateException.class, () -> DEFINITION.execute(ctxNoSnapshot));
   }
 
   @Test
   void execute_throwsWhenLastCommandWasAlsoSquick() {
     game.getBoard().recordLastAction(new Game(game), "SQUICK");
-    assertThrows(IllegalStateException.class, () -> DEFINITION.execute(ctx(alice)));
+    CardCommandContext ctxSquick = ctx(alice);
+    assertThrows(IllegalStateException.class, () -> DEFINITION.execute(ctxSquick));
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────

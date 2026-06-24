@@ -24,17 +24,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class BegForSnacksCardDefinition implements CardDefinition {
 
-  /** Creates the Beg for Snacks card definition. */
-  public BegForSnacksCardDefinition() {}
+  private static final String CARD_TYPE = "BegForSnacks";
 
   @Override
   public String cardType() {
-    return "BegForSnacks";
+    return CARD_TYPE;
   }
 
   @Override
   public String commandId() {
-    return "BegForSnacks";
+    return CARD_TYPE;
   }
 
   @Override
@@ -44,13 +43,13 @@ public class BegForSnacksCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card("BegForSnacks" + playerId, displayName(), cardType());
+    return new Card(CARD_TYPE + playerId, displayName(), cardType());
   }
 
   @Override
   public CardCommandResult execute(CardCommandContext context) {
-    String targetPlayerId = requiredString(context, "targetPlayerId");
-    String requestedType  = requiredString(context, "cardType");
+    String targetPlayerId = requiredParam(context, "targetPlayerId");
+    String requestedType = requiredParam(context, "cardType");
 
     Player requester = context.getPlayer();
     Player target = context.getGame().getPlayers().stream()
@@ -82,13 +81,5 @@ public class BegForSnacksCardDefinition implements CardDefinition {
     return CardCommandResult.publicOnly(String.format(
       "%s begged %s for a %s and received one.",
       requester.getName(), target.getName(), requestedType));
-  }
-
-  private static String requiredString(CardCommandContext context, String key) {
-    Object value = context.getParameters().get(key);
-    if (value == null || value.toString().isBlank()) {
-      throw new IllegalArgumentException("BegForSnacks: missing required parameter: " + key);
-    }
-    return value.toString();
   }
 }

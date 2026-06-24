@@ -6,7 +6,6 @@ import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Component;
 
@@ -17,8 +16,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class StealCardDefinition implements CardDefinition {
-
-  private static final Random RANDOM = new Random();
 
   @Override
   public String cardType() {

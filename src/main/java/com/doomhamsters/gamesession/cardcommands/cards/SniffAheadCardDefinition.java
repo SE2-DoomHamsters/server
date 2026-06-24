@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class SniffAheadCardDefinition implements CardDefinition {
 
-  public SniffAheadCardDefinition() {}
 
   @Override
   public String cardType() {

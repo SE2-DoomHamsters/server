@@ -52,11 +52,13 @@ public class StealCardDefinition implements CardDefinition {
       );
     }
 
+    // Steal a random card
     int randomIndex = ThreadLocalRandom.current().nextInt(victim.getHand().size());
     Card cardToSteal = victim.getHand().get(randomIndex);
     Card stolenCard = victim.removeFromHand(cardToSteal.getId());
     thief.addToHand(stolenCard);
 
+    // Return the command result
     return CardCommandResult.withPrivateResult(
       thief.getName() + " stole a card from " + victim.getName() + "!",
       "You successfully stole: " + stolenCard.getName(),

@@ -12,11 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class HyperModeCardDefinition implements CardDefinition {
 
-  /**
-   * Creates the Hyper Mode card definition.
-   */
-  public HyperModeCardDefinition() {
-  }
 
   @Override
   public String cardType() {
@@ -35,15 +30,11 @@ public class HyperModeCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card(
-        "hyper_mode_" + playerId,
-        displayName(),
-        cardType());
+    return new Card("hyper_mode_" + playerId, displayName(), cardType());
   }
 
   @Override
   public CardCommandResult execute(CardCommandContext context) {
-
     context.getGame()
         .getBoard()
         .addExtraTurn();

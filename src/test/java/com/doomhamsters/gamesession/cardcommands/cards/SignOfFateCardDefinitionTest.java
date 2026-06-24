@@ -1,10 +1,10 @@
-package com.doomhamsters.gamesession.cardcommands;
+package com.doomhamsters.gamesession.cardcommands.cards;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Player;
-import com.doomhamsters.gamesession.cardcommands.cards.SignOfFateCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 

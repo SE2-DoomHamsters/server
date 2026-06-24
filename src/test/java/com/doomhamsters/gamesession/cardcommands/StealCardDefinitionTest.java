@@ -9,9 +9,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.util.ArrayList;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 class StealCardDefinitionTest {
   private StealCardDefinition stealCardDefinition;
@@ -66,7 +65,7 @@ class StealCardDefinitionTest {
     Exception exception = assertThrows(IllegalArgumentException.class, () -> {
       stealCardDefinition.execute(mockContext);
     });
-    assertEquals("Target player ID is missing.", exception.getMessage());
+    assertEquals("STEAL_CARD: missing required parameter: targetPlayerId", exception.getMessage());
   }
   @Test
   void simpleMethods_returnExpectedValues() {

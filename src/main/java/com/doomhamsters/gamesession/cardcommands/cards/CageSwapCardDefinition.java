@@ -55,6 +55,7 @@ public class CageSwapCardDefinition implements CardDefinition {
 
     for (Card card : currentHandCopy) {
       currentPlayer.removeFromHand(card.getId());
+      nextPlayer.addToHand(card);
     }
     for (Card card : nextHandCopy) {
       nextPlayer.removeFromHand(card.getId());

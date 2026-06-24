@@ -5,17 +5,15 @@ import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Component;
-
-
 
 /**
  * Card definition for Steal Card.
  */
 @Component
 public class StealCardDefinition implements CardDefinition {
+
 
   @Override
   public String cardType() {
@@ -39,9 +37,7 @@ public class StealCardDefinition implements CardDefinition {
 
   @Override
   public CardCommandResult execute(CardCommandContext context) {
-    // Extract parameters (sent from the frontend)
-    Map<String, Object> parameters = context.getParameters();
-    String targetPlayerId = (String) parameters.get("targetPlayerId");
+    String targetPlayerId = requiredParam(context, "targetPlayerId");
 
     if (targetPlayerId == null) {
       throw new IllegalArgumentException("Target player ID is missing.");
@@ -50,9 +46,9 @@ public class StealCardDefinition implements CardDefinition {
     // Retrieve player objects
     Player thief = context.getPlayer();
     Player victim = context.getGame().getPlayers().stream()
-              .filter(p -> p.getId().equals(targetPlayerId))
-              .findFirst()
-              .orElse(null);
+        .filter(p -> p.getId().equals(targetPlayerId))
+        .findFirst()
+        .orElse(null);
 
     if (victim == null || victim.getHand().isEmpty()) {
       return CardCommandResult.publicOnly(

@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +40,7 @@ class GameSessionRepositoryTest {
   void testGetAllReturnsSnapshot() {
     repository.store(new GameSession("game-1", "lobby-1"));
 
-    ConcurrentHashMap<String, GameSession> allSessions = repository.getAll();
+    ConcurrentMap<String, GameSession> allSessions = repository.getAll();
     assertEquals(1, allSessions.size());
 
     allSessions.remove("game-1");
@@ -47,7 +49,7 @@ class GameSessionRepositoryTest {
 
   @Test
   void testLoadAll() {
-    ConcurrentHashMap<String, GameSession> initialData = new ConcurrentHashMap<>();
+    Map<String, GameSession> initialData = new HashMap<>();
     initialData.put("game-1", new GameSession("game-1", "lobby-1"));
 
     repository.loadAll(initialData);

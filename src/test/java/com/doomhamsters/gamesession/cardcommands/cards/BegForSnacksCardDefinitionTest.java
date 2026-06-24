@@ -1,6 +1,5 @@
 package com.doomhamsters.gamesession.cardcommands.cards;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,7 +7,6 @@ import com.doomhamsters.Card;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.GameSession;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
-import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,14 +17,12 @@ class BegForSnacksCardDefinitionTest {
 
   private GameSession session;
   private Player requester;
-  private Player target;
   private Card begCard;
 
   @BeforeEach
   void setUp() {
     session = new GameSession("game-1", "lobby-1");
     requester = new Player("p1", "Alice");
-    target    = new Player("p2", "Bob");
     begCard   = new Card("bfs_p1", DEFINITION.displayName(), DEFINITION.cardType());
 
     requester.addToHand(begCard);
@@ -64,38 +60,41 @@ class BegForSnacksCardDefinitionTest {
 
   @Test
   void missingTargetPlayerId_throws() {
+    CardCommandContext context = ctx(Map.of("cardType", "power_nap"));
     IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-      () -> DEFINITION.execute(ctx(Map.of("cardType", "power_nap"))));
+      () -> DEFINITION.execute(context));
     assertTrue(ex.getMessage().contains("targetPlayerId"));
   }
 
   @Test
   void missingCardType_throws() {
+    CardCommandContext context = ctx(Map.of("targetPlayerId", "p2"));
     IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-      () -> DEFINITION.execute(ctx(Map.of("targetPlayerId", "p2"))));
+      () -> DEFINITION.execute(context));
     assertTrue(ex.getMessage().contains("cardType"));
   }
 
   @Test
   void unknownTargetPlayerId_throws() {
+    CardCommandContext context = ctx(Map.of("targetPlayerId", "nobody", "cardType", "power_nap"));
     IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-      () -> DEFINITION.execute(
-        ctx(Map.of("targetPlayerId", "nobody", "cardType", "power_nap"))));
+      () -> DEFINITION.execute(context));
     assertTrue(ex.getMessage().contains("unknown targetPlayerId"));
   }
 
-
   @Test
   void blankTargetPlayerId_throws() {
+    CardCommandContext context = ctx(Map.of("targetPlayerId", " ", "cardType", "power_nap"));
     IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-      () -> DEFINITION.execute(ctx(Map.of("targetPlayerId", " ", "cardType", "power_nap"))));
+      () -> DEFINITION.execute(context));
     assertTrue(ex.getMessage().contains("targetPlayerId"));
   }
 
   @Test
   void blankCardType_throws() {
+    CardCommandContext context = ctx(Map.of("targetPlayerId", "p2", "cardType", " "));
     IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-      () -> DEFINITION.execute(ctx(Map.of("targetPlayerId", "p2", "cardType", " "))));
+      () -> DEFINITION.execute(context));
     assertTrue(ex.getMessage().contains("cardType"));
   }
 }

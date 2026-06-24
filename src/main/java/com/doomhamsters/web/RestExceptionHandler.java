@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -23,7 +24,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @RestControllerAdvice
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(RestExceptionHandler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(RestExceptionHandler.class);
 
   /**
    * Maps invalid client input to 400 Bad Request.
@@ -36,7 +37,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
   public ResponseEntity<ApiErrorDto> handleBadRequest(
       IllegalArgumentException exception, HttpServletRequest request) {
 
-    LOGGER.warn("bad request: path={}, reason={}", request.getRequestURI(), exception.getMessage());
+    LOG.warn("bad request: path={}, reason={}", request.getRequestURI(), exception.getMessage());
     return build(HttpStatus.BAD_REQUEST, exception.getMessage(), request.getRequestURI());
   }
 
@@ -51,7 +52,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
   public ResponseEntity<ApiErrorDto> handleConflict(
       IllegalStateException exception, HttpServletRequest request) {
 
-    LOGGER.warn("conflict: path={}, reason={}", request.getRequestURI(), exception.getMessage());
+    LOG.warn("conflict: path={}, reason={}", request.getRequestURI(), exception.getMessage());
     return build(HttpStatus.CONFLICT, exception.getMessage(), request.getRequestURI());
   }
 
@@ -66,7 +67,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
   public ResponseEntity<ApiErrorDto> handleUnexpected(
       Exception exception, HttpServletRequest request) {
 
-    LOGGER.error("unexpected error: path={}", request.getRequestURI(), exception);
+    LOG.error("unexpected error: path={}", request.getRequestURI(), exception);
     return build(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.",
         request.getRequestURI());
   }
@@ -74,7 +75,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
   @Override
   protected ResponseEntity<Object> handleExceptionInternal(
       Exception ex,
-      Object body,
+      @Nullable Object body,
       HttpHeaders headers,
       HttpStatusCode statusCode,
       WebRequest request) {
@@ -83,7 +84,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         ? servletRequest.getRequest().getRequestURI()
         : "";
     HttpStatus status = HttpStatus.valueOf(statusCode.value());
-    LOGGER.warn("request error: status={}, path={}, reason={}",
+    LOG.warn("request error: status={}, path={}, reason={}",
         statusCode.value(), path, ex.getMessage());
     ApiErrorDto apiError =
         new ApiErrorDto(statusCode.value(), status.getReasonPhrase(), ex.getMessage(), path);

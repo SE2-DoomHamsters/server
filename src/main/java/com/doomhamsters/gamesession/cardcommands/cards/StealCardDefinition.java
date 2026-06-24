@@ -5,12 +5,8 @@ import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
-import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Component;
-
-
 
 /**
  * Card definition for Steal Card.
@@ -18,11 +14,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class StealCardDefinition implements CardDefinition {
 
-  private static final Random RANDOM = new Random();
-
-  public StealCardDefinition() {
-
-  }
 
   @Override
   public String cardType() {
@@ -46,20 +37,13 @@ public class StealCardDefinition implements CardDefinition {
 
   @Override
   public CardCommandResult execute(CardCommandContext context) {
-    // Extract parameters (sent from the frontend)
-    Map<String, Object> parameters = context.getParameters();
-    String targetPlayerId = (String) parameters.get("targetPlayerId");
+    String targetPlayerId = requiredParam(context, "targetPlayerId");
 
-    if (targetPlayerId == null) {
-      throw new IllegalArgumentException("Target player ID is missing.");
-    }
-
-    // Retrieve player objects
     Player thief = context.getPlayer();
     Player victim = context.getGame().getPlayers().stream()
-              .filter(p -> p.getId().equals(targetPlayerId))
-              .findFirst()
-              .orElse(null);
+        .filter(p -> p.getId().equals(targetPlayerId))
+        .findFirst()
+        .orElse(null);
 
     if (victim == null || victim.getHand().isEmpty()) {
       return CardCommandResult.publicOnly(
@@ -68,13 +52,11 @@ public class StealCardDefinition implements CardDefinition {
       );
     }
 
-    // Steal a random card
     int randomIndex = ThreadLocalRandom.current().nextInt(victim.getHand().size());
     Card cardToSteal = victim.getHand().get(randomIndex);
     Card stolenCard = victim.removeFromHand(cardToSteal.getId());
     thief.addToHand(stolenCard);
 
-    // Return the command result
     return CardCommandResult.withPrivateResult(
       thief.getName() + " stole a card from " + victim.getName() + "!",
       "You successfully stole: " + stolenCard.getName(),

@@ -62,10 +62,11 @@ class HamsterTrioCardDefinitionTest {
     params.put("cardType", "Beg");
     params.put("hamsterType", "hamster_ninja");
 
+    CardCommandContext context1 = createContext(params);
     IllegalArgumentException ex =
       assertThrows(
         IllegalArgumentException.class,
-        () -> definition.execute(createContext(params)));
+        () -> definition.execute(context1));
 
     assertTrue(ex.getMessage().contains("unknown targetPlayerId"));
   }
@@ -78,10 +79,11 @@ class HamsterTrioCardDefinitionTest {
     params.put("cardType", "Beg");
     params.put("hamsterType", "ninja");
 
+    CardCommandContext context2 = createContext(params);
     IllegalArgumentException ex =
       assertThrows(
         IllegalArgumentException.class,
-        () -> definition.execute(createContext(params)));
+        () -> definition.execute(context2));
 
     assertTrue(ex.getMessage().contains("must start with 'hamster_'"));
   }
@@ -93,10 +95,11 @@ class HamsterTrioCardDefinitionTest {
     params.put("targetPlayerId", "p2");
     params.put("cardType", "Beg");
 
+    CardCommandContext context3 = createContext(params);
     IllegalArgumentException ex =
       assertThrows(
         IllegalArgumentException.class,
-        () -> definition.execute(createContext(params)));
+        () -> definition.execute(context3));
 
     assertTrue(ex.getMessage().contains("missing required parameter"));
   }

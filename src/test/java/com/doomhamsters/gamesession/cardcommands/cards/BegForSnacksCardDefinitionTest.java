@@ -19,14 +19,12 @@ class BegForSnacksCardDefinitionTest {
 
   private GameSession session;
   private Player requester;
-  private Player target;
   private Card begCard;
 
   @BeforeEach
   void setUp() {
     session = new GameSession("game-1", "lobby-1");
     requester = new Player("p1", "Alice");
-    target    = new Player("p2", "Bob");
     begCard   = new Card("bfs_p1", DEFINITION.displayName(), DEFINITION.cardType());
 
     requester.addToHand(begCard);

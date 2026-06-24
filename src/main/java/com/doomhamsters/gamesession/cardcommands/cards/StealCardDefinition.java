@@ -46,7 +46,7 @@ public class StealCardDefinition implements CardDefinition {
 
   @Override
   public CardCommandResult execute(CardCommandContext context) {
-    // Parametern auslesen (die vom Frontend kommen)
+    // Extract parameters (sent from the frontend)
     Map<String, Object> parameters = context.getParameters();
     String targetPlayerId = (String) parameters.get("targetPlayerId");
 
@@ -54,7 +54,7 @@ public class StealCardDefinition implements CardDefinition {
       throw new IllegalArgumentException("Target player ID is missing.");
     }
 
-    // Spieler-Objekte holen
+    // Retrieve player objects
     Player thief = context.getPlayer();
     Player victim = context.getGame().getPlayers().stream()
               .filter(p -> p.getId().equals(targetPlayerId))
@@ -68,13 +68,13 @@ public class StealCardDefinition implements CardDefinition {
       );
     }
 
-    // Zufällige Karte klauen
+    // Steal a random card
     int randomIndex = ThreadLocalRandom.current().nextInt(victim.getHand().size());
     Card cardToSteal = victim.getHand().get(randomIndex);
     Card stolenCard = victim.removeFromHand(cardToSteal.getId());
     thief.addToHand(stolenCard);
 
-    // Ergebnis zurückgeben
+    // Return the command result
     return CardCommandResult.withPrivateResult(
       thief.getName() + " stole a card from " + victim.getName() + "!",
       "You successfully stole: " + stolenCard.getName(),

@@ -24,7 +24,7 @@ class QrCodeGeneratorServiceTest {
     String result = service.generateQrCode("LOBBY-123");
 
     assertNotNull(result);
-    // Ein gültiger Base64 PNG-String sollte immer generiert werden
+    // A valid Base64 PNG string should always be generated
     assertTrue(result.length() > 50);
   }
 
@@ -37,15 +37,15 @@ class QrCodeGeneratorServiceTest {
 
   @Test
   void catchBlockIsCoveredOnWriterException() {
-    // Wir fangen die interne Erstellung von QRCodeWriter ab und zwingen sie, einen Fehler zu werfen
+    // Intercept the internal construction of QRCodeWriter and force it to throw an exception
     try (MockedConstruction<QRCodeWriter> mocked = Mockito.mockConstruction(QRCodeWriter.class,
       (mock, context) -> {
         Mockito.when(mock.encode(Mockito.anyString(), Mockito.any(), Mockito.anyInt(), Mockito.anyInt()))
-          .thenThrow(new WriterException("Simulierter Fehler für 100% Coverage"));
+          .thenThrow(new WriterException("Simulated error for 100% coverage"));
       })) {
 
       String result = service.generateQrCode("LOBBY-123");
-      assertNull(result); // Der catch-Block loggt den Fehler und gibt null zurück
+      assertNull(result); // The catch block logs the error and returns null
     }
   }
 }

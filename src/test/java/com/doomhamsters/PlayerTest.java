@@ -125,7 +125,7 @@ public class PlayerTest {
   @DisplayName("Copy constructor duplicates all fields")
   void copyConstructor() {
     player.addToHand(new Card("a1", "Test", "action"));
-    player.handleDoom(); // Zieht ein Leben ab
+    player.handleDoom();
 
     Player copy = new Player(player);
 
@@ -147,7 +147,6 @@ public class PlayerTest {
   @Test
   @DisplayName("incrementLives() does nothing when the player is already eliminated")
   void incrementLivesWhenEliminated() {
-    // Spieler eliminieren
     player.handleDoom();
     player.handleDoom();
     player.handleDoom();
@@ -155,10 +154,8 @@ public class PlayerTest {
     assertTrue(player.isEliminated());
     assertEquals(0, player.getLives());
 
-    // Versuch, den eliminierten Spieler zu heilen
     player.incrementLives();
 
-    // Leben und Status dürfen sich nicht verändert haben
     assertEquals(0, player.getLives());
     assertTrue(player.isEliminated());
   }

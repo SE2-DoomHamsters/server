@@ -40,6 +40,8 @@ public class GameActionController {
   private static final Logger LOGGER =
       LoggerFactory.getLogger(GameActionController.class);
 
+  private static final String PRIVATE_QUEUE_PREFIX = PRIVATE_QUEUE_PREFIX;
+
   private final GameSessionService gameSessionService;
 
   private final GameSessionBroadcaster gameSessionBroadcaster;
@@ -278,7 +280,7 @@ public class GameActionController {
     }
 
     messagingTemplate.convertAndSend(
-        "/queue/game/" + gameId + "/" + playerId,
+        PRIVATE_QUEUE_PREFIX + gameId + "/" + playerId,
         new DoomDrawnEventDto(cardRegistry.toCardDto(drawResult.getDrawnCard())));
   }
 
@@ -347,7 +349,7 @@ public class GameActionController {
     event.setMessage(result.getPrivateMessage());
 
     messagingTemplate.convertAndSend(
-        "/queue/game/" + gameId + "/" + request.getPlayerId(),
+        PRIVATE_QUEUE_PREFIX + gameId + "/" + request.getPlayerId(),
         event);
   }
 
@@ -540,7 +542,7 @@ public class GameActionController {
     }
 
     messagingTemplate.convertAndSend(
-        "/queue/game/" + gameId + "/" + playerId + "/errors",
+        PRIVATE_QUEUE_PREFIX + gameId + "/" + playerId + "/errors",
         new ErrorEventDto(code, exception.getMessage(), gameId));
   }
 
@@ -566,7 +568,7 @@ public class GameActionController {
     }
 
     messagingTemplate.convertAndSend(
-        "/queue/game/" + gameId + "/" + playerId + "/errors",
+        PRIVATE_QUEUE_PREFIX + gameId + "/" + playerId + "/errors",
         new ErrorEventDto(ErrorCode.INTERNAL_ERROR, "An unexpected error occurred.", gameId));
   }
 

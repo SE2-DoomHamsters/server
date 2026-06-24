@@ -589,15 +589,17 @@ public class GameActionController {
   }
 
   private String extractPlayerIdOrNull(Object payload) {
-    String json;
-    if (payload instanceof byte[] bytes) {
-      json = new String(bytes, StandardCharsets.UTF_8);
-    } else if (payload instanceof String text) {
-      json = text;
-    } else {
-      LOGGER.warn(
-          "Unsupported payload type for error routing: {}",
-          payload == null ? "null" : payload.getClass().getName());
+    String json = switch (payload) {
+      case byte[] bytes -> new String(bytes, StandardCharsets.UTF_8);
+      case String text -> text;
+      case null, default -> {
+        LOGGER.warn(
+            "Unsupported payload type for error routing: {}",
+            payload == null ? "null" : payload.getClass().getName());
+        yield null;
+      }
+    };
+    if (json == null) {
       return null;
     }
 

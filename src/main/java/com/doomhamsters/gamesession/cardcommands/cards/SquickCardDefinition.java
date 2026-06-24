@@ -28,8 +28,6 @@ public class SquickCardDefinition implements CardDefinition {
 
   static final String COMMAND_ID = "SQUICK";
 
-  /** Creates the Squick card definition. */
-  public SquickCardDefinition() {}
 
   @Override
   public String cardType() {

@@ -1,7 +1,6 @@
 package com.doomhamsters.gamesession;
 
 import jakarta.annotation.PreDestroy;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;

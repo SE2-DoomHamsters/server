@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class StealCardDefinition implements CardDefinition {
 
-  public StealCardDefinition() {}
 
   @Override
   public String cardType() {

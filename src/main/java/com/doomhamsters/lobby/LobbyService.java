@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
  * Authoritative in-memory service for lobby membership and game-start state.
  */
 @Service
+@SuppressWarnings("java:S2629")
 public class LobbyService {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LobbyService.class);

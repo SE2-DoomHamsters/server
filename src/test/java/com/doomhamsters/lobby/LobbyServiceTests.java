@@ -400,7 +400,7 @@ class LobbyServiceTests {
 
   @Test
   void scheduledCleanupWithRealtimePublisherBroadcastsSnapshots() {
-    // Covers the 'else' branch in scheduledCleanup: if (realtimePublisher != null)
+    // Covers the 'else' branch in scheduledCleanup.
     LobbyRealtimePublisher mockPublisher = mock(LobbyRealtimePublisher.class);
     MutableClock clock = new MutableClock(Instant.parse("2026-05-17T12:00:00Z"));
     LobbyService service = new LobbyService(6, Duration.ofSeconds(5), clock, mockPublisher, new QrCodeGeneratorService());

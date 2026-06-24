@@ -18,7 +18,7 @@ public class Lobby {
   @Schema(description = "List of all active members in the lobby")
   private List<User> members = new ArrayList<>();
   @Schema(description = "The Base64-encoded string of the lobby QR code",
-    example = "iVBORw0KGgo...")
+      example = "iVBORw0KGgo...")
   private String qrCodeBase64;
   @Schema(description = "Game session id after the lobby starts a game",
       example = "550e8400-e29b-41d4-a716-446655440000")

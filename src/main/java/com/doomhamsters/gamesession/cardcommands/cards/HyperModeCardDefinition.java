@@ -12,11 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class HyperModeCardDefinition implements CardDefinition {
 
-  /**
-   * Creates the Hyper Mode card definition.
-   */
-  public HyperModeCardDefinition() {
-  }
 
   @Override
   public String cardType() {

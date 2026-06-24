@@ -51,7 +51,7 @@ class TwoHamstersCardDefinitionTest {
 
   @Test
   void testMetadata() {
-    assertEquals("HamsterTwo", definition.cardType()); // HIER ÄNDERN
+    assertEquals("HamsterTwo", definition.cardType());
     assertEquals("TWO_HAMSTERS", definition.commandId());
     assertEquals("Hamster Combo: 2-of-a-Kind", definition.displayName());
   }
@@ -62,7 +62,7 @@ class TwoHamstersCardDefinitionTest {
     assertNotNull(testingCard);
     assertEquals("two_hamsters_player1", testingCard.getId());
     assertEquals("Hamster Combo: 2-of-a-Kind", testingCard.getName());
-    assertEquals("HamsterTwo", testingCard.getType()); // HIER ÄNDERN
+    assertEquals("HamsterTwo", testingCard.getType());
   }
 
   @Test
@@ -187,18 +187,18 @@ class TwoHamstersCardDefinitionTest {
     CardCommandResult result = definition.execute(context);
 
     assertNotNull(result);
-    // Verifiziert, dass die zwei Kombo-Karten abgeworfen wurden
+    // Verifies that the two combo cards were discarded
     verify(requester, times(2)).removeFromHand(anyString());
 
-    // Verifiziert, dass eine Karte vom Target gestohlen wurde
+    // Verifies that a card was stolen from the target
     verify(target, times(1)).removeFromHand(anyString());
 
-    // Verifiziert, dass der Requester die gestohlene Karte erhält
+    // Verifies that the requester receives the stolen card
     verify(requester, times(1)).addToHand(targetCard);
   }
   @Test
   void testFailsIfParameterIsBlank() {
-    // Arrange: Der Parameter existiert, ist aber leer (Blank)
+    // Arrange: The parameter exists but is blank
     when(context.getParameters()).thenReturn(Map.of(
       "targetPlayerId", "   ",
       "hamsterType", "hamster_ninja"

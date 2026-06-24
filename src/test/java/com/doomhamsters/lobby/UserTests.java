@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * Testet die User-Klasse auf 100% Code-Abdeckung.
+ * Tests the User class for 100% code coverage.
  */
 class UserTest {
 
@@ -25,11 +25,11 @@ class UserTest {
 
   @Test
   void testConstructors() {
-    // Test des Standard-Konstruktors
+    // Tests the default constructor
     User emptyUser = new User();
     assertNotNull(emptyUser);
 
-    // Test des Full-Args-Konstruktors
+    // Tests the full-args constructor
     User fullUser = new User("id1", "name1", "icon1");
     assertEquals("id1", fullUser.getId());
     assertEquals("name1", fullUser.getUsername());
@@ -42,14 +42,11 @@ class UserTest {
     User userB = new User("100", "Michael", "🐱");
     User userC = new User("200", "AndereID", "🐶");
 
-    // Identisch
     assertEquals(userA, userA);
 
-    // Gleich (basierend auf ID)
     assertEquals(userA, userB);
     assertEquals(userA.hashCode(), userB.hashCode());
 
-    // Ungleich
     assertNotEquals(userA, userC);
     assertNotEquals(userA, null);
     assertNotEquals(userA, new Object());

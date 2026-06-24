@@ -28,7 +28,7 @@ class FourHamstersCardDefinitionTest {
   void setUp() {
     cardDefinition = new FourHamstersCardDefinition();
 
-    // Spieler starten mit 3 Leben
+    // Players start with 3 lives
     initiator = new Player("initiator-id", "Alice");
     target = new Player("target-id", "Bob");
 
@@ -39,7 +39,7 @@ class FourHamstersCardDefinitionTest {
     when(gameMock.getPlayers()).thenReturn(List.of(initiator, target));
   }
 
-  // Hilfsmethode, um dem Initiator die nötigen Karten auf die Hand zu geben
+  // Helper method to give the initiator the required cards in hand
   private void giveInitiatorFourHamsters(String type) {
     for (int i = 0; i < 4; i++) {
       initiator.addToHand(new Card("hamster-" + i, "Hamster", type));
@@ -55,11 +55,11 @@ class FourHamstersCardDefinitionTest {
     CardCommandResult result = cardDefinition.execute(context);
 
     // AC: Target loses 1 life, playing player gains 1 life
-    assertEquals(2, target.getLives(), "Target sollte 1 Leben verlieren (3 -> 2).");
-    assertFalse(target.isEliminated(), "Target sollte nicht eliminiert sein.");
-    assertEquals(4, initiator.getLives(), "Initiator sollte 1 Leben gewinnen (3 -> 4).");
+    assertEquals(2, target.getLives(), "Target should lose 1 life (3 -> 2).");
+    assertFalse(target.isEliminated(), "Target should not be eliminated.");
+    assertEquals(4, initiator.getLives(), "Initiator should gain 1 life (3 -> 4).");
 
-    assertEquals(0, initiator.getHand().size(), "Initiator sollte die 4 Karten abgeworfen haben.");
+    assertEquals(0, initiator.getHand().size(), "Initiator should have discarded the 4 cards.");
     assertTrue(result.getPublicMessage().contains("stole 1 life from Bob!"));
     assertFalse(result.getPublicMessage().contains("eliminated"));
   }
@@ -68,7 +68,7 @@ class FourHamstersCardDefinitionTest {
   void execute_shouldStealLife_andTargetIsEliminated() {
     giveInitiatorFourHamsters("hamster_fat");
     target.decrementLives();
-    target.decrementLives(); // Target hat jetzt nur noch 1 Leben
+    target.decrementLives(); // Target has only 1 life left now
 
     Map<String, Object> params = Map.of("targetPlayerId", target.getId(), "hamsterType", "hamster_fat");
     CardCommandContext context = new CardCommandContext(sessionMock, gameMock, initiator, dummyCard, params);
@@ -76,19 +76,19 @@ class FourHamstersCardDefinitionTest {
     CardCommandResult result = cardDefinition.execute(context);
 
     // AC: Target eliminated if reaches 0 lives
-    assertEquals(0, target.getLives(), "Target sollte auf 0 Leben fallen.");
-    assertTrue(target.isEliminated(), "Target sollte eliminiert sein.");
+    assertEquals(0, target.getLives(), "Target should drop to 0 lives.");
+    assertTrue(target.isEliminated(), "Target should be eliminated.");
 
-    // AC: Playing player gains 1 life (Wurde vorher vergessen!)
-    assertEquals(4, initiator.getLives(), "Initiator sollte 1 Leben gewinnen.");
+    // AC: Playing player gains 1 life
+    assertEquals(4, initiator.getLives(), "Initiator should gain 1 life.");
 
-    assertEquals(0, initiator.getHand().size(), "Initiator sollte die 4 Karten abgeworfen haben.");
+    assertEquals(0, initiator.getHand().size(), "Initiator should have discarded the 4 cards.");
     assertTrue(result.getPublicMessage().contains("Bob was eliminated!"));
   }
 
   @Test
   void execute_shouldThrowException_whenNotEnoughCardsInHand() {
-    // Initiator hat nur 3 statt 4 Karten!
+    // Initiator only has 3 instead of 4 cards!
     for (int i = 0; i < 3; i++) {
       initiator.addToHand(new Card("hamster-" + i, "Hamster", "hamster_ninja"));
     }
@@ -102,8 +102,8 @@ class FourHamstersCardDefinitionTest {
     );
     assertTrue(exception.getMessage().contains("requester does not hold 4 cards"));
 
-    // WICHTIG: Die 3 Karten dürfen bei einem Fehler nicht gelöscht werden!
-    assertEquals(3, initiator.getHand().size(), "Die Karten dürfen nicht abgeworfen werden, wenn die Kombo fehlschlägt.");
+    // IMPORTANT: The 3 cards must not be removed if an error occurs!
+    assertEquals(3, initiator.getHand().size(), "The cards must not be discarded if the combo fails.");
   }
 
   @Test
@@ -159,7 +159,7 @@ class FourHamstersCardDefinitionTest {
     giveInitiatorFourHamsters("hamster_ninja");
     target.decrementLives();
     target.decrementLives();
-    target.decrementLives(); // Target ist eliminiert
+    target.decrementLives(); // Target is eliminated
 
     Map<String, Object> params = Map.of("targetPlayerId", target.getId(), "hamsterType", "hamster_ninja");
     CardCommandContext context = new CardCommandContext(sessionMock, gameMock, initiator, dummyCard, params);
@@ -171,7 +171,7 @@ class FourHamstersCardDefinitionTest {
     assertTrue(exception.getMessage().contains("already eliminated."));
   }
 
-  // --- Metadaten Tests ---
+  // --- Metadata Tests ---
 
   @Test
   void cardType_shouldReturnHamsterFour() {

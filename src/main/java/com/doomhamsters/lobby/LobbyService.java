@@ -35,7 +35,7 @@ public class LobbyService {
   private final Clock clock;
   private final LobbyRealtimePublisher realtimePublisher;
 
-  // Dependency Injection für die Infrastruktur
+  // Dependency injection for the infrastructure
   private final QrCodeGeneratorService qrCodeGenerator;
 
   /** Constructor used by focused unit tests. */
@@ -75,7 +75,7 @@ public class LobbyService {
   }
 
   /**
-   * Erstellt eine neue Lobby basierend auf einem Gruppennamen.
+   * Creates a new lobby based on a group name.
    */
   public Lobby createLobby(String groupName, User creator) {
     validateUser(creator);
@@ -89,7 +89,7 @@ public class LobbyService {
     lobby.setMaxPlayers(defaultMaxPlayers);
     lobby.setMembers(List.of(host));
 
-    // Delegation an den neuen QRCode Provider
+    // Delegation to the new QRCode provider
     lobby.setQrCodeBase64(qrCodeGenerator.generateQrCode(lobbyId));
     lobby.incrementVersion();
 

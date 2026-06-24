@@ -6,18 +6,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Container für eine Spiel-Lobby.
+ * Container for a game lobby.
  */
 public class Lobby {
-  @Schema(description = "Die eindeutige ID der Lobby", example = "MEINE_LOBBY")
+  @Schema(description = "The unique ID of the lobby", example = "MY_LOBBY")
   private String lobbyId;
   @Schema(description = "Display name of the lobby group", example = "DoomHamsters")
   private String groupName;
   private String hostId;
   private int maxPlayers = 6;
-  @Schema(description = "Liste aller aktiven Mitglieder in der Lobby")
+  @Schema(description = "List of all active members in the lobby")
   private List<User> members = new ArrayList<>();
-  @Schema(description = "Der Base64-codierte String des Lobby-QR-Codes", example = "iVBORw0KGgo...")
+  @Schema(description = "The Base64-encoded string of the lobby QR code",
+      example = "iVBORw0KGgo...")
   private String qrCodeBase64;
   @Schema(description = "Game session id after the lobby starts a game",
       example = "550e8400-e29b-41d4-a716-446655440000")
@@ -28,14 +29,14 @@ public class Lobby {
   private int version = 0;
 
   /**
-   * Standard-Konstruktor für Frameworks und Deserialisierung.
+   * Default constructor for frameworks and deserialization.
    */
   public Lobby() {}
 
   /**
-   * Erstellt eine neue Lobby mit der angegebenen ID.
+   * Creates a new lobby with the specified ID.
    *
-   * @param lobbyId Die eindeutige ID der Lobby
+   * @param lobbyId the unique ID of the lobby
    */
   public Lobby(String lobbyId) {
     this.lobbyId = lobbyId;
@@ -59,18 +60,18 @@ public class Lobby {
   }
 
   /**
-   * Gibt die ID der Lobby zurück.
+   * Returns the ID of the lobby.
    *
-   * @return Die ID der Lobby
+   * @return the ID of the lobby
    */
   public String getLobbyId() {
     return lobbyId;
   }
 
   /**
-   * Setzt die ID der Lobby.
+   * Sets the ID of the lobby.
    *
-   * @param lobbyId Die zu setzende Lobby-ID
+   * @param lobbyId the lobby ID to set
    */
   public void setLobbyId(String lobbyId) {
     this.lobbyId = lobbyId;
@@ -147,9 +148,9 @@ public class Lobby {
   }
 
   /**
-   * Gibt eine Kopie der Mitgliederliste zurück.
+   * Returns a copy of the member list.
    *
-   * @return Eine Liste aller Benutzer in dieser Lobby
+   * @return a list of all users in this lobby
    */
   public List<User> getMembers() {
     if (members == null) {
@@ -164,11 +165,11 @@ public class Lobby {
   }
 
   /**
-   * Überschreibt die Liste der Mitglieder mit einer neuen Liste.
+   * Overwrites the list of members with a new list.
    *
-   * @param members Die neue Liste der Benutzer
+   * @param members the new list of users
    */
-  // FIX für EI_EXPOSE_REP2: Speichert eine Kopie, statt die Referenz direkt zu übernehmen
+  // FIX für EI_EXPOSE_REP2: Stores a copy instead of directly accepting the reference
   public void setMembers(List<User> members) {
     this.members = new ArrayList<>();
     if (members != null) {
@@ -179,18 +180,18 @@ public class Lobby {
   }
 
   /**
-   * Gibt den generierten QR-Code als Base64-String zurück.
+   * Returns the generated QR code as a Base64 string.
    *
-   * @return Der QR-Code als Base64-String
+   * @return the QR code as a Base64 string
    */
   public String getQrCodeBase64() {
     return qrCodeBase64;
   }
 
   /**
-   * Setzt den QR-Code als Base64-String.
+   * Sets the QR code as a Base64 string.
    *
-   * @param qrCodeBase64 Der zu setzende Base64-String
+   * @param qrCodeBase64 the Base64 string to set
    */
   public void setQrCodeBase64(String qrCodeBase64) {
     this.qrCodeBase64 = qrCodeBase64;

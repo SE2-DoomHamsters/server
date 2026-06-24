@@ -76,8 +76,8 @@ public class CageSwapCardDefinition implements CardDefinition {
   }
 
   /**
-   * Hilfsmethode, um den nächsten Spieler in der Zugreihenfolge zu finden,
-   * basierend auf den aktiven (lebenden) Spielern.
+   * Helper method to find the next player in the turn order,
+   * based on the active (living) players.
    */
   private Player getNextActivePlayer(Game game, Player currentPlayer) {
     List<Player> activePlayers = game.getBoard().getActivePlayers();

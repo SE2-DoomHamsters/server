@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Koordinator für die Hintergrund-Synchronisation der Spielsitzungen auf die Festplatte.
+ * Coordinator for background synchronization of game sessions to the disk.
  */
 @Component
 public class GameSessionPersistenceCoordinator {
@@ -17,10 +17,10 @@ public class GameSessionPersistenceCoordinator {
   private boolean dirty;
 
   /**
-   * Initialisiert den Koordinator und lädt gespeicherte Sitzungen.
+   * Initializes the coordinator and loads saved sessions.
    *
-   * @param repository         Das Repository für die Datenhaltung im RAM
-   * @param persistenceService Der Handler für die Festplatten-Persistenz
+   * @param repository         the repository for data storage in RAM
+   * @param persistenceService the handler for disk persistence
    */
   public GameSessionPersistenceCoordinator(
       GameSessionRepository repository,
@@ -31,8 +31,8 @@ public class GameSessionPersistenceCoordinator {
   }
 
   /**
-   * Markiert den aktuellen Speicherstand als schmutzig (dirty),
-   * sodass er beim nächsten Flush gespeichert wird.
+   * Marks the current memory state as dirty,
+   * so it will be saved during the next flush.
    */
   public void markDirty() {
     synchronized (monitor) {
@@ -41,7 +41,7 @@ public class GameSessionPersistenceCoordinator {
   }
 
   /**
-   * Erzwingt ein sofortiges Speichern des aktuellen Standes auf die Festplatte.
+   * Forces an immediate save of the current state to the disk.
    */
   public void saveNow() {
     ConcurrentHashMap<String, GameSession> snapshot = repository.getAll();

@@ -55,7 +55,7 @@ class GameControllerTest {
 
   @BeforeEach
   void setUp() {
-    // Hier wird der MockMvc selbst zusammengebaut
+    // Build the MockMvc instance manually using the web application context
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
 
     testLobby = new Lobby("TEST_LOBBY");

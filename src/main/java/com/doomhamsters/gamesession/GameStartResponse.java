@@ -3,8 +3,8 @@ package com.doomhamsters.gamesession;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * Einfaches DTO, um zu signalisieren, dass ein Spiel gestartet
- * wurde, und dessen ID bereitzustellen.
+ * Simple DTO to signal that a game has been started
+ * and to provide its ID.
  */
 @Schema(description = "Response returned when a game is successfully started")
 public class GameStartResponse {
@@ -15,18 +15,18 @@ public class GameStartResponse {
   private final String gameId;
 
   /**
-   * Konstruktor für die GameStartResponse.
+   * Constructor for GameStartResponse.
    *
-   * @param gameId Die generierte ID des Spiels
+   * @param gameId the generated ID of the game
    */
   public GameStartResponse(String gameId) {
     this.gameId = gameId;
   }
 
   /**
-   * Gibt die Spiel-ID zurück.
+   * Returns the game ID.
    *
-   * @return Die ID des Spiels
+   * @return the ID of the game
    */
   public String getGameId() {
     return gameId;

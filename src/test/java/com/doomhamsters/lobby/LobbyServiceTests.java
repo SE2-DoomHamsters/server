@@ -249,10 +249,10 @@ class LobbyServiceTests {
   void lastMemberLeavingDestroysLobby() {
     Lobby lobby = lobbyService.createLobby("Room", host);
 
-    // Host (und einziger Spieler) verlässt den Raum
+    // Host (and only player) leaves the room
     assertTrue(lobbyService.leaveLobby(lobby.getLobbyId(), "host-id").isEmpty());
 
-    // Die Lobby sollte jetzt aus dem System gelöscht sein
+    // The lobby should now be removed from the system
     assertNull(lobbyService.getLobby(lobby.getLobbyId()));
   }
 
@@ -262,7 +262,7 @@ class LobbyServiceTests {
 
     Lobby result = lobbyService.leaveLobby(lobby.getLobbyId(), "unknown-user").orElseThrow();
 
-    // Host ist immer noch drin
+    // Host is still in the lobby
     assertEquals(1, result.getMembers().size());
   }
 
@@ -276,7 +276,7 @@ class LobbyServiceTests {
   void startGameFailsWithNotEnoughPlayers() {
     Lobby lobby = lobbyService.createLobby("Room", host);
 
-    // Nur der Host ist drin (< 2 Spieler) -> Exception erwartet
+    // Only the host is inside (< 2 players) -> expected exception
     assertThrows(IllegalStateException.class, () ->
       lobbyService.startGame(lobby.getLobbyId(), "host-id", ignored -> "game-1")
     );
@@ -294,7 +294,7 @@ class LobbyServiceTests {
   @Test
   void scheduledCleanupRunsWithoutErrors() {
     Lobby lobby = lobbyService.createLobby("Room", host);
-    // Simuliere den Spring-Scheduler
+    // Simulate the Spring scheduler
     lobbyService.scheduledCleanupExpiredMembers();
 
     assertNotNull(lobbyService.getLobby(lobby.getLobbyId()));
@@ -306,17 +306,17 @@ class LobbyServiceTests {
     LobbyService service = new LobbyService(6, Duration.ofSeconds(5), clock, null, new QrCodeGeneratorService());
     Lobby lobby = service.createLobby("Room", host);
 
-    // Zeit um 10 Sekunden vordrehen, damit der Timeout (5s) greift
+    // Advance time by 10 seconds so the timeout (5s) triggers
     clock.advance(Duration.ofSeconds(10));
     service.cleanupExpiredMembers();
 
-    // Raum sollte gelöscht worden sein
+    // Room should have been deleted
     assertNull(service.getLobby(lobby.getLobbyId()));
   }
 
   @Test
   void maxPlayersClampedToSix() {
-    // Testet, dass die Kapazität nicht unter 6 sinken kann (Math.max(6, defaultMaxPlayers))
+    // Tests that the capacity cannot drop below 6 (Math.max(6, defaultMaxPlayers))
     LobbyService smallService = new LobbyService(1, Duration.ofMinutes(1), Clock.systemUTC(), null, new QrCodeGeneratorService());
     Lobby lobby = smallService.createLobby("Small Room", host);
     assertEquals(6, lobby.getMaxPlayers());
@@ -340,10 +340,10 @@ class LobbyServiceTests {
     service.joinOrUpdateLobby(lobby.getLobbyId(), new User("p2", "P2", "cat"));
     service.markGameStarted(lobby.getLobbyId(), "game-1");
 
-    // Zeit abgelaufen
+    // Time expired
     clock.advance(Duration.ofSeconds(10));
 
-    // In einem gestarteten Spiel wird removeExpiredMembersLocked frühzeitig abgebrochen
+    // In a started game, removeExpiredMembersLocked returns early
     Lobby snapshot = service.getLobby(lobby.getLobbyId());
     assertEquals(2, snapshot.getMembers().size());
   }
@@ -362,13 +362,13 @@ class LobbyServiceTests {
 
   @Test
   void getLobbyExplicitlyWithNullReturnsNull() {
-    // Deckt ab: if (lobbyId == null) { return null; }
+    // Covers: if (lobbyId == null) { return null; }
     assertNull(lobbyService.getLobby(null));
   }
 
   @Test
   void springAutowiredConstructorIsCovered() {
-    // Deckt den Konstruktor ab, der von Spring Boot beim Start aufgerufen wird (ObjectProvider)
+    // Covers the constructor called by Spring Boot during startup (ObjectProvider)
     @SuppressWarnings("unchecked")
     ObjectProvider<LobbyRealtimePublisher> providerMock = mock(ObjectProvider.class);
     when(providerMock.getIfAvailable()).thenReturn(null);
@@ -385,7 +385,7 @@ class LobbyServiceTests {
 
   @Test
   void gameStartOutcomeRecordMethodsAreCovered() {
-    // Deckt die überschriebene lobby() Methode und die automatisch generierten Record-Methoden ab
+    // Covers the overridden lobby() method and the automatically generated record methods
     Lobby lobby = lobbyService.createLobby("Room", host);
     LobbyService.GameStartOutcome outcome = new LobbyService.GameStartOutcome(lobby, "game-record", true);
 
@@ -396,22 +396,22 @@ class LobbyServiceTests {
 
   @Test
   void scheduledCleanupWithRealtimePublisherBroadcastsSnapshots() {
-    // Deckt den 'else'-Zweig im scheduledCleanup ab: if (realtimePublisher != null)
+    // Covers the 'else' branch in scheduledCleanup: if (realtimePublisher != null)
     LobbyRealtimePublisher mockPublisher = mock(LobbyRealtimePublisher.class);
     MutableClock clock = new MutableClock(Instant.parse("2026-05-17T12:00:00Z"));
     LobbyService service = new LobbyService(6, Duration.ofSeconds(5), clock, mockPublisher, new QrCodeGeneratorService());
 
     Lobby lobby = service.createLobby("Room", host);
-    service.joinOrUpdateLobby(lobby.getLobbyId(), new User("p2", "P2", "cat")); // p2 tritt bei
+    service.joinOrUpdateLobby(lobby.getLobbyId(), new User("p2", "P2", "cat"));
 
-    // Zeit vordrehen, Host meldet sich, p2 läuft ab
+    // Advance time, host sends heartbeat, p2 expires
     clock.advance(Duration.ofSeconds(3));
-    service.heartbeat(lobby.getLobbyId(), "host-id"); // Host ist safe
-    clock.advance(Duration.ofSeconds(3)); // p2 ist abgelaufen
+    service.heartbeat(lobby.getLobbyId(), "host-id");
+    clock.advance(Duration.ofSeconds(3));
 
     service.scheduledCleanupExpiredMembers();
 
-    // Verifiziert, dass der Code in die for-Schleife geht und broadcast aufruft
+    // Verifies that the code enters the for loop and invokes broadcast
     org.mockito.Mockito.verify(mockPublisher, org.mockito.Mockito.atLeastOnce())
       .broadcastLobbySnapshot(org.mockito.Mockito.any(Lobby.class));
   }
@@ -430,10 +430,10 @@ class LobbyServiceTests {
 
   @Test
   void isExpiredReturnsFalseIfLastSeenAtIsNull() {
-    // Deckt ab: if (lastSeenAt != null && ...) -> den Fall, dass es null ist
+    // Covers: if (lastSeenAt != null && ...) -> the case where it is null
     Lobby lobby = lobbyService.createLobby("Room", host);
     Lobby fetched = lobbyService.getLobby(lobby.getLobbyId());
-    fetched.getMembers().get(0).markSeen(null); // Wir erzwingen null
+    fetched.getMembers().get(0).markSeen(null);
 
     List<Lobby> changed = lobbyService.cleanupExpiredMembers();
     assertTrue(changed.isEmpty());
@@ -441,13 +441,13 @@ class LobbyServiceTests {
 
   @Test
   void nonHostLeavingDoesNotReassignHost() {
-    // Deckt ab: if (!removedUserId.equals(lobby.getHostId())) { return; }
+    // Covers: if (!removedUserId.equals(lobby.getHostId())) { return; }
     Lobby lobby = lobbyService.createLobby("Room", host);
     join(lobby, "p2");
 
     Lobby updated = lobbyService.leaveLobby(lobby.getLobbyId(), "p2").orElseThrow();
 
-    // Host muss weiterhin "host-id" sein
+    // Host must remain "host-id"
     assertEquals("host-id", updated.getHostId());
   }
 

@@ -63,7 +63,7 @@ public class FourHamstersCardDefinition implements CardDefinition {
       throw new IllegalStateException("FourHamsters: Target player is already eliminated.");
     }
 
-    // 1. Die 4 Karten suchen und abwerfen
+    // 1. Find and collect the 4 matching cards
     java.util.List<Card> matchingCards = requester.getHand().stream()
         .filter(c -> hamsterType.equalsIgnoreCase(c.getType()))
         .limit(REQUIRED_COUNT)
@@ -75,14 +75,14 @@ public class FourHamstersCardDefinition implements CardDefinition {
         REQUIRED_COUNT, hamsterType, matchingCards.size()));
     }
 
-    // 2. Jetzt gefahrlos abwerfen, da wir über unsere temporäre Liste iterieren
+    // 2. Discard them safely now by iterating over our temporary list
     matchingCards.forEach(c -> requester.removeFromHand(c.getId()));
 
-    // 2. Leben klauen
+    // 3. Steal 1 life
     target.decrementLives();
     requester.incrementLives();
 
-    // 3. Nachricht generieren
+    // 4. Generate the broadcast message
     String message = String.format(
         "%s played four %s cards and stole 1 life from %s!",
         requester.getName(), hamsterType, target.getName());
@@ -94,7 +94,7 @@ public class FourHamstersCardDefinition implements CardDefinition {
     return CardCommandResult.publicOnly(message);
   }
 
-  // Hilfsmethode zum sicheren Auslesen der Parameter
+  // Helper method to safely extract required string parameters
   private static String requiredString(CardCommandContext context, String key) {
     Object value = context.getParameters().get(key);
     if (value == null || value.toString().isBlank()) {

@@ -24,17 +24,16 @@ import org.springframework.stereotype.Component;
 @Component
 public class BegForSnacksCardDefinition implements CardDefinition {
 
-  /** Creates the Beg for Snacks card definition. */
-  public BegForSnacksCardDefinition() {}
+  private static final String CARD_TYPE = "BegForSnacks";
 
   @Override
   public String cardType() {
-    return "BegForSnacks";
+    return CARD_TYPE;
   }
 
   @Override
   public String commandId() {
-    return "BegForSnacks";
+    return CARD_TYPE;
   }
 
   @Override
@@ -44,7 +43,7 @@ public class BegForSnacksCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card("BegForSnacks" + playerId, displayName(), cardType());
+    return new Card(CARD_TYPE + playerId, displayName(), cardType());
   }
 
   @Override

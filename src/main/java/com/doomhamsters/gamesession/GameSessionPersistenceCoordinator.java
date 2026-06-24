@@ -2,6 +2,7 @@ package com.doomhamsters.gamesession;
 
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -44,7 +45,7 @@ public class GameSessionPersistenceCoordinator {
    * Forces an immediate save of the current state to the disk.
    */
   public void saveNow() {
-    ConcurrentHashMap<String, GameSession> snapshot = repository.getAll();
+    ConcurrentMap<String, GameSession> snapshot = repository.getAll();
     synchronized (monitor) {
       dirty = false;
     }
@@ -65,7 +66,7 @@ public class GameSessionPersistenceCoordinator {
   }
 
   private void saveIfDirty() {
-    ConcurrentHashMap<String, GameSession> snapshot;
+    ConcurrentMap<String, GameSession> snapshot;
     synchronized (monitor) {
       if (!dirty) {
         return;
@@ -76,7 +77,7 @@ public class GameSessionPersistenceCoordinator {
     executeSave(snapshot);
   }
 
-  private void executeSave(ConcurrentHashMap<String, GameSession> snapshot) {
+  private void executeSave(ConcurrentMap<String, GameSession> snapshot) {
     try {
       persistenceService.saveSessions(snapshot);
     } catch (RuntimeException error) {

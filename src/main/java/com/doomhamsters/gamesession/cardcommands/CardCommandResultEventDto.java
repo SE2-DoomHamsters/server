@@ -108,11 +108,11 @@ public class CardCommandResultEventDto {
   /**
    * Returns the privately revealed cards in deck order.
    *
-   * @return defensive copies of revealed card DTOs, or {@code null}
+   * @return defensive copies of revealed card DTOs, or an empty list
    */
   public List<CardDto> getRevealedCards() {
     if (revealedCards == null) {
-      return null;
+      return List.of();
     }
     return revealedCards.stream().map(CardDto::new).toList();
   }
@@ -124,7 +124,7 @@ public class CardCommandResultEventDto {
    */
   public void setRevealedCards(List<CardDto> revealedCards) {
     this.revealedCards = (revealedCards == null)
-        ? null
+        ? List.of()
         : revealedCards.stream().map(CardDto::new).toList();
   }
 

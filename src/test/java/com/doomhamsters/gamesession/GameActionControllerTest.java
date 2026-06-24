@@ -368,7 +368,7 @@ class GameActionControllerTest {
         privateCaptor.capture());
 
     CardCommandResultEventDto privateEvent = privateCaptor.getValue();
-    assertNull(privateEvent.getRevealedCards());
+    assertTrue(privateEvent.getRevealedCards().isEmpty());
     assertEquals("The deck is empty.", privateEvent.getMessage());
   }
 

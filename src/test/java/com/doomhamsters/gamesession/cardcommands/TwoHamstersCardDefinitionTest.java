@@ -71,7 +71,7 @@ class TwoHamstersCardDefinitionTest {
 
     IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
       () -> definition.execute(context));
-    assertEquals("TwoHamsters: missing required parameter: targetPlayerId", exception.getMessage());
+    assertEquals("TWO_HAMSTERS: missing required parameter: targetPlayerId", exception.getMessage());
   }
 
   @Test
@@ -80,7 +80,7 @@ class TwoHamstersCardDefinitionTest {
 
     IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
       () -> definition.execute(context));
-    assertEquals("TwoHamsters: missing required parameter: hamsterType", exception.getMessage());
+    assertEquals("TWO_HAMSTERS: missing required parameter: hamsterType", exception.getMessage());
   }
 
   @Test
@@ -206,6 +206,6 @@ class TwoHamstersCardDefinitionTest {
 
     IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
       () -> definition.execute(context));
-    assertEquals("TwoHamsters: missing required parameter: targetPlayerId", exception.getMessage());
+    assertEquals("TWO_HAMSTERS: missing required parameter: targetPlayerId", exception.getMessage());
   }
 }

@@ -28,7 +28,7 @@ public class SquickCardDefinition implements CardDefinition {
 
   static final String COMMAND_ID = "SQUICK";
 
-  /** Required by Spring component scanning. */
+  /** Creates the Squick card definition. */
   public SquickCardDefinition() {}
 
   @Override

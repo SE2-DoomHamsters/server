@@ -17,8 +17,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SniffAheadCardDefinition implements CardDefinition {
 
-  public SniffAheadCardDefinition() {
-  }
+  public SniffAheadCardDefinition() {}
 
   @Override
   public String cardType() {
@@ -37,10 +36,7 @@ public class SniffAheadCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card(
-        "sniff_ahead_" + playerId,
-        displayName(),
-        cardType());
+    return new Card("sniff_ahead_" + playerId, displayName(), cardType());
   }
 
   @Override

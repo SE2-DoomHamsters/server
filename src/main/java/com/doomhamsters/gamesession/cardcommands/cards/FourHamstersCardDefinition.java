@@ -5,6 +5,7 @@ import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
 import com.doomhamsters.gamesession.cardcommands.CardDefinition;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,8 +16,7 @@ public class FourHamstersCardDefinition implements CardDefinition {
 
   private static final int REQUIRED_COUNT = 4;
 
-  public FourHamstersCardDefinition() {
-  }
+  public FourHamstersCardDefinition() {}
 
   @Override
   public String cardType() {
@@ -40,8 +40,8 @@ public class FourHamstersCardDefinition implements CardDefinition {
 
   @Override
   public CardCommandResult execute(CardCommandContext context) {
-    String targetPlayerId = requiredString(context, "targetPlayerId");
-    String hamsterType = requiredString(context, "hamsterType");
+    String targetPlayerId = requiredParam(context, "targetPlayerId");
+    String hamsterType = requiredParam(context, "hamsterType");
 
     if (!hamsterType.startsWith("hamster_")) {
       throw new IllegalArgumentException(
@@ -63,8 +63,7 @@ public class FourHamstersCardDefinition implements CardDefinition {
       throw new IllegalStateException("FourHamsters: Target player is already eliminated.");
     }
 
-    // 1. Find and collect the 4 matching cards
-    java.util.List<Card> matchingCards = requester.getHand().stream()
+    List<Card> matchingCards = requester.getHand().stream()
         .filter(c -> hamsterType.equalsIgnoreCase(c.getType()))
         .limit(REQUIRED_COUNT)
         .toList();
@@ -75,14 +74,11 @@ public class FourHamstersCardDefinition implements CardDefinition {
         REQUIRED_COUNT, hamsterType, matchingCards.size()));
     }
 
-    // 2. Discard them safely now by iterating over our temporary list
     matchingCards.forEach(c -> requester.removeFromHand(c.getId()));
 
-    // 3. Steal 1 life
     target.decrementLives();
     requester.incrementLives();
 
-    // 4. Generate the broadcast message
     String message = String.format(
         "%s played four %s cards and stole 1 life from %s!",
         requester.getName(), hamsterType, target.getName());
@@ -92,14 +88,5 @@ public class FourHamstersCardDefinition implements CardDefinition {
     }
 
     return CardCommandResult.publicOnly(message);
-  }
-
-  // Helper method to safely extract required string parameters
-  private static String requiredString(CardCommandContext context, String key) {
-    Object value = context.getParameters().get(key);
-    if (value == null || value.toString().isBlank()) {
-      throw new IllegalArgumentException("FourHamsters: missing required parameter: " + key);
-    }
-    return value.toString();
   }
 }

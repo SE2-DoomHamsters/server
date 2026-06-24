@@ -15,12 +15,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class TunnelChaosCardDefinition implements CardDefinition {
 
-  /**
-   * Creates the Tunnel Chaos card definition.
-   */
-  public TunnelChaosCardDefinition() {
-    // Required by Spring component scanning for this stateless card definition.
-  }
+  /** Creates the Tunnel Chaos card definition. */
+  public TunnelChaosCardDefinition() {}
 
   @Override
   public String cardType() {
@@ -39,10 +35,7 @@ public class TunnelChaosCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card(
-        "tunnel_chaos_" + playerId,
-        displayName(),
-        cardType());
+    return new Card("tunnel_chaos_" + playerId, displayName(), cardType());
   }
 
   @Override

@@ -35,15 +35,11 @@ public class HyperModeCardDefinition implements CardDefinition {
 
   @Override
   public Card createTestingCard(String playerId) {
-    return new Card(
-        "hyper_mode_" + playerId,
-        displayName(),
-        cardType());
+    return new Card("hyper_mode_" + playerId, displayName(), cardType());
   }
 
   @Override
   public CardCommandResult execute(CardCommandContext context) {
-
     context.getGame()
         .getBoard()
         .addExtraTurn();

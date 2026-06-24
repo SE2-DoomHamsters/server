@@ -49,8 +49,8 @@ public class BegForSnacksCardDefinition implements CardDefinition {
 
   @Override
   public CardCommandResult execute(CardCommandContext context) {
-    String targetPlayerId = requiredString(context, "targetPlayerId");
-    String requestedType  = requiredString(context, "cardType");
+    String targetPlayerId = requiredParam(context, "targetPlayerId");
+    String requestedType = requiredParam(context, "cardType");
 
     Player requester = context.getPlayer();
     Player target = context.getGame().getPlayers().stream()
@@ -82,13 +82,5 @@ public class BegForSnacksCardDefinition implements CardDefinition {
     return CardCommandResult.publicOnly(String.format(
       "%s begged %s for a %s and received one.",
       requester.getName(), target.getName(), requestedType));
-  }
-
-  private static String requiredString(CardCommandContext context, String key) {
-    Object value = context.getParameters().get(key);
-    if (value == null || value.toString().isBlank()) {
-      throw new IllegalArgumentException("BegForSnacks: missing required parameter: " + key);
-    }
-    return value.toString();
   }
 }

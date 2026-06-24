@@ -368,7 +368,6 @@ class LobbyServiceTests {
 
   @Test
   void getLobbyExplicitlyWithNullReturnsNull() {
-    // Covers: if (lobbyId == null) { return null; }
     assertNull(lobbyService.getLobby(null));
   }
 
@@ -436,7 +435,6 @@ class LobbyServiceTests {
 
   @Test
   void isExpiredReturnsFalseIfLastSeenAtIsNull() {
-    // Covers: if (lastSeenAt != null && ...) -> the case where it is null
     Lobby lobby = lobbyService.createLobby("Room", host);
     Lobby fetched = lobbyService.getLobby(lobby.getLobbyId());
     fetched.getMembers().get(0).markSeen(null);
@@ -447,7 +445,6 @@ class LobbyServiceTests {
 
   @Test
   void nonHostLeavingDoesNotReassignHost() {
-    // Covers: if (!removedUserId.equals(lobby.getHostId())) { return; }
     Lobby lobby = lobbyService.createLobby("Room", host);
     join(lobby, "p2");
 

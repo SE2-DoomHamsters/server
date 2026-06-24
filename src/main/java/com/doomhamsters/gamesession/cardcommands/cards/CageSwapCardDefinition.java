@@ -17,8 +17,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class CageSwapCardDefinition implements CardDefinition {
 
-  public CageSwapCardDefinition() {}
-
   @Override
   public String cardType() {
     return "CageSwap";

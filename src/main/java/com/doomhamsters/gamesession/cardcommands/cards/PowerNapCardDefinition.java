@@ -12,9 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class PowerNapCardDefinition implements CardDefinition {
 
-  /** Creates the Power Nap card definition. */
-  public PowerNapCardDefinition() {}
-
   @Override
   public String cardType() {
     return "PowerNap";

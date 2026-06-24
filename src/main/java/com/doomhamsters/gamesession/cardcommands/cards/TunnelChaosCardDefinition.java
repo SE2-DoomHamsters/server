@@ -15,9 +15,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class TunnelChaosCardDefinition implements CardDefinition {
 
-  /** Creates the Tunnel Chaos card definition. */
-  public TunnelChaosCardDefinition() {}
-
   @Override
   public String cardType() {
     return "TunnelChaos";

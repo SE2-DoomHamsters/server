@@ -8,9 +8,11 @@ import com.doomhamsters.Deck;
 import com.doomhamsters.Game;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.GameSession;
+import com.doomhamsters.gamesession.snackstash.SnackStashClaim;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class GameStateMapperTest {
@@ -33,6 +35,14 @@ class GameStateMapperTest {
 
     player2.addToHand(
         new Card("c2", "Defend", "action"));
+    game.setPendingSnackStashClaim(
+        new SnackStashClaim(
+            "claim-1",
+            "p2",
+            "c2",
+            123L,
+            List.of("p1"),
+            Map.of()));
 
     Field playersField =
         Game.class.getDeclaredField("players");
@@ -61,6 +71,11 @@ class GameStateMapperTest {
     assertEquals(game.getResolvingDoomPlayerId(), dto.getResolvingDoomPlayerId());
     assertTrue(dto.isPendingDoomRequiresInsertion());
     assertEquals("doom_pending", dto.getPendingDoomCardId());
+    assertEquals("claim-1", dto.getPendingSnackStashClaim().getClaimId());
+    assertEquals("p2", dto.getPendingSnackStashClaim().getPlayerId());
+    assertEquals("Bob", dto.getPendingSnackStashClaim().getPlayerName());
+    assertEquals(1, dto.getPendingSnackStashClaim().getVotesRequired());
+    assertEquals(0, dto.getPendingSnackStashClaim().getVotesReceived());
     assertEquals(3, dto.getRemainingDeckSize());
 
     assertEquals(2, dto.getPlayers().size());

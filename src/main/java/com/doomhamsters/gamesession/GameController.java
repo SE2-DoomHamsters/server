@@ -33,17 +33,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * REST Endpunkte zur Steuerung des Spiel-Lebenszyklus.
+ * REST endpoints for controlling the game lifecycle.
  *
- * <p>Das Starten nutzt HTTP Request-Response. Danach wird die
- * Antwort auch via STOMP an die Lobby gesendet.
+ * <p>Starting the game uses HTTP request-response. Afterward, the
+ * response is also broadcast via STOMP to the lobby.
  */
-@Tag(name = "Game", description = "Game lifecycle — Spiel aus Lobby starten")
+@Tag(name = "Game", description = "Game lifecycle — Start game from lobby")
 @RestController
 @RequestMapping("/api/game")
 public class GameController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GameController.class);
+  private static final int COPIES_PER_COMMAND_CARD = 4;
 
   private final GameSessionService gameSessionService;
   private final LobbyService lobbyService;
@@ -53,14 +54,14 @@ public class GameController {
   private final CardRegistry cardRegistry;
 
   /**
-   * Initialisiert den GameController mit seinen Abhängigkeiten.
+   * Initializes the GameController with its dependencies.
    *
-   * @param gameSessionService Der Service für Spielsitzungen
-   * @param lobbyService Der Service für die Lobbys
-   * @param messagingTemplate Das Template für STOMP-Nachrichten
-   * @param realtimePublisher Der Publisher für Lobby/Spielstart-Events
-   * @param gameStateMapper Der Mapper für den Spielzustand
-   * @param cardRegistry Die Registry für Karten-Commands
+   * @param gameSessionService the service for game sessions
+   * @param lobbyService the service for lobbies
+   * @param messagingTemplate the template for STOMP messages
+   * @param realtimePublisher the publisher for lobby/game start events
+   * @param gameStateMapper the mapper for the game state
+   * @param cardRegistry the registry for card commands
    */
   @SuppressFBWarnings("EI_EXPOSE_REP2")
   public GameController(
@@ -79,23 +80,23 @@ public class GameController {
   }
 
   /**
-   * Startet ein neues Spiel aus der angegebenen Lobby.
+   * Starts a new game from the specified lobby.
    *
    * <p>POST /api/game/start
    *
-   * @param lobbyId Die ID der Ziel-Lobby
-   * @param userId Die ID des anfragenden Lobby-Mitglieds
-   * @return GameStartResponse mit neuer Spiel-ID, oder 404 bei Fehler
+   * @param lobbyId the ID of the target lobby
+   * @param userId the ID of the requesting lobby member
+   * @return GameStartResponse with the new game ID, or 404 on error
    */
-  @Operation(summary = "Startet ein neues Spiel",
-      description = "Erstellt GameSession und sendet ID via STOMP.")
-  @ApiResponse(responseCode = "200", description = "Spiel erfolgreich gestartet",
+  @Operation(summary = "Starts a new game",
+      description = "Creates a GameSession and sends the ID via STOMP.")
+  @ApiResponse(responseCode = "200", description = "Game successfully started",
       content = @Content(schema = @Schema(implementation = GameStartResponse.class)))
-  @ApiResponse(responseCode = "404", description = "Lobby nicht gefunden")
+  @ApiResponse(responseCode = "404", description = "Lobby not found")
   @PostMapping("/start")
   public ResponseEntity<GameStartResponse> startGame(
-      @Parameter(description = "ID der Lobby") @RequestParam String lobbyId,
-      @Parameter(description = "ID des anfragenden Mitglieds")
+      @Parameter(description = "ID of the lobby") @RequestParam String lobbyId,
+      @Parameter(description = "ID of the requesting member")
       @RequestParam(required = false) String userId) {
 
     AtomicReference<GameSession> createdSession = new AtomicReference<>();
@@ -116,13 +117,14 @@ public class GameController {
             return ResponseEntity.ok(new GameStartResponse(outcome.gameId()));
           }).orElseGet(() -> ResponseEntity.notFound().build());
     } catch (SecurityException e) {
-      LOGGER.warn("start rejected: lobbyId={}, userId={}, reason=not_member", lobbyId, userId);
+      LOGGER.warn("start rejected: lobbyId={}, userId={}, reason=not_member",
+          sanitize(lobbyId), sanitize(userId));
       return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     } catch (IllegalArgumentException | IllegalStateException e) {
       LOGGER.warn(
           "start rejected: lobbyId={}, userId={}, reason={}",
-          lobbyId,
-          userId,
+          sanitize(lobbyId),
+          sanitize(userId),
           e.getMessage());
       return ResponseEntity.badRequest().build();
     }
@@ -140,12 +142,11 @@ public class GameController {
             : user.getUsername())
         .collect(Collectors.toList());
 
-    List<Card> actionCards = createDummyActionCards();
+    List<Card> deckCards = cardRegistry.createDeckCards(COPIES_PER_COMMAND_CARD);
     Card snackStash = new Card("ss_proto", "Snack Stash", "snack_stash");
     List<Card> doomCards = createDoomCards(playerIds.size() - 1);
 
-    session.getGame().setupWithPlayers(playerIds, playerNames, actionCards, snackStash, doomCards);
-    addTestingCommandCardsToHands(session.getGame());
+    session.getGame().setupWithPlayers(playerIds, playerNames, deckCards, snackStash, doomCards);
     session.setStatus(GameSession.GameStatus.RUNNING);
 
     logInitialGameState(session);
@@ -195,23 +196,11 @@ public class GameController {
     return topCard.getId() + ":" + topCard.getType();
   }
 
-  private List<Card> createDummyActionCards() {
-    List<Card> cards = new ArrayList<>();
-    for (int i = 0; i < 40; i++) {
-      cards.add(new Card("act_" + i, "Aktion " + i, "action"));
+  private static String sanitize(String value) {
+    if (value == null) {
+      return null;
     }
-    for (int i = 0; i < 4; i++) {
-      cards.add(new Card("ss_deck_" + i, "Snack Stash", "snack_stash"));
-    }
-    return cards;
-  }
-
-  private void addTestingCommandCardsToHands(Game game) {
-    for (Player player : game.getPlayers()) {
-      for (Card card : cardRegistry.createTestingCardsForPlayer(player.getId())) {
-        player.addToHand(card);
-      }
-    }
+    return value.replace('\n', '_').replace('\r', '_');
   }
 
   private List<Card> createDoomCards(int count) {

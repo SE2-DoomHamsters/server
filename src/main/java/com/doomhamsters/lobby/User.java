@@ -6,14 +6,14 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Repräsentiert einen Benutzer in einer Lobby.
+ * Represents a user in a lobby.
  */
 public class User {
-  @Schema(description = "Die eindeutige Socket-Session-ID des Benutzers", example = "abc-12345")
+  @Schema(description = "The unique socket session ID of the user", example = "abc-12345")
   private String id;
-  @Schema(description = "Der gewählte Anzeigename des Benutzers", example = "DoomSlayer")
+  @Schema(description = "The chosen display name of the user", example = "DoomSlayer")
   private String username;
-  @Schema(description = "Das gewählte Icon oder Emoji des Benutzers", example = "🐹")
+  @Schema(description = "The chosen icon or emoji of the user", example = "🐹")
   private String avatar;
   @Schema(description = "Whether the user is currently connected", example = "true")
   private boolean connected = true;
@@ -22,16 +22,16 @@ public class User {
   private Instant lastSeenAt = Instant.now();
 
   /**
-   * Standard-Konstruktor für Frameworks.
+   * Default constructor for frameworks.
    */
   public User() {}
 
   /**
-   * Erstellt einen neuen User mit allen Details.
+   * Creates a new user with all details.
    *
-   * @param id Die eindeutige ID (z.B. Socket-Session).
-   * @param username Der gewählte Anzeigename.
-   * @param avatar Das gewählte Icon/Emoji.
+   * @param id the unique ID (e.g., socket session)
+   * @param username the chosen display name
+   * @param avatar the chosen icon/emoji
    */
   public User(String id, String username, String avatar) {
     this.id = id;
@@ -55,54 +55,54 @@ public class User {
   }
 
   /**
-   * Gibt die ID des Users zurück.
+   * Returns the ID of the user.
    *
-   * @return Die ID des Users.
+   * @return the ID of the user
    */
   public String getId() {
     return id;
   }
 
   /**
-   * Setzt die ID des Users.
+   * Sets the ID of the user.
    *
-   * @param id Die zu setzende ID.
+   * @param id the ID to set
    */
   public void setId(String id) {
     this.id = id;
   }
 
   /**
-   * Gibt den Namen des Users zurück.
+   * Returns the username of the user.
    *
-   * @return Der Name des Users.
+   * @return the username of the user
    */
   public String getUsername() {
     return username;
   }
 
   /**
-   * Setzt den Namen des Users.
+   * Sets the username of the user.
    *
-   * @param username Der zu setzende Name.
+   * @param username the username to set
    */
   public void setUsername(String username) {
     this.username = username;
   }
 
   /**
-   * Gibt den gewählten Avatar zurück.
+   * Returns the chosen avatar.
    *
-   * @return Der gewählte Avatar.
+   * @return the chosen avatar
    */
   public String getAvatar() {
     return avatar;
   }
 
   /**
-   * Setzt den Avatar des Users.
+   * Sets the avatar of the user.
    *
-   * @param avatar Der zu setzende Avatar.
+   * @param avatar the avatar to set
    */
   public void setAvatar(String avatar) {
     this.avatar = avatar;
@@ -156,10 +156,10 @@ public class User {
   }
 
   /**
-   * Vergleicht diesen User mit einem anderen Objekt auf Gleichheit anhand der ID.
+   * Compares this user with another object for equality based on the ID.
    *
-   * @param o Das zu vergleichende Objekt
-   * @return true, wenn die IDs übereinstimmen, sonst false
+   * @param o the object to compare
+   * @return true if the IDs match, otherwise false
    */
   @Override
   public boolean equals(Object o) {
@@ -174,9 +174,9 @@ public class User {
   }
 
   /**
-   * Generiert den Hashcode basierend auf der User-ID.
+   * Generates the hash code based on the user ID.
    *
-   * @return Der generierte Hashcode
+   * @return the generated hash code
    */
   @Override
   public int hashCode() {

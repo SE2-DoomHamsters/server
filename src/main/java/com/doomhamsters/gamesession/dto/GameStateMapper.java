@@ -5,6 +5,8 @@ import com.doomhamsters.Game;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.GameSession;
 import com.doomhamsters.gamesession.cardcommands.CardRegistry;
+import com.doomhamsters.gamesession.snackstash.SnackStashClaim;
+import com.doomhamsters.gamesession.snackstash.SnackStashClaimEventDto;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +59,7 @@ public class GameStateMapper {
     dto.setResolvingDoomPlayerId(game.getResolvingDoomPlayerId());
     dto.setPendingDoomRequiresInsertion(game.isPendingDoomRequiresInsertion());
     dto.setPendingDoomCardId(game.getPendingDoomCardId());
+    dto.setPendingSnackStashClaim(mapPendingSnackStashClaim(game));
     dto.setRemainingDeckSize(
         game.getDeck() == null ? 0 : game.getDeck().size());
 
@@ -102,6 +105,31 @@ public class GameStateMapper {
 
     dto.setPlayers(playerDtos);
 
+    return dto;
+  }
+
+  private SnackStashClaimEventDto mapPendingSnackStashClaim(Game game) {
+    SnackStashClaim claim = game.getPendingSnackStashClaim();
+    if (claim == null) {
+      return null;
+    }
+
+    Player claimant =
+        game.getPlayers().stream()
+            .filter(player -> player.getId().equals(claim.getPlayerId()))
+            .findFirst()
+            .orElse(null);
+
+    String playerName = claimant == null ? claim.getPlayerId() : claimant.getName();
+
+    SnackStashClaimEventDto dto = new SnackStashClaimEventDto();
+    dto.setClaimId(claim.getClaimId());
+    dto.setPlayerId(claim.getPlayerId());
+    dto.setPlayerName(playerName);
+    dto.setVotesRequired(claim.getVotesRequired());
+    dto.setVotesReceived(claim.getVotesReceived());
+    dto.setVotedPlayerIds(claim.getVotesByPlayerId().keySet().stream().toList());
+    dto.setMessage(playerName + " claims Snack Stash.");
     return dto;
   }
 }

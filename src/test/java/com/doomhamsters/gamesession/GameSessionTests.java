@@ -12,13 +12,13 @@ class GameSessionTests {
 
     GameSession session = new GameSession(gameId, lobbyId);
 
-    // Teste Konstruktor und Getter
+    // Test constructor and getters
     assertEquals(gameId, session.getGameId());
     assertEquals(lobbyId, session.getLobbyId());
     assertNotNull(session.getGame());
     assertTrue(true);
 
-    // Teste Initialstatus
+    // Test initial status
     assertEquals(GameSession.GameStatus.SETUP, session.getStatus());
   }
 
@@ -26,7 +26,7 @@ class GameSessionTests {
   void testStatusSetters() {
     GameSession session = new GameSession("id", "lobby");
 
-    // Teste Status-Änderung
+    // Test status change
     session.setStatus(GameSession.GameStatus.RUNNING);
     assertEquals(GameSession.GameStatus.RUNNING, session.getStatus());
 
@@ -36,13 +36,13 @@ class GameSessionTests {
 
   @Test
   void testEnumValues() {
-    // Deckt das Enum vollständig ab für Coverage
+    // Fully covers the enum for test coverage
     assertNotNull(GameSession.GameStatus.valueOf("SETUP"));
     assertEquals(3, GameSession.GameStatus.values().length);
   }
   @Test
   void testEmptyConstructorAndSimpleSetters() {
-    // Testet den leeren Konstruktor
+    // Tests the empty constructor
     GameSession session = new GameSession();
 
     session.setGameId("game-789");
@@ -56,11 +56,11 @@ class GameSessionTests {
   void testSetGameWithNullAndNonNull() {
     GameSession session = new GameSession("id", "lobby");
 
-    // 1. Pfad: Übergeht die Null
+    // 1. Path: Passes null
     session.setGame(null);
     assertNull(session.getGame());
 
-    // 2. Pfad: Übergeht ein echtes Game-Objekt
+    // 2. Path: Passes a real Game object
     com.doomhamsters.Game newGame = new com.doomhamsters.Game();
     session.setGame(newGame);
     assertNotNull(session.getGame());

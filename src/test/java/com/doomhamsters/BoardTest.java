@@ -100,4 +100,69 @@ class BoardTest {
     Deck copiedDeck = board.getDeck();
     assertEquals(30, copiedDeck.getCards().size());
   }
+
+  @Test
+  @DisplayName("next player receives single extra turn")
+  void nextPlayerReceivesSingleExtraTurn() {
+    board.setCurrentIndex(0); // Alice
+
+    board.addExtraTurn();
+
+    board.advanceTurn();
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Carol", board.getCurrentPlayer().getName());
+  }
+
+  @Test
+  @DisplayName("next player receives stacked extra turns")
+  void nextPlayerReceivesStackedExtraTurns() {
+    board.setCurrentIndex(0); // Alice
+
+    board.addExtraTurn();
+    board.addExtraTurn();
+
+    board.advanceTurn();
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Carol", board.getCurrentPlayer().getName());
+  }
+
+  @Test
+  @DisplayName("extra turn wraps from last player to first player")
+  void extraTurnWrapsToFirstPlayer() {
+    board.setCurrentIndex(2); // Carol
+
+    board.addExtraTurn();
+
+    board.advanceTurn();
+
+    assertEquals("Alice", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Alice", board.getCurrentPlayer().getName());
+
+    board.advanceTurn();
+
+    assertEquals("Bob", board.getCurrentPlayer().getName());
+  }
 }

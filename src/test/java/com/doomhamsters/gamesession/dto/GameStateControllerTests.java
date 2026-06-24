@@ -6,12 +6,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.doomhamsters.Card;
 import com.doomhamsters.gamesession.GameSession;
+import com.doomhamsters.gamesession.GameSessionPersistenceCoordinator;
 import com.doomhamsters.gamesession.GameSessionPersistenceService;
+import com.doomhamsters.gamesession.GameSessionRepository;
 import com.doomhamsters.gamesession.GameSessionService;
-import com.doomhamsters.gamesession.dto.GameStateMapper;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,21 +31,18 @@ class GameStateControllerTests {
   @BeforeEach
   void setUp() {
     String filePath = new File(tempDir, "sessions.json").getAbsolutePath();
-    gameSessionService =
-        new GameSessionService(
-            new GameSessionPersistenceService(filePath));
 
-    GameStateMapper mapper =
-        new GameStateMapper();
+    GameSessionPersistenceService persistenceService = new GameSessionPersistenceService(filePath);
+    GameSessionRepository repository = new GameSessionRepository();
+    GameSessionPersistenceCoordinator coordinator = new GameSessionPersistenceCoordinator(repository, persistenceService);
 
-    GameStateController controller =
-        new GameStateController(
-            gameSessionService,
-            mapper);
+    gameSessionService = new GameSessionService(repository, coordinator);
 
-    mockMvc =
-        MockMvcBuilders.standaloneSetup(controller)
-            .build();
+    GameStateMapper mapper = new GameStateMapper();
+
+    GameStateController controller = new GameStateController(gameSessionService, mapper);
+
+    mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
   }
 
   @Test

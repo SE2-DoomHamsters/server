@@ -1,0 +1,51 @@
+package com.doomhamsters.gamesession.cardcommands.cards;
+
+import com.doomhamsters.Card;
+import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
+import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
+import java.util.concurrent.ThreadLocalRandom;
+import org.springframework.stereotype.Component;
+
+/**
+ * Card definition for Steal Card.
+ */
+@Component
+public class StealCardDefinition extends AbstractCardDefinition {
+
+  public StealCardDefinition() {
+    super("StealCard", "STEAL_CARD", "Steal Card");
+  }
+
+  @Override
+  public CardCommandResult execute(CardCommandContext context) {
+    String targetPlayerId = requiredParam(context, "targetPlayerId");
+
+    Player thief = context.getPlayer();
+    Player victim = context.getGame().getPlayers().stream()
+        .filter(p -> p.getId().equals(targetPlayerId))
+        .findFirst()
+        .orElse(null);
+
+    if (victim == null || victim.getHand().isEmpty()) {
+      return CardCommandResult.publicOnly(
+        thief.getName() + " tried to steal, but "
+          + (victim != null ? victim.getName() : "the target") + " had no cards!"
+      );
+    }
+
+    // Steal a random card
+    int randomIndex = ThreadLocalRandom.current().nextInt(victim.getHand().size());
+    Card cardToSteal = victim.getHand().get(randomIndex);
+    Card stolenCard = victim.removeFromHand(cardToSteal.getId());
+    thief.addToHand(stolenCard);
+
+    // Return the command result
+    return CardCommandResult.withPrivateResult(
+      thief.getName() + " stole a card from " + victim.getName() + "!",
+      "You successfully stole: " + stolenCard.getName(),
+      stolenCard
+    );
+  }
+}

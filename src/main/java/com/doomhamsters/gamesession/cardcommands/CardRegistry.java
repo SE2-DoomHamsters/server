@@ -1,9 +1,21 @@
 package com.doomhamsters.gamesession.cardcommands;
 
 import com.doomhamsters.Card;
+import com.doomhamsters.gamesession.cardcommands.cards.BegForSnacksCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.CageSwapCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.FourHamstersCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.HamsterTrioCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.HyperModeCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.PowerNapCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.cards.QuickPeekCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.SignOfFateCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.SniffAheadCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.SquickCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.StealCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.TunnelChaosCardDefinition;
+import com.doomhamsters.gamesession.cardcommands.cards.TwoHamstersCardDefinition;
 import com.doomhamsters.gamesession.dto.CardDto;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -57,7 +69,19 @@ public class CardRegistry {
   public static CardRegistry defaultRegistry() {
     return of(
         new PowerNapCardDefinition(),
-        new QuickPeekCardDefinition());
+        new QuickPeekCardDefinition(),
+        new SniffAheadCardDefinition(),
+        new SignOfFateCardDefinition(),
+        new StealCardDefinition(),
+        new HamsterTrioCardDefinition(),
+        new HyperModeCardDefinition(),
+        new BegForSnacksCardDefinition(),
+        new SquickCardDefinition(),
+        new TunnelChaosCardDefinition(),
+        new TwoHamstersCardDefinition(),
+        new CageSwapCardDefinition(),
+        new FourHamstersCardDefinition()
+    );
   }
 
   /**
@@ -117,6 +141,31 @@ public class CardRegistry {
   }
 
   /**
+   * Creates deck cards from the registered playable card definitions.
+   *
+   * @param copiesPerDefinition number of copies to create for every definition
+   * @return real command cards suitable for the draw deck
+   */
+  public List<Card> createDeckCards(int copiesPerDefinition) {
+    if (copiesPerDefinition < 1) {
+      throw new IllegalArgumentException("At least one copy per card definition is required.");
+    }
+
+    List<Card> cards = new ArrayList<>();
+    for (CardDefinition definition : definitions) {
+      String idPrefix = toCardIdSegment(definition.cardType());
+      for (int copy = 0; copy < copiesPerDefinition; copy++) {
+        cards.add(new Card(
+            idPrefix + "_" + copy,
+            definition.displayName(),
+            definition.cardType()));
+      }
+    }
+
+    return cards;
+  }
+
+  /**
    * Maps a card to a DTO, adding effectId when the card type is registered.
    *
    * @param card source card
@@ -170,5 +219,14 @@ public class CardRegistry {
     }
 
     return value.trim().toUpperCase(Locale.ROOT);
+  }
+
+  private String toCardIdSegment(String value) {
+    return value
+        .replaceAll("([a-z])([A-Z])", "$1_$2")
+        .replaceAll("[^A-Za-z0-9]+", "_")
+        .replaceAll("_+", "_")
+        .replaceAll("(^_)|(_$)", "")
+        .toLowerCase(Locale.ROOT);
   }
 }

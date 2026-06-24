@@ -6,25 +6,39 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Deck;
+import com.doomhamsters.Game;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.cardcommands.CardCommandPlayedEventDto;
+import com.doomhamsters.gamesession.cardcommands.CardRegistry;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResultEventDto;
 import com.doomhamsters.gamesession.dto.DoomDrawnEventDto;
 import com.doomhamsters.gamesession.dto.GameStateDto;
 import com.doomhamsters.gamesession.dto.GameStateMapper;
+import com.doomhamsters.gamesession.snackstash.SnackStashWebSocketController;
+import com.doomhamsters.gamesession.snackstash.SnackStashClaim;
+import com.doomhamsters.gamesession.snackstash.SnackStashClaimEventDto;
+import com.doomhamsters.gamesession.snackstash.SnackStashClaimService;
+import com.doomhamsters.gamesession.snackstash.SnackStashResolutionEventDto;
+import com.doomhamsters.gamesession.snackstash.SnackStashVote;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,24 +60,45 @@ class GameActionControllerTest {
 
   private GameActionController controller;
 
+  private SnackStashWebSocketController snackStashController;
+
   @TempDir
   private Path tempDir;
 
   @BeforeEach
   void setUp() {
-    gameSessionService =
-        new GameSessionService(
-            new GameSessionPersistenceService(
-                tempDir.resolve("game-action-sessions.json").toString()));
+    // 1. Die neuen Bauteile initialisieren
+    String sessionFilePath = tempDir.resolve("game-action-sessions.json").toString();
+    GameSessionPersistenceService persistenceService = new GameSessionPersistenceService(sessionFilePath);
+    GameSessionRepository repository = new GameSessionRepository();
+    GameSessionPersistenceCoordinator coordinator = new GameSessionPersistenceCoordinator(repository, persistenceService);
+
+    // 2. Den Service mit den Bauteilen zusammenbauen
+    gameSessionService = new GameSessionService(repository, coordinator);
 
     messagingTemplate = mock(SimpMessagingTemplate.class);
+    GameStateMapper gameStateMapper = new GameStateMapper();
+    ObjectMapper objectMapper = new ObjectMapper();
+    GameSessionBroadcaster gameSessionBroadcaster =
+        new GameSessionBroadcaster(
+            gameSessionService,
+            gameStateMapper,
+            messagingTemplate);
 
     controller =
         new GameActionController(
             gameSessionService,
-            new GameStateMapper(),
+            gameSessionBroadcaster,
             messagingTemplate,
-            new ObjectMapper());
+            objectMapper,
+            CardRegistry.defaultRegistry());
+    snackStashController =
+        new SnackStashWebSocketController(
+            gameSessionService,
+            gameSessionBroadcaster,
+            messagingTemplate,
+            objectMapper,
+            new SnackStashClaimService());
   }
 
   @Test
@@ -206,6 +241,138 @@ class GameActionControllerTest {
   }
 
   @Test
+  void sniffAheadDiscardsCardSendsPublicAndPrivateEventsWithTopThreeCardsAndDoesNotChangeDeckOrder() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    Player current = session.getGame().getBoard().getCurrentPlayer();
+    current.addToHand(new Card("sniff_1", "Sniff Ahead", "SniffAhead"));
+
+    replaceDeck(session, List.of(
+        new Card("top_1", "Top One", "action"),
+        new Card("top_2", "Top Two", "action"),
+        new Card("top_3", "Top Three", "action")));
+
+    controller.activateCard(
+        session.getGameId(),
+        """
+            {
+              "playerId": "p1",
+              "cardId": "sniff_1",
+              "cardType": "SniffAhead",
+              "commandId": "SNIFF_AHEAD",
+              "parameters": {}
+            }
+            """);
+
+    GameSession saved =
+        gameSessionService
+            .getSession(session.getGameId())
+            .orElseThrow();
+
+    assertEquals("top_1", saved.getGame().getDeck().getCards().get(0).getId());
+    assertEquals("top_2", saved.getGame().getDeck().getCards().get(1).getId());
+    assertEquals("top_3", saved.getGame().getDeck().getCards().get(2).getId());
+    assertTrue(
+        saved.getGame().getBoard().getDiscardPile().stream()
+            .anyMatch(card -> card.getId().equals("sniff_1")));
+
+    ArgumentCaptor<CardCommandPlayedEventDto> publicCaptor =
+        ArgumentCaptor.forClass(CardCommandPlayedEventDto.class);
+    ArgumentCaptor<CardCommandResultEventDto> privateCaptor =
+        ArgumentCaptor.forClass(CardCommandResultEventDto.class);
+
+    InOrder inOrder = inOrder(messagingTemplate);
+    inOrder.verify(messagingTemplate).convertAndSend(
+        eq("/topic/game/" + session.getGameId()),
+        publicCaptor.capture());
+    inOrder.verify(messagingTemplate).convertAndSend(
+        eq("/queue/game/" + session.getGameId() + "/p1"),
+        privateCaptor.capture());
+
+    assertEquals("CARD_COMMAND_PLAYED", publicCaptor.getValue().getType());
+    assertEquals("SNIFF_AHEAD", publicCaptor.getValue().getCommandId());
+    assertEquals("ty activated Sniff Ahead.", publicCaptor.getValue().getMessage());
+
+    CardCommandResultEventDto privateEvent = privateCaptor.getValue();
+    assertEquals("CARD_COMMAND_RESULT", privateEvent.getType());
+    assertEquals("p1", privateEvent.getPlayerId());
+    assertEquals("SNIFF_AHEAD", privateEvent.getCommandId());
+    assertEquals(3, privateEvent.getRevealedCards().size());
+    assertEquals("top_1", privateEvent.getRevealedCards().get(0).getId());
+    assertEquals("top_2", privateEvent.getRevealedCards().get(1).getId());
+    assertEquals("top_3", privateEvent.getRevealedCards().get(2).getId());
+    assertEquals("Top 3 card(s): Top One, Top Two, Top Three.", privateEvent.getMessage());
+  }
+
+  @Test
+  void sniffAheadRevealsFewerCardsWhenDeckSmallerThanThree() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    Player current = session.getGame().getBoard().getCurrentPlayer();
+    current.addToHand(new Card("sniff_2", "Sniff Ahead", "SniffAhead"));
+
+    replaceDeck(session, List.of(
+        new Card("only_1", "Only One", "action")));
+
+    controller.activateCard(
+        session.getGameId(),
+        """
+            {
+              "playerId": "p1",
+              "cardId": "sniff_2",
+              "cardType": "SniffAhead",
+              "commandId": "SNIFF_AHEAD",
+              "parameters": {}
+            }
+            """);
+
+    ArgumentCaptor<CardCommandResultEventDto> privateCaptor =
+        ArgumentCaptor.forClass(CardCommandResultEventDto.class);
+
+    verify(messagingTemplate).convertAndSend(
+        eq("/queue/game/" + session.getGameId() + "/p1"),
+        privateCaptor.capture());
+
+    CardCommandResultEventDto privateEvent = privateCaptor.getValue();
+    assertEquals(1, privateEvent.getRevealedCards().size());
+    assertEquals("only_1", privateEvent.getRevealedCards().get(0).getId());
+    assertEquals("Top 1 card(s): Only One.", privateEvent.getMessage());
+  }
+
+  @Test
+  void sniffAheadSendsEmptyDeckMessageWhenDeckIsEmpty() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    Player current = session.getGame().getBoard().getCurrentPlayer();
+    current.addToHand(new Card("sniff_3", "Sniff Ahead", "SniffAhead"));
+
+    replaceDeck(session, List.of());
+
+    controller.activateCard(
+        session.getGameId(),
+        """
+            {
+              "playerId": "p1",
+              "cardId": "sniff_3",
+              "cardType": "SniffAhead",
+              "commandId": "SNIFF_AHEAD",
+              "parameters": {}
+            }
+            """);
+
+    ArgumentCaptor<CardCommandResultEventDto> privateCaptor =
+        ArgumentCaptor.forClass(CardCommandResultEventDto.class);
+
+    verify(messagingTemplate).convertAndSend(
+        eq("/queue/game/" + session.getGameId() + "/p1"),
+        privateCaptor.capture());
+
+    CardCommandResultEventDto privateEvent = privateCaptor.getValue();
+    assertTrue(privateEvent.getRevealedCards().isEmpty());
+    assertEquals("The deck is empty.", privateEvent.getMessage());
+  }
+
+  @Test
   void drawMutatesSavedSessionAndBroadcastsUpdatedState() {
     GameSession session = runningSession();
     session.getGame().getBoard().setCurrentIndex(1);
@@ -276,6 +443,30 @@ class GameActionControllerTest {
   }
 
   @Test
+  void drawOnEmptyDeckThrows() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    replaceDeck(session, List.of());
+    String gameId = session.getGameId();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> controller.draw(gameId, "{\"playerId\":\"p1\"}"));
+  }
+
+  @Test
+  void drawAfterGameOverThrows() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    session.getGame().setState(Game.State.FINISHED);
+    String gameId = session.getGameId();
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> controller.draw(gameId, "{\"playerId\":\"p1\"}"));
+  }
+
+  @Test
   void drawDoomSendsPrivateEventBeforeSharedState() {
     GameSession session = runningSession();
     session.getGame().getBoard().setCurrentIndex(1);
@@ -320,21 +511,22 @@ class GameActionControllerTest {
     assertEquals("p1", stateCaptor.getValue().getCurrentPlayerId());
     assertEquals("p1", stateCaptor.getValue().getResolvingDoomPlayerId());
     assertFalse(stateCaptor.getValue().isPendingDoomRequiresInsertion());
-    assertEquals(remainingDeckSizeBefore, stateCaptor.getValue().getRemainingDeckSize());
+    assertEquals(remainingDeckSizeBefore - 1, stateCaptor.getValue().getRemainingDeckSize());
 
     GameSession saved =
         gameSessionService
             .getSession(session.getGameId())
             .orElseThrow();
 
-    assertTrue(saved.getGame().getDeck().getCards().stream()
+    assertEquals("doom_android", saved.getGame().getDrawnDoomCardId());
+    assertFalse(saved.getGame().getDeck().getCards().stream()
         .anyMatch(card -> card.getId().equals("doom_android")));
     assertFalse(saved.getGame().getDeck().getDiscards().stream()
         .anyMatch(card -> card.getId().equals("doom_android")));
   }
 
   @Test
-  void drawDoomWithSnackStashRequiresInsertionChoice() {
+  void drawDoomWithSnackStashWaitsForSnackStashClaim() {
     GameSession session = runningSession();
     session.getGame().getBoard().setCurrentIndex(1);
     Player current = session.getGame().getBoard().getCurrentPlayer();
@@ -361,19 +553,307 @@ class GameActionControllerTest {
             .getSession(session.getGameId())
             .orElseThrow();
 
-    assertEquals(
-        handSizeBefore - 1,
-        saved.getGame().getBoard().getCurrentPlayer().getHand().size());
+    assertEquals(handSizeBefore, saved.getGame().getBoard().getCurrentPlayer().getHand().size());
     assertEquals("p1", stateCaptor.getValue().getResolvingDoomPlayerId());
-    assertTrue(stateCaptor.getValue().isPendingDoomRequiresInsertion());
-    assertEquals("doom_insert", stateCaptor.getValue().getPendingDoomCardId());
-    assertEquals("doom_insert", saved.getGame().getPendingDoomCardId());
+    assertFalse(stateCaptor.getValue().isPendingDoomRequiresInsertion());
+    assertNull(stateCaptor.getValue().getPendingDoomCardId());
+    assertEquals("doom_insert", saved.getGame().getDrawnDoomCardId());
+    assertNull(saved.getGame().getPendingDoomCardId());
+  }
+
+  @Test
+  void claimSnackStashPublishesPendingClaimAndKeepsDoomPending() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    Player current = session.getGame().getBoard().getCurrentPlayer();
+    String snackStashId =
+        current.getHand().stream()
+            .filter(Card::isSnackStash)
+            .findFirst()
+            .orElseThrow()
+            .getId();
+
+    while (!session.getGame().getDeck().isEmpty()) {
+      session.getGame().getDeck().draw();
+    }
+    session.getGame().getDeck().insertDoomCards(
+        List.of(new Card("doom_claim", "Doom Hamster", "doom")));
+
+    controller.draw(session.getGameId(), "{\"playerId\":\"p1\"}");
+    snackStashController.claimSnackStash(
+        session.getGameId(),
+        "{\"playerId\":\"p1\",\"cardId\":\"" + snackStashId + "\"}");
+
+    ArgumentCaptor<SnackStashClaimEventDto> eventCaptor =
+        ArgumentCaptor.forClass(SnackStashClaimEventDto.class);
+    verify(messagingTemplate).convertAndSend(
+        eq("/topic/game/" + session.getGameId()),
+        eventCaptor.capture());
+
+    SnackStashClaimEventDto event = eventCaptor.getValue();
+    assertEquals("SNACK_STASH_CLAIM_PENDING", event.getType());
+    assertEquals("p1", event.getPlayerId());
+    assertEquals("ty", event.getPlayerName());
+    assertEquals(1, event.getVotesRequired());
+    assertEquals(0, event.getVotesReceived());
+    assertTrue(event.getVotedPlayerIds().isEmpty());
+
+    GameSession saved =
+        gameSessionService
+            .getSession(session.getGameId())
+            .orElseThrow();
+    assertEquals("doom_claim", saved.getGame().getDrawnDoomCardId());
+    assertFalse(saved.getGame().isPendingDoomRequiresInsertion());
+    assertEquals(event.getClaimId(), saved.getGame().getPendingSnackStashClaim().getClaimId());
+  }
+
+  @Test
+  void noVoteAgainstFakeSnackStashBroadcastsCheaterAndAppliesDoomLifeLoss() {
+    GameSession session = runningSession();
+    session.getGame().getBoard().setCurrentIndex(1);
+    Player claimant = session.getGame().getBoard().getCurrentPlayer();
+    String fakeCardId =
+        claimant.getHand().stream()
+            .filter(card -> !card.isSnackStash() && !card.isDoom())
+            .findFirst()
+            .orElseThrow()
+            .getId();
+    int livesBefore = claimant.getLives();
+
+    while (!session.getGame().getDeck().isEmpty()) {
+      session.getGame().getDeck().draw();
+    }
+    session.getGame().getDeck().insertDoomCards(
+        List.of(new Card("doom_fake", "Doom Hamster", "doom")));
+
+    controller.draw(session.getGameId(), "{\"playerId\":\"p1\"}");
+    snackStashController.claimSnackStash(
+        session.getGameId(),
+        "{\"playerId\":\"p1\",\"cardId\":\"" + fakeCardId + "\"}");
+    String claimId =
+        gameSessionService
+            .getSession(session.getGameId())
+            .orElseThrow()
+            .getGame()
+            .getPendingSnackStashClaim()
+            .getClaimId();
+
+    snackStashController.voteSnackStash(
+        session.getGameId(),
+        "{\"playerId\":\"p0\",\"claimId\":\"" + claimId + "\",\"vote\":\"NO\"}");
+
+    ArgumentCaptor<Object> publicEventCaptor =
+        ArgumentCaptor.forClass(Object.class);
+    verify(messagingTemplate, times(2)).convertAndSend(
+        eq("/topic/game/" + session.getGameId()),
+        publicEventCaptor.capture());
+
+    SnackStashResolutionEventDto event =
+        publicEventCaptor.getAllValues().stream()
+            .filter(SnackStashResolutionEventDto.class::isInstance)
+            .map(SnackStashResolutionEventDto.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals("SNACK_STASH_RESOLVED", event.getType());
+    assertEquals("CHEATER", event.getOutcome());
+    assertEquals(List.of("p0"), event.getAccusingPlayerIds());
+    assertEquals("p1", event.getAffectedPlayerId());
+    assertEquals(livesBefore, event.getLivesBefore());
+    assertEquals(livesBefore - 1, event.getLivesAfter());
+    assertEquals(1, event.getLifeChanges().size());
+    assertEquals("p1", event.getLifeChanges().get(0).getPlayerId());
+
+    GameSession saved =
+        gameSessionService
+            .getSession(session.getGameId())
+            .orElseThrow();
+    assertNull(saved.getGame().getResolvingDoomPlayerId());
+    assertNull(saved.getGame().getDrawnDoomCardId());
+    assertTrue(saved.getGame().getDeck().getCards().stream()
+        .anyMatch(card -> card.getId().equals("doom_fake")));
+  }
+
+  @Test
+  void partialSnackStashVotePublishesClaimProgress() {
+    GameSession session = runningSession(List.of("yy", "ty", "zz"));
+    session.getGame().getBoard().setCurrentIndex(1);
+    Player claimant = session.getGame().getBoard().getCurrentPlayer();
+    String snackStashId =
+        claimant.getHand().stream()
+            .filter(Card::isSnackStash)
+            .findFirst()
+            .orElseThrow()
+            .getId();
+
+    while (!session.getGame().getDeck().isEmpty()) {
+      session.getGame().getDeck().draw();
+    }
+    session.getGame().getDeck().insertDoomCards(
+        List.of(new Card("doom_progress", "Doom Hamster", "doom")));
+
+    controller.draw(session.getGameId(), "{\"playerId\":\"p1\"}");
+    snackStashController.claimSnackStash(
+        session.getGameId(),
+        "{\"playerId\":\"p1\",\"cardId\":\"" + snackStashId + "\"}");
+    String claimId =
+        gameSessionService
+            .getSession(session.getGameId())
+            .orElseThrow()
+            .getGame()
+            .getPendingSnackStashClaim()
+            .getClaimId();
+    clearInvocations(messagingTemplate);
+
+    snackStashController.voteSnackStash(
+        session.getGameId(),
+        "{\"playerId\":\"p0\",\"claimId\":\"" + claimId + "\",\"vote\":\"YES\"}");
+
+    ArgumentCaptor<SnackStashClaimEventDto> eventCaptor =
+        ArgumentCaptor.forClass(SnackStashClaimEventDto.class);
+    verify(messagingTemplate).convertAndSend(
+        eq("/topic/game/" + session.getGameId()),
+        eventCaptor.capture());
+
+    SnackStashClaimEventDto event = eventCaptor.getValue();
+    assertEquals(claimId, event.getClaimId());
+    assertEquals(2, event.getVotesRequired());
+    assertEquals(1, event.getVotesReceived());
+    assertEquals(List.of("p0"), event.getVotedPlayerIds());
+    assertEquals(claimId, gameSessionService
+        .getSession(session.getGameId())
+        .orElseThrow()
+        .getGame()
+        .getPendingSnackStashClaim()
+        .getClaimId());
+  }
+
+  @Test
+  void snackStashClaimRejectsUnknownGame() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            snackStashController.claimSnackStash(
+                "missing-game",
+                "{\"playerId\":\"p1\",\"cardId\":\"card-1\"}"));
+  }
+
+  @Test
+  void snackStashClaimRejectsInvalidJsonPayload() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> snackStashController.claimSnackStash("game-1", "{"));
+  }
+
+  @Test
+  void snackStashClaimRejectsMissingCardId() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> snackStashController.claimSnackStash("game-1", "{\"playerId\":\"p1\"}"));
+  }
+
+  @Test
+  void snackStashClaimRejectsNonTextPlayerId() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            snackStashController.claimSnackStash(
+                "game-1",
+                "{\"playerId\":123,\"cardId\":\"card-1\"}"));
+  }
+
+  @Test
+  void snackStashClaimRejectsBlankCardId() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            snackStashController.claimSnackStash(
+                "game-1",
+                "{\"playerId\":\"p1\",\"cardId\":\"   \"}"));
+  }
+
+  @Test
+  void snackStashVoteRejectsInvalidVoteValue() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            snackStashController.voteSnackStash(
+                "game-1",
+                "{\"playerId\":\"p0\",\"claimId\":\"claim-1\",\"vote\":\"MAYBE\"}"));
+  }
+
+  @Test
+  void snackStashVoteWithNoClaimAfterServiceVoteOnlyBroadcastsState() {
+    GameSession session = runningSession();
+    SnackStashClaimService claimService = mock(SnackStashClaimService.class);
+    SnackStashWebSocketController controllerWithMockService =
+        new SnackStashWebSocketController(
+            gameSessionService,
+            new GameSessionBroadcaster(
+                gameSessionService,
+                new GameStateMapper(),
+                messagingTemplate),
+            messagingTemplate,
+            new ObjectMapper(),
+            claimService);
+    when(claimService.vote(session, "p0", "claim-1", SnackStashVote.YES))
+        .thenReturn(Optional.empty());
+
+    controllerWithMockService.voteSnackStash(
+        session.getGameId(),
+        "{\"playerId\":\"p0\",\"claimId\":\"claim-1\",\"vote\":\"YES\"}");
+
+    verify(messagingTemplate).convertAndSend(
+        eq("/topic/game-state/" + session.getGameId()),
+        any(GameStateDto.class));
+  }
+
+  @Test
+  void snackStashClaimRejectsClaimForMissingPlayerReturnedByService() {
+    GameSession session = runningSession();
+    SnackStashClaimService claimService = mock(SnackStashClaimService.class);
+    SnackStashWebSocketController controllerWithMockService =
+        new SnackStashWebSocketController(
+            gameSessionService,
+            new GameSessionBroadcaster(
+                gameSessionService,
+                new GameStateMapper(),
+                messagingTemplate),
+            messagingTemplate,
+            new ObjectMapper(),
+            claimService);
+    when(claimService.claimSnackStash(
+        eq(session),
+        eq("missing-player"),
+        eq("card-1"),
+        anyLong()))
+        .thenReturn(
+            new SnackStashClaim(
+                "claim-1",
+                "missing-player",
+                "card-1",
+                1L,
+                List.of("p0"),
+                Map.of()));
+
+    String gameId = session.getGameId();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> controllerWithMockService.claimSnackStash(
+            gameId,
+            "{\"playerId\":\"missing-player\",\"cardId\":\"card-1\"}"));
   }
 
   @Test
   void insertDoomReinsertsPendingCardClearsStateAndBroadcasts() {
     GameSession session = runningSession();
     session.getGame().getBoard().setCurrentIndex(1);
+    Player current = session.getGame().getBoard().getCurrentPlayer();
+    String snackStashId =
+        current.getHand().stream()
+            .filter(Card::isSnackStash)
+            .findFirst()
+            .orElseThrow()
+            .getId();
 
     while (!session.getGame().getDeck().isEmpty()) {
       session.getGame().getDeck().draw();
@@ -383,6 +863,7 @@ class GameActionControllerTest {
         List.of(new Card("doom_insert", "Doom Hamster", "doom")));
 
     controller.draw(session.getGameId(), "{\"playerId\":\"p1\"}");
+    session.getGame().defusePendingDoomWithClaimedCard(snackStashId);
     controller.insertDoom(session.getGameId(), "{\"playerId\":\"p1\",\"position\":0}");
 
     GameSession saved =
@@ -424,6 +905,9 @@ class GameActionControllerTest {
   void ackDoomClearsResolvingDoomPlayerAndBroadcastsState() {
     GameSession session = runningSession();
     session.getGame().setResolvingDoomPlayerId("p1");
+    session.getGame().setDrawnDoomCardId("doom_ack");
+    session.getGame().setDrawnDoomCardName("Doom Hamster");
+    session.getGame().setDrawnDoomCardType("doom");
 
     controller.ackDoom(session.getGameId(), "{\"playerId\":\"p1\"}");
 
@@ -438,6 +922,14 @@ class GameActionControllerTest {
     assertNull(stateCaptor.getValue().getResolvingDoomPlayerId());
     assertFalse(stateCaptor.getValue().isPendingDoomRequiresInsertion());
     assertNull(stateCaptor.getValue().getPendingDoomCardId());
+
+    GameSession saved =
+        gameSessionService
+            .getSession(session.getGameId())
+            .orElseThrow();
+    assertNull(saved.getGame().getDrawnDoomCardId());
+    assertTrue(saved.getGame().getDeck().getCards().stream()
+        .anyMatch(card -> card.getId().equals("doom_ack")));
   }
 
   @Test
@@ -535,14 +1027,52 @@ class GameActionControllerTest {
         Arguments.of("acceptDoom", gameIdAndPayload, "/game/{gameId}/doom/accept"));
   }
 
+  @ParameterizedTest
+  @MethodSource("snackStashMessageMappings")
+  void snackStashActionUsesExpectedMessageMapping(
+      String methodName,
+      Class<?>[] parameterTypes,
+      String expectedMapping) throws Exception {
+    Method method =
+        SnackStashWebSocketController.class.getMethod(methodName, parameterTypes);
+
+    MessageMapping mapping = method.getAnnotation(MessageMapping.class);
+
+    assertArrayEquals(
+        new String[] {expectedMapping},
+        mapping.value());
+  }
+
+  private static Stream<Arguments> snackStashMessageMappings() {
+    Class<?>[] gameIdAndPayload = {String.class, String.class};
+
+    return Stream.of(
+        Arguments.of(
+            "claimSnackStash",
+            gameIdAndPayload,
+            "/game/{gameId}/snack-stash/claim"),
+        Arguments.of(
+            "voteSnackStash",
+            gameIdAndPayload,
+            "/game/{gameId}/snack-stash/vote"));
+  }
+
   private GameSession runningSession() {
+    return runningSession(List.of("yy", "ty"));
+  }
+
+  private GameSession runningSession(List<String> playerNames) {
     GameSession session = gameSessionService.createSession("lobby-1");
+    List<Card> doomCards = new ArrayList<>();
+    for (int i = 0; i < Math.max(1, playerNames.size() - 1); i++) {
+      doomCards.add(new Card("doom_" + i, "Doom Hamster", "doom"));
+    }
 
     session.getGame().setup(
-        List.of("yy", "ty"),
+        playerNames,
         actionCards(20),
         new Card("ss_proto", "Snack Stash", "snack_stash"),
-        List.of(new Card("doom_1", "Doom Hamster", "doom")));
+        doomCards);
 
     session.setStatus(GameSession.GameStatus.RUNNING);
     gameSessionService.saveSession(session);

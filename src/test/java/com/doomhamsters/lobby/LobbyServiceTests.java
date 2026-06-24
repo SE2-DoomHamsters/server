@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -23,6 +24,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /** Tests for the authoritative lobby service. */
 class LobbyServiceTests {
@@ -32,7 +38,7 @@ class LobbyServiceTests {
 
   @BeforeEach
   void setUp() {
-    lobbyService = new LobbyService();
+    lobbyService = new LobbyService(new QrCodeGeneratorService());
     host = new User("host-id", "Alice", "dog");
   }
 
@@ -154,9 +160,11 @@ class LobbyServiceTests {
     join(lobby, "p2");
     lobbyService.startGame(lobby.getLobbyId(), "host-id", ignored -> "game-1");
 
+    String lobbyId = lobby.getLobbyId();
+    User newPlayer = new User("p3", "P3", "cat");
     assertThrows(
         IllegalStateException.class,
-        () -> lobbyService.joinOrUpdateLobby(lobby.getLobbyId(), new User("p3", "P3", "cat")));
+        () -> lobbyService.joinOrUpdateLobby(lobbyId, newPlayer));
   }
 
   @Test
@@ -164,15 +172,16 @@ class LobbyServiceTests {
     Lobby lobby = lobbyService.createLobby("Room", host);
     join(lobby, "p2");
 
+    String lobbyId = lobby.getLobbyId();
     assertThrows(
         SecurityException.class,
-        () -> lobbyService.startGame(lobby.getLobbyId(), "outsider", ignored -> "game-1"));
+        () -> lobbyService.startGame(lobbyId, "outsider", ignored -> "game-1"));
   }
 
   @Test
   void disconnectedPlayerCleanupRemovesExpiredMembersAndReassignsHost() {
     MutableClock clock = new MutableClock(Instant.parse("2026-05-17T12:00:00Z"));
-    LobbyService service = new LobbyService(6, Duration.ofSeconds(5), clock, null);
+    LobbyService service = new LobbyService(6, Duration.ofSeconds(5), clock, null, new QrCodeGeneratorService());
     Lobby lobby = service.createLobby("Room", host);
     service.joinOrUpdateLobby(lobby.getLobbyId(), new User("p2", "P2", "cat"));
 
@@ -213,6 +222,235 @@ class LobbyServiceTests {
     assertNotEquals(first.getLobbyId(), second.getLobbyId());
     assertEquals("Same Room", first.getGroupName());
     assertEquals("Same Room", second.getGroupName());
+  }
+
+  @Test
+  void operationsOnUnknownLobbyReturnEmpty() {
+    assertTrue(lobbyService.joinOrUpdateLobby("unknown", host).isEmpty());
+    assertTrue(lobbyService.heartbeat("unknown", "p1").isEmpty());
+    assertTrue(lobbyService.leaveLobby("unknown", "p1").isEmpty());
+    assertTrue(lobbyService.startGame("unknown", "p1", ignored -> "game-1").isEmpty());
+    assertTrue(lobbyService.markGameStarted("unknown", "game-1").isEmpty());
+    assertNull(lobbyService.getLobby("unknown"));
+  }
+
+  @Test
+  void invalidUserIdsThrowExceptions() {
+    assertThrows(IllegalArgumentException.class, () -> lobbyService.heartbeat("lobby-1", null));
+    assertThrows(IllegalArgumentException.class, () -> lobbyService.heartbeat("lobby-1", "  "));
+    assertThrows(IllegalArgumentException.class, () -> lobbyService.startGame("lobby-1", "", ignored -> "game"));
+  }
+
+  @Test
+  void leaveLobbyWithNullArgumentsReturnsEmpty() {
+    assertTrue(lobbyService.leaveLobby(null, "p1").isEmpty());
+    assertTrue(lobbyService.leaveLobby("lobby-1", null).isEmpty());
+  }
+
+  @Test
+  void lastMemberLeavingDestroysLobby() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+
+    // Host (and only player) leaves the room
+    assertTrue(lobbyService.leaveLobby(lobby.getLobbyId(), "host-id").isEmpty());
+
+    // The lobby should now be removed from the system
+    assertNull(lobbyService.getLobby(lobby.getLobbyId()));
+  }
+
+  @Test
+  void leaveLobbyDoesNothingIfMemberNotInLobby() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+
+    Lobby result = lobbyService.leaveLobby(lobby.getLobbyId(), "unknown-user").orElseThrow();
+
+    // Host is still in the lobby
+    assertEquals(1, result.getMembers().size());
+  }
+
+  @Test
+  void heartbeatReturnsEmptyIfMemberNotInLobby() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+    assertTrue(lobbyService.heartbeat(lobby.getLobbyId(), "unknown-user").isEmpty());
+  }
+
+  @Test
+  void startGameFailsWithNotEnoughPlayers() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+
+    // Only the host is inside (< 2 players) -> expected exception
+    String lobbyId = lobby.getLobbyId();
+    assertThrows(IllegalStateException.class, () ->
+      lobbyService.startGame(lobbyId, "host-id", ignored -> "game-1")
+    );
+  }
+
+  @Test
+  void markGameStartedUpdatesLobbyState() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+    Lobby started = lobbyService.markGameStarted(lobby.getLobbyId(), "game-xyz").orElseThrow();
+
+    assertTrue(started.isGameStarted());
+    assertEquals("game-xyz", started.getGameId());
+  }
+
+  @Test
+  void scheduledCleanupRunsWithoutErrors() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+    // Simulate the Spring scheduler
+    lobbyService.scheduledCleanupExpiredMembers();
+
+    assertNotNull(lobbyService.getLobby(lobby.getLobbyId()));
+  }
+
+  @Test
+  void cleanupDestroysLobbyIfAllMembersExpire() {
+    MutableClock clock = new MutableClock(Instant.parse("2026-05-17T12:00:00Z"));
+    LobbyService service = new LobbyService(6, Duration.ofSeconds(5), clock, null, new QrCodeGeneratorService());
+    Lobby lobby = service.createLobby("Room", host);
+
+    // Advance time by 10 seconds so the timeout (5s) triggers
+    clock.advance(Duration.ofSeconds(10));
+    service.cleanupExpiredMembers();
+
+    // Room should have been deleted
+    assertNull(service.getLobby(lobby.getLobbyId()));
+  }
+
+  @Test
+  void maxPlayersClampedToSix() {
+    // Tests that the capacity cannot drop below 6 (Math.max(6, defaultMaxPlayers))
+    LobbyService smallService = new LobbyService(1, Duration.ofMinutes(1), Clock.systemUTC(), null, new QrCodeGeneratorService());
+    Lobby lobby = smallService.createLobby("Small Room", host);
+    assertEquals(6, lobby.getMaxPlayers());
+  }
+
+  @Test
+  void getLobbyIsCaseInsensitive() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+    String lowercaseId = lobby.getLobbyId().toLowerCase(Locale.ROOT);
+
+    assertNotNull(lobbyService.getLobby(lowercaseId));
+    assertEquals(lobby.getLobbyId(), lobbyService.getLobby(lowercaseId).getLobbyId());
+  }
+
+  @Test
+  void expiredMembersNotRemovedFromStartedGame() {
+    MutableClock clock = new MutableClock(Instant.parse("2026-05-17T12:00:00Z"));
+    LobbyService service = new LobbyService(6, Duration.ofSeconds(5), clock, null, new QrCodeGeneratorService());
+
+    Lobby lobby = service.createLobby("Room", host);
+    service.joinOrUpdateLobby(lobby.getLobbyId(), new User("p2", "P2", "cat"));
+    service.markGameStarted(lobby.getLobbyId(), "game-1");
+
+    // Time expired
+    clock.advance(Duration.ofSeconds(10));
+
+    // In a started game, removeExpiredMembersLocked returns early
+    Lobby snapshot = service.getLobby(lobby.getLobbyId());
+    assertEquals(2, snapshot.getMembers().size());
+  }
+
+  @Test
+  void createLobbyWithInvalidUserThrows() {
+    assertThrows(IllegalArgumentException.class, () -> lobbyService.createLobby("Room", null));
+    User invalidUser = new User("", "Name", "cat");
+    assertThrows(IllegalArgumentException.class, () -> lobbyService.createLobby("Room", invalidUser));
+  }
+
+  @Test
+  void joinOrUpdateLobbyWithInvalidUserThrows() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+    String lobbyId = lobby.getLobbyId();
+    assertThrows(IllegalArgumentException.class, () -> lobbyService.joinOrUpdateLobby(lobbyId, null));
+  }
+
+  @Test
+  void getLobbyExplicitlyWithNullReturnsNull() {
+    assertNull(lobbyService.getLobby(null));
+  }
+
+  @Test
+  void springAutowiredConstructorIsCovered() {
+    // Covers the constructor called by Spring Boot during startup (ObjectProvider)
+    @SuppressWarnings("unchecked")
+    ObjectProvider<LobbyRealtimePublisher> providerMock = mock(ObjectProvider.class);
+    when(providerMock.getIfAvailable()).thenReturn(null);
+
+    LobbyService springService = new LobbyService(
+      6,
+      120000L,
+      providerMock,
+      new QrCodeGeneratorService()
+    );
+
+    assertNotNull(springService);
+  }
+
+  @Test
+  void gameStartOutcomeRecordMethodsAreCovered() {
+    // Covers the overridden lobby() method and the automatically generated record methods
+    Lobby lobby = lobbyService.createLobby("Room", host);
+    LobbyService.GameStartOutcome outcome = new LobbyService.GameStartOutcome(lobby, "game-record", true);
+
+    assertNotNull(outcome.lobby());
+    assertEquals("game-record", outcome.gameId());
+    assertTrue(outcome.created());
+  }
+
+  @Test
+  void scheduledCleanupWithRealtimePublisherBroadcastsSnapshots() {
+    // Covers the 'else' branch in scheduledCleanup.
+    LobbyRealtimePublisher mockPublisher = mock(LobbyRealtimePublisher.class);
+    MutableClock clock = new MutableClock(Instant.parse("2026-05-17T12:00:00Z"));
+    LobbyService service = new LobbyService(6, Duration.ofSeconds(5), clock, mockPublisher, new QrCodeGeneratorService());
+
+    Lobby lobby = service.createLobby("Room", host);
+    service.joinOrUpdateLobby(lobby.getLobbyId(), new User("p2", "P2", "cat"));
+
+    // Advance time, host sends heartbeat, p2 expires
+    clock.advance(Duration.ofSeconds(3));
+    service.heartbeat(lobby.getLobbyId(), "host-id");
+    clock.advance(Duration.ofSeconds(3));
+
+    service.scheduledCleanupExpiredMembers();
+
+    // Verifies that the code enters the for loop and invokes broadcast
+    org.mockito.Mockito.verify(mockPublisher, org.mockito.Mockito.atLeastOnce())
+      .broadcastLobbySnapshot(org.mockito.Mockito.any(Lobby.class));
+  }
+
+  @Test
+  void cleanupExpiredMembersIgnoresNullLobbyInMap() throws Exception {
+    java.lang.reflect.Field mapField = LobbyService.class.getDeclaredField("activeLobbies");
+    mapField.setAccessible(true);
+    java.util.Map<String, Lobby> spoofedMap = new java.util.HashMap<>();
+    spoofedMap.put("SPOOF_ID", null);
+    mapField.set(lobbyService, spoofedMap);
+
+    List<Lobby> changed = lobbyService.cleanupExpiredMembers();
+    assertTrue(changed.isEmpty());
+  }
+
+  @Test
+  void isExpiredReturnsFalseIfLastSeenAtIsNull() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+    Lobby fetched = lobbyService.getLobby(lobby.getLobbyId());
+    fetched.getMembers().get(0).markSeen(null);
+
+    List<Lobby> changed = lobbyService.cleanupExpiredMembers();
+    assertTrue(changed.isEmpty());
+  }
+
+  @Test
+  void nonHostLeavingDoesNotReassignHost() {
+    Lobby lobby = lobbyService.createLobby("Room", host);
+    join(lobby, "p2");
+
+    Lobby updated = lobbyService.leaveLobby(lobby.getLobbyId(), "p2").orElseThrow();
+
+    // Host must remain "host-id"
+    assertEquals("host-id", updated.getHostId());
   }
 
   private Lobby join(Lobby lobby, String playerId) {

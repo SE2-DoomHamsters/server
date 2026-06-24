@@ -9,8 +9,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * Testklasse für die Lobby-Modellklasse.
- * Deckt alle Konstruktoren, Getter und Setter ab.
+ * Test class for the Lobby model class.
+ * Covers all constructors, getters, and setters.
  */
 class LobbyTest {
 
@@ -47,7 +47,7 @@ class LobbyTest {
     Lobby lobby = new Lobby("LIST_TEST");
     User user = new User("99", "Player", "🐱");
 
-    // Änderung: Kopie holen, User hinzufügen, Liste zurücksetzen
+    // Modification: retrieve copy, add user, reset list
     List<User> members = lobby.getMembers();
     members.add(user);
     lobby.setMembers(members);
@@ -59,7 +59,7 @@ class LobbyTest {
   void testMembersNullHandling() {
     Lobby lobby = new Lobby();
 
-    // Testet den Null-Branch in setMembers
+    // Tests the null branch in setMembers
     lobby.setMembers(null);
     assertNotNull(lobby.getMembers());
     assertTrue(lobby.getMembers().isEmpty());
@@ -69,7 +69,7 @@ class LobbyTest {
   @Test
   void testGetMembersWhenInternalListIsNullReturnsEmptySnapshot() throws Exception {
     Lobby lobby = new Lobby();
-    // Ich nutze Reflection, um das private Feld hart auf null zu setzen,
+    // Uses reflection to explicitly set the private field to null
     java.lang.reflect.Field field = Lobby.class.getDeclaredField("members");
     field.setAccessible(true);
     field.set(lobby, null);

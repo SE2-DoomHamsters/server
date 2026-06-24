@@ -3,6 +3,7 @@ package com.doomhamsters.gamesession;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -54,7 +55,7 @@ class GameControllerTest {
 
   @BeforeEach
   void setUp() {
-    // Hier wird der MockMvc selbst zusammengebaut
+    // Build the MockMvc instance manually using the web application context
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webApplicationContext).build();
 
     testLobby = new Lobby("TEST_LOBBY");
@@ -174,14 +175,14 @@ class GameControllerTest {
             .filter(Card::isSnackStash)
             .count();
 
-    assertEquals(31, testSession.getGame().getDeck().size());
-    assertEquals(7, snackStashCardsInGame);
+    assertEquals(39, testSession.getGame().getDeck().size());
+    assertEquals(3, snackStashCardsInGame);
     testSession.getGame().getPlayers().forEach(player ->
-        assertEquals(8, player.getHand().size()));
+        assertEquals(6, player.getHand().size()));
   }
 
   @Test
-  void startGame_AddsImplementedCommandCardsToEachStartingHand() throws Exception {
+  void startGame_UsesRegisteredCommandCardsInsteadOfGenericActionCards() throws Exception {
     stubNewStart("u1");
 
     mockMvc.perform(post("/api/game/start")
@@ -189,27 +190,35 @@ class GameControllerTest {
         .param("userId", "u1"))
       .andExpect(status().isOk());
 
-    testSession.getGame().getPlayers().forEach(player -> {
-      long powerNapCount = player.getHand().stream()
-          .filter(card -> "PowerNap".equals(card.getType()))
-          .count();
-      long quickPeekCount = player.getHand().stream()
-          .filter(card -> "QuickPeek".equals(card.getType()))
-          .count();
-      long stablePowerNapIdCount = player.getHand().stream()
-          .filter(card -> ("power_nap_" + player.getId()).equals(card.getId()))
-          .filter(card -> "Power Nap".equals(card.getName()))
-          .count();
-      long stableQuickPeekIdCount = player.getHand().stream()
-          .filter(card -> ("quick_peek_" + player.getId()).equals(card.getId()))
-          .filter(card -> "Quick Peek".equals(card.getName()))
-          .count();
+    List<Card> allCards = allCardsInGame();
 
-      assertEquals(1, powerNapCount);
-      assertEquals(1, quickPeekCount);
-      assertEquals(1, stablePowerNapIdCount);
-      assertEquals(1, stableQuickPeekIdCount);
-    });
+    assertEquals(0, allCards.stream()
+        .filter(card -> "action".equals(card.getType()))
+        .count());
+
+    List<String> expectedTypes = List.of(
+        "BegForSnacks",
+        "CageSwap",
+        "HAMSTER_FOUR",
+        "HamsterTrio",
+        "HyperMode",
+        "PowerNap",
+        "QuickPeek",
+        "SignOfFate",
+        "SniffAhead",
+        "Squick",
+        "StealCard",
+        "TunnelChaos",
+        "HamsterTwo");
+
+    for (String expectedType : expectedTypes) {
+      assertEquals(4, allCards.stream()
+          .filter(card -> expectedType.equals(card.getType()))
+          .count());
+    }
+
+    assertTrue(allCards.stream()
+        .noneMatch(card -> card.getId().startsWith("act_")));
   }
 
   @Test
@@ -285,5 +294,13 @@ class GameControllerTest {
     lobby.setGameId(gameId);
     lobby.setGameStarted(true);
     return lobby;
+  }
+
+  private List<Card> allCardsInGame() {
+    return java.util.stream.Stream.concat(
+            testSession.getGame().getDeck().getCards().stream(),
+            testSession.getGame().getPlayers().stream()
+                .flatMap(player -> player.getHand().stream()))
+        .toList();
   }
 }

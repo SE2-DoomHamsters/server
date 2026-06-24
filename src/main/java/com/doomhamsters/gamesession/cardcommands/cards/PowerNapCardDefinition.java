@@ -1,45 +1,18 @@
 package com.doomhamsters.gamesession.cardcommands.cards;
 
-import com.doomhamsters.Card;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import org.springframework.stereotype.Component;
 
 /**
  * Card definition for Power Nap.
  */
 @Component
-public class PowerNapCardDefinition implements CardDefinition {
+public class PowerNapCardDefinition extends AbstractCardDefinition {
 
-  /**
-   * Creates the Power Nap card definition.
-   */
   public PowerNapCardDefinition() {
-    // Required by Spring component scanning for this stateless card definition.
-  }
-
-  @Override
-  public String cardType() {
-    return "PowerNap";
-  }
-
-  @Override
-  public String commandId() {
-    return "POWER_NAP";
-  }
-
-  @Override
-  public String displayName() {
-    return "Power Nap";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card(
-        "power_nap_" + playerId,
-        displayName(),
-        cardType());
+    super("PowerNap", "POWER_NAP", "Power Nap");
   }
 
   @Override

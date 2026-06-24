@@ -4,7 +4,7 @@ import com.doomhamsters.Game;
 import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 
 /**
- * Repräsentiert eine einzelne Spielsitzung und ihren aktuellen Status.
+ * Represents a single game session and its current status.
  */
 public class GameSession {
 
@@ -14,16 +14,16 @@ public class GameSession {
   private GameStatus status;
 
   /**
-   * Leerer Konstruktor, der für die JSON-Deserialisierung benötigt wird.
+   * Empty constructor required for JSON deserialization.
    */
   public GameSession() {
   }
 
   /**
-   * Erstellt eine neue GameSession.
+   * Creates a new GameSession.
    *
-   * @param gameId Die eindeutige Kennung für das Spiel
-   * @param lobbyId Die Kennung der Lobby, aus der dieses Spiel gestartet wurde
+   * @param gameId the unique identifier for the game
+   * @param lobbyId the identifier of the lobby from which this game was started
    */
   public GameSession(String gameId, String lobbyId) {
     this.gameId = gameId;
@@ -33,45 +33,45 @@ public class GameSession {
   }
 
   /**
-   * Gibt die Spiel-ID zurück.
+   * Returns the game ID.
    *
-   * @return Die ID des Spiels
+   * @return the ID of the game
    */
   public String getGameId() {
     return gameId;
   }
 
   /**
-   * Setzt die Spiel-ID.
+   * Sets the game ID.
    *
-   * @param gameId Die zu setzende Spiel-ID
+   * @param gameId the game ID to set
    */
   public void setGameId(String gameId) {
     this.gameId = gameId;
   }
 
   /**
-   * Gibt die Lobby-ID zurück.
+   * Returns the lobby ID.
    *
-   * @return Die ID der Lobby
+   * @return the ID of the lobby
    */
   public String getLobbyId() {
     return lobbyId;
   }
 
   /**
-   * Setzt die Lobby-ID.
+   * Sets the lobby ID.
    *
-   * @param lobbyId Die zu setzende Lobby-ID
+   * @param lobbyId the lobby ID to set
    */
   public void setLobbyId(String lobbyId) {
     this.lobbyId = lobbyId;
   }
 
   /**
-   * Gibt die interne Spiellogik-Instanz zurück.
+   * Returns the internal game logic instance.
    *
-   * @return Die Spiel-Instanz
+   * @return the game instance
    */
   @SuppressFBWarnings("EI_EXPOSE_REP")
   public Game getGame() {
@@ -79,12 +79,12 @@ public class GameSession {
   }
 
   /**
-   * Setzt die Spiel-Instanz.
+   * Sets the game instance.
    *
-   * <p>Wird null übergeben, wird die Instanz auf null gesetzt,
-   * ansonsten wird eine Kopie der übergebenen Instanz gespeichert.
+   * <p>If null is passed, the instance is set to null,
+   * otherwise a copy of the passed instance is stored.
    *
-   * @param game Die zu setzende Spiel-Instanz
+   * @param game the game instance to set
    */
   public void setGame(Game game) {
     this.game = game == null
@@ -93,32 +93,32 @@ public class GameSession {
   }
 
   /**
-   * Gibt den aktuellen Status der Spielsitzung zurück.
+   * Returns the current status of the game session.
    *
-   * @return Der Spielstatus
+   * @return the game status
    */
   public GameStatus getStatus() {
     return status;
   }
 
   /**
-   * Setzt den neuen Status der Spielsitzung.
+   * Sets the new status of the game session.
    *
-   * @param status Der neue Status
+   * @param status the new status
    */
   public void setStatus(GameStatus status) {
     this.status = status;
   }
 
   /**
-   * Mögliche Zustände für eine Spielsitzung.
+   * Possible states for a game session.
    */
   public enum GameStatus {
-    /** Das Spiel wird gerade eingerichtet und ist noch nicht gestartet. */
+    /** The game is currently being set up and has not started yet. */
     SETUP,
-    /** Das Spiel läuft aktiv. */
+    /** The game is actively running. */
     RUNNING,
-    /** Das Spiel wurde beendet und ein Gewinner steht fest. */
+    /** The game has finished and a winner has been determined. */
     FINISHED
   }
 }

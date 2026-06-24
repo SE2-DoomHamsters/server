@@ -1,6 +1,7 @@
 package com.doomhamsters.gamesession.cardcommands;
 
 import com.doomhamsters.gamesession.dto.CardDto;
+import java.util.List;
 
 /**
  * Private event emitted to the player who activated a card command.
@@ -13,6 +14,7 @@ public class CardCommandResultEventDto {
   private String commandId;
   private CardDto card;
   private CardDto revealedCard;
+  private List<CardDto> revealedCards;
   private String message;
 
   /**
@@ -101,6 +103,29 @@ public class CardCommandResultEventDto {
    */
   public void setRevealedCard(CardDto revealedCard) {
     this.revealedCard = revealedCard == null ? null : new CardDto(revealedCard);
+  }
+
+  /**
+   * Returns the privately revealed cards in deck order.
+   *
+   * @return defensive copies of revealed card DTOs, or an empty list
+   */
+  public List<CardDto> getRevealedCards() {
+    if (revealedCards == null) {
+      return List.of();
+    }
+    return revealedCards.stream().map(CardDto::new).toList();
+  }
+
+  /**
+   * Sets the privately revealed cards in deck order.
+   *
+   * @param revealedCards revealed card DTOs
+   */
+  public void setRevealedCards(List<CardDto> revealedCards) {
+    this.revealedCards = (revealedCards == null)
+        ? List.of()
+        : revealedCards.stream().map(CardDto::new).toList();
   }
 
   /**

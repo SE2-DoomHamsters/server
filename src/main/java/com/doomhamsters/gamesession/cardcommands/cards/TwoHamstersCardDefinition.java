@@ -17,7 +17,6 @@ public class TwoHamstersCardDefinition implements CardDefinition {
 
   private static final int REQUIRED_COUNT = 2;
 
-  public TwoHamstersCardDefinition() {}
 
   @Override
   public String cardType() {

@@ -15,9 +15,6 @@ public class FourHamstersCardDefinition implements CardDefinition {
 
   private static final int REQUIRED_COUNT = 4;
 
-  public FourHamstersCardDefinition() {
-  }
-
   @Override
   public String cardType() {
     return "HAMSTER_FOUR";

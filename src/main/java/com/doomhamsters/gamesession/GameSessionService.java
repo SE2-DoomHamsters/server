@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 /**
- * Service zur Verwaltung des Lebenszyklus von Spielsitzungen.
+ * Service for managing the lifecycle of game sessions.
  */
 @Service
 public class GameSessionService {
@@ -14,10 +14,10 @@ public class GameSessionService {
   private final GameSessionPersistenceCoordinator persistenceCoordinator;
 
   /**
-   * Initialisiert den Service mit seinen Abhängigkeiten.
+   * Initializes the service with its dependencies.
    *
-   * @param repository             Das in-memory Repository
-   * @param persistenceCoordinator Der Persistenz-Koordinator
+   * @param repository             the in-memory repository
+   * @param persistenceCoordinator the persistence coordinator
    */
   public GameSessionService(
       GameSessionRepository repository,
@@ -27,10 +27,10 @@ public class GameSessionService {
   }
 
   /**
-   * Erstellt und speichert eine neue Spielsitzung für eine gegebene Lobby.
+   * Creates and stores a new game session for a given lobby.
    *
-   * @param lobbyId Die Lobby, aus der das Spiel gestartet wird
-   * @return Die neu erstellte Spielsitzung
+   * @param lobbyId the ID of the lobby from which the game is started
+   * @return the newly created game session
    */
   public GameSession createSession(String lobbyId) {
     String gameId = UUID.randomUUID().toString();
@@ -43,19 +43,19 @@ public class GameSessionService {
   }
 
   /**
-   * Ruft eine existierende Spielsitzung anhand ihrer ID ab.
+   * Retrieves an existing game session by its ID.
    *
-   * @param gameId Die ID der Sitzung
-   * @return Ein Optional, das die Sitzung enthält, falls gefunden
+   * @param gameId the ID of the session
+   * @return an Optional containing the session if found
    */
   public Optional<GameSession> getSession(String gameId) {
     return repository.findById(gameId);
   }
 
   /**
-   * Speichert oder aktualisiert eine Spielsitzung manuell im Speicher.
+   * Manually stores or updates a game session in memory.
    *
-   * @param session Die zu speichernde Sitzung
+   * @param session the session to store
    */
   public void saveSession(GameSession session) {
     repository.store(session);

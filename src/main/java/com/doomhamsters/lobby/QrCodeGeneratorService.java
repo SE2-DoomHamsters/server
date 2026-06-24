@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
- * Service für die Generierung von QR-Code Bildern.
+ * Service for generating QR code images.
  */
 @Service
 public class QrCodeGeneratorService {
@@ -19,10 +19,10 @@ public class QrCodeGeneratorService {
   private static final Logger LOGGER = LoggerFactory.getLogger(QrCodeGeneratorService.class);
 
   /**
-   * Generiert einen QR-Code aus einem gegebenen Text und gibt diesen als Base64-String zurück.
+   * Generates a QR code from a given text and returns it as a Base64 string.
    *
-   * @param text Der Text, der im QR-Code verschlüsselt werden soll.
-   * @return Der Base64 codierte PNG-String oder null im Fehlerfall.
+   * @param text the text to be encoded into the QR code
+   * @return the Base64-encoded PNG string, or null in case of an error
    */
   public String generateQrCode(String text) {
     if (text == null || text.isBlank()) {

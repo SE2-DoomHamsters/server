@@ -65,7 +65,7 @@ public class TwoHamstersCardDefinition implements CardDefinition {
       throw new IllegalStateException("TwoHamsters: Target player is already eliminated.");
     }
 
-    // 1. Die 2 Karten suchen
+    // 1. Find and collect the 2 matching cards
     List<Card> matchingCards = requester.getHand().stream()
         .filter(c -> hamsterType.equalsIgnoreCase(c.getType()))
         .limit(REQUIRED_COUNT)
@@ -77,10 +77,10 @@ public class TwoHamstersCardDefinition implements CardDefinition {
         REQUIRED_COUNT, hamsterType));
     }
 
-    // 2. Die 2 Karten gefahrlos abwerfen
+    // 2. Discard them safely now by iterating over our temporary list
     matchingCards.forEach(c -> requester.removeFromHand(c.getId()));
 
-    // 3. Steal-Logik (orientiert an StealCardDefinition)
+    // 3. Steal logic (similar to StealCardDefinition)
     if (target.getHand().isEmpty()) {
       return CardCommandResult.publicOnly(
         requester.getName() + " played two " + hamsterType + " cards, but "
@@ -92,7 +92,7 @@ public class TwoHamstersCardDefinition implements CardDefinition {
     Card stolenCard = target.removeFromHand(cardToSteal.getId());
     requester.addToHand(stolenCard);
 
-    // 4. Resultat mit privateResult generieren
+    // 4. Generate the result including a private notification
     String publicMsg = String.format(
         "%s played two %s cards and stole a random card from %s!",
         requester.getName(), hamsterType, target.getName());
@@ -102,7 +102,7 @@ public class TwoHamstersCardDefinition implements CardDefinition {
     return CardCommandResult.withPrivateResult(publicMsg, privateMsg, stolenCard);
   }
 
-  // Hilfsmethode zum sicheren Auslesen der Parameter
+  // Helper method to safely extract required string parameters
   private static String requiredString(CardCommandContext context, String key) {
     Object value = context.getParameters().get(key);
     if (value == null || value.toString().isBlank()) {

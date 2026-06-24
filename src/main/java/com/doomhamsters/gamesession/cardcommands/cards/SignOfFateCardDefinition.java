@@ -1,36 +1,18 @@
 package com.doomhamsters.gamesession.cardcommands.cards;
 
-import com.doomhamsters.Card;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import org.springframework.stereotype.Component;
 
 /**
  * Card definition for Sign of Fate.
  */
 @Component
-public class SignOfFateCardDefinition implements CardDefinition {
+public class SignOfFateCardDefinition extends AbstractCardDefinition {
 
-
-  @Override
-  public String cardType() {
-    return "SignOfFate";
-  }
-
-  @Override
-  public String commandId() {
-    return "SIGN_OF_FATE";
-  }
-
-  @Override
-  public String displayName() {
-    return "Sign of Fate";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card("sign_of_fate_" + playerId, displayName(), cardType());
+  public SignOfFateCardDefinition() {
+    super("SignOfFate", "SIGN_OF_FATE", "Sign of Fate");
   }
 
   @Override

@@ -2,9 +2,9 @@ package com.doomhamsters.gamesession.cardcommands.cards;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Deck;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -15,27 +15,10 @@ import org.springframework.stereotype.Component;
  * player. The deck order is not changed.
  */
 @Component
-public class SniffAheadCardDefinition implements CardDefinition {
+public class SniffAheadCardDefinition extends AbstractCardDefinition {
 
-
-  @Override
-  public String cardType() {
-    return "SniffAhead";
-  }
-
-  @Override
-  public String commandId() {
-    return "SNIFF_AHEAD";
-  }
-
-  @Override
-  public String displayName() {
-    return "Sniff Ahead";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card("sniff_ahead_" + playerId, displayName(), cardType());
+  public SniffAheadCardDefinition() {
+    super("SniffAhead", "SNIFF_AHEAD", "Sniff Ahead");
   }
 
   @Override

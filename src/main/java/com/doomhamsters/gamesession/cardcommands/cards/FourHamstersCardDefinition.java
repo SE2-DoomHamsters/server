@@ -2,9 +2,9 @@ package com.doomhamsters.gamesession.cardcommands.cards;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -12,28 +12,12 @@ import org.springframework.stereotype.Component;
  * Card definition for playing 4 identical Hamsters to steal 1 life.
  */
 @Component
-public class FourHamstersCardDefinition implements CardDefinition {
+public class FourHamstersCardDefinition extends AbstractCardDefinition {
 
   private static final int REQUIRED_COUNT = 4;
 
-  @Override
-  public String cardType() {
-    return "HAMSTER_FOUR";
-  }
-
-  @Override
-  public String commandId() {
-    return "FOUR_HAMSTERS";
-  }
-
-  @Override
-  public String displayName() {
-    return "Hamster Combo: 4-of-a-Kind";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card("four_hamsters_" + playerId, displayName(), cardType());
+  public FourHamstersCardDefinition() {
+    super("HAMSTER_FOUR", "FOUR_HAMSTERS", "Hamster Combo: 4-of-a-Kind");
   }
 
   @Override

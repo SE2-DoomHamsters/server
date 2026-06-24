@@ -3,9 +3,9 @@ package com.doomhamsters.gamesession.cardcommands.cards;
 import com.doomhamsters.Card;
 import com.doomhamsters.Game;
 import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Component;
@@ -15,26 +15,10 @@ import org.springframework.stereotype.Component;
  * Swaps the current player's entire hand with the next active player.
  */
 @Component
-public class CageSwapCardDefinition implements CardDefinition {
+public class CageSwapCardDefinition extends AbstractCardDefinition {
 
-  @Override
-  public String cardType() {
-    return "CageSwap";
-  }
-
-  @Override
-  public String commandId() {
-    return "CAGE_SWAP";
-  }
-
-  @Override
-  public String displayName() {
-    return "Cage Swap";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card("cage_swap_" + playerId, displayName(), cardType());
+  public CageSwapCardDefinition() {
+    super("CageSwap", "CAGE_SWAP", "Cage Swap");
   }
 
   @Override

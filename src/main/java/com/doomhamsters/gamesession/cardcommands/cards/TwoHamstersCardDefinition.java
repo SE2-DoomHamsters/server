@@ -2,9 +2,9 @@ package com.doomhamsters.gamesession.cardcommands.cards;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Component;
@@ -13,29 +13,12 @@ import org.springframework.stereotype.Component;
  * Card definition for playing 2 identical Hamsters to steal a random card.
  */
 @Component
-public class TwoHamstersCardDefinition implements CardDefinition {
+public class TwoHamstersCardDefinition extends AbstractCardDefinition {
 
   private static final int REQUIRED_COUNT = 2;
 
-
-  @Override
-  public String cardType() {
-    return "HamsterTwo";
-  }
-
-  @Override
-  public String commandId() {
-    return "TWO_HAMSTERS";
-  }
-
-  @Override
-  public String displayName() {
-    return "Hamster Combo: 2-of-a-Kind";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card("two_hamsters_" + playerId, displayName(), cardType());
+  public TwoHamstersCardDefinition() {
+    super("HamsterTwo", "TWO_HAMSTERS", "Hamster Combo: 2-of-a-Kind");
   }
 
   @Override

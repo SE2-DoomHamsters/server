@@ -2,9 +2,9 @@ package com.doomhamsters.gamesession.cardcommands.cards;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import java.util.concurrent.ThreadLocalRandom;
 import org.springframework.stereotype.Component;
 
@@ -12,27 +12,10 @@ import org.springframework.stereotype.Component;
  * Card definition for Steal Card.
  */
 @Component
-public class StealCardDefinition implements CardDefinition {
+public class StealCardDefinition extends AbstractCardDefinition {
 
-
-  @Override
-  public String cardType() {
-    return "StealCard";
-  }
-
-  @Override
-  public String commandId() {
-    return "STEAL_CARD";
-  }
-
-  @Override
-  public String displayName() {
-    return "Steal Card";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card("steal_card_" + playerId, displayName(), cardType());
+  public StealCardDefinition() {
+    super("StealCard", "STEAL_CARD", "Steal Card");
   }
 
   @Override

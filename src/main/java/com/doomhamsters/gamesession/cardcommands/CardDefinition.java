@@ -67,8 +67,13 @@ public interface CardDefinition extends CardCommand {
   /**
    * Creates this card for a player's testing starting hand.
    *
+   * <p>The default implementation derives the card id from {@link #commandId()} converted to
+   * lower-case, e.g. {@code "two_hamsters_p1"} for command id {@code "TWO_HAMSTERS"}.
+   *
    * @param playerId owning player id
    * @return card instance
    */
-  Card createTestingCard(String playerId);
+  default Card createTestingCard(String playerId) {
+    return new Card(commandId().toLowerCase() + "_" + playerId, displayName(), cardType());
+  }
 }

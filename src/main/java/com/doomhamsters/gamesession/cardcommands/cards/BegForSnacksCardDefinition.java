@@ -2,9 +2,9 @@ package com.doomhamsters.gamesession.cardcommands.cards;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,28 +22,10 @@ import org.springframework.stereotype.Component;
  * </ul>
  */
 @Component
-public class BegForSnacksCardDefinition implements CardDefinition {
+public class BegForSnacksCardDefinition extends AbstractCardDefinition {
 
-  private static final String CARD_TYPE = "BegForSnacks";
-
-  @Override
-  public String cardType() {
-    return CARD_TYPE;
-  }
-
-  @Override
-  public String commandId() {
-    return CARD_TYPE;
-  }
-
-  @Override
-  public String displayName() {
-    return "Beg for Snacks";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card(CARD_TYPE + playerId, displayName(), cardType());
+  public BegForSnacksCardDefinition() {
+    super("BegForSnacks", "BegForSnacks", "Beg for Snacks");
   }
 
   @Override

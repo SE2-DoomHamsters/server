@@ -1,11 +1,10 @@
 package com.doomhamsters.gamesession.cardcommands.cards;
 
-import com.doomhamsters.Card;
 import com.doomhamsters.Game;
 import com.doomhamsters.LastActionSnapshot;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,34 +23,17 @@ import org.springframework.stereotype.Component;
  * </ul>
  */
 @Component
-public class SquickCardDefinition implements CardDefinition {
+public class SquickCardDefinition extends AbstractCardDefinition {
 
   static final String COMMAND_ID = "SQUICK";
 
-
-  @Override
-  public String cardType() {
-    return "Squick";
-  }
-
-  @Override
-  public String commandId() {
-    return COMMAND_ID;
-  }
-
-  @Override
-  public String displayName() {
-    return "Squick";
+  public SquickCardDefinition() {
+    super("Squick", COMMAND_ID, "Squick");
   }
 
   @Override
   public boolean isUndoable() {
     return false;
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card("squick_" + playerId, displayName(), cardType());
   }
 
   @Override

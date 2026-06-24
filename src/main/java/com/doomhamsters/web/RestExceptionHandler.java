@@ -73,6 +73,7 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
   @Override
+  @Nullable
   protected ResponseEntity<Object> handleExceptionInternal(
       Exception ex,
       @Nullable Object body,

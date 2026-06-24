@@ -2,9 +2,9 @@ package com.doomhamsters.gamesession.cardcommands.cards;
 
 import com.doomhamsters.Card;
 import com.doomhamsters.Player;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -27,28 +27,12 @@ import org.springframework.stereotype.Component;
  * </ul>
  */
 @Component
-public class HamsterTrioCardDefinition implements CardDefinition {
+public class HamsterTrioCardDefinition extends AbstractCardDefinition {
 
   private static final int REQUIRED_COUNT = 3;
 
-  @Override
-  public String cardType() {
-    return "HamsterTrio";
-  }
-
-  @Override
-  public String commandId() {
-    return "HAMSTER_TRIO";
-  }
-
-  @Override
-  public String displayName() {
-    return "Hamster Trio";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card("hamster_trio_" + playerId, displayName(), cardType());
+  public HamsterTrioCardDefinition() {
+    super("HamsterTrio", "HAMSTER_TRIO", "Hamster Trio");
   }
 
   @Override

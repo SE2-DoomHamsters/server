@@ -1,9 +1,8 @@
 package com.doomhamsters.gamesession.cardcommands.cards;
 
-import com.doomhamsters.Card;
+import com.doomhamsters.gamesession.cardcommands.AbstractCardDefinition;
 import com.doomhamsters.gamesession.cardcommands.CardCommandContext;
 import com.doomhamsters.gamesession.cardcommands.CardCommandResult;
-import com.doomhamsters.gamesession.cardcommands.CardDefinition;
 import org.springframework.stereotype.Component;
 
 /**
@@ -13,29 +12,10 @@ import org.springframework.stereotype.Component;
  * has no target and produces no private information.
  */
 @Component
-public class TunnelChaosCardDefinition implements CardDefinition {
+public class TunnelChaosCardDefinition extends AbstractCardDefinition {
 
-  /** Creates the Tunnel Chaos card definition. */
-  public TunnelChaosCardDefinition() {}
-
-  @Override
-  public String cardType() {
-    return "TunnelChaos";
-  }
-
-  @Override
-  public String commandId() {
-    return "TUNNEL_CHAOS";
-  }
-
-  @Override
-  public String displayName() {
-    return "Tunnel Chaos";
-  }
-
-  @Override
-  public Card createTestingCard(String playerId) {
-    return new Card("tunnel_chaos_" + playerId, displayName(), cardType());
+  public TunnelChaosCardDefinition() {
+    super("TunnelChaos", "TUNNEL_CHAOS", "Tunnel Chaos");
   }
 
   @Override

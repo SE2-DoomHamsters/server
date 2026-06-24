@@ -20,10 +20,6 @@ public class StealCardDefinition implements CardDefinition {
 
   private static final Random RANDOM = new Random();
 
-  public StealCardDefinition() {
-
-  }
-
   @Override
   public String cardType() {
     return "StealCard";

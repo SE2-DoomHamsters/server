@@ -175,7 +175,7 @@ class FourHamstersCardDefinitionTest {
 
   @Test
   void cardType_shouldReturnHamsterFour() {
-    assertEquals("HAMSTER_FOUR", cardDefinition.cardType());
+    assertEquals("FourHamsters", cardDefinition.cardType());
   }
 
   @Test
@@ -193,6 +193,6 @@ class FourHamstersCardDefinitionTest {
     Card testCard = cardDefinition.createTestingCard("test-player-1");
     assertEquals("four_hamsters_test-player-1", testCard.getId());
     assertEquals("Hamster Combo: 4-of-a-Kind", testCard.getName());
-    assertEquals("HAMSTER_FOUR", testCard.getType());
+    assertEquals("FourHamsters", testCard.getType());
   }
 }

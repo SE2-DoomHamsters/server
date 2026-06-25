@@ -199,7 +199,7 @@ class GameControllerTest {
     List<String> expectedTypes = List.of(
         "BegForSnacks",
         "CageSwap",
-        "HAMSTER_FOUR",
+        "FourHamsters",
         "HamsterTrio",
         "HyperMode",
         "PowerNap",

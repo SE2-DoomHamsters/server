@@ -17,7 +17,7 @@ public class FourHamstersCardDefinition extends AbstractCardDefinition {
   private static final int REQUIRED_COUNT = 4;
 
   public FourHamstersCardDefinition() {
-    super("HAMSTER_FOUR", "FOUR_HAMSTERS", "Hamster Combo: 4-of-a-Kind");
+    super("FourHamsters", "FOUR_HAMSTERS", "Hamster Combo: 4-of-a-Kind");
   }
 
   @Override

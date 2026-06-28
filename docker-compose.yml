@@ -1,6 +1,7 @@
 services:
   server:
     # Pre-built image from GitHub Container Registry — built on every push to main via GitHub Actions
+    # Deploy version: 3
     image: ghcr.io/se2-doomhamsters/server:latest
 
     # Restart automatically on crash; skip restart only if manually stopped

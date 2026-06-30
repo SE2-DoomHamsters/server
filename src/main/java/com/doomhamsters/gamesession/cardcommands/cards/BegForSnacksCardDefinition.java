@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 public class BegForSnacksCardDefinition extends AbstractCardDefinition {
 
   public BegForSnacksCardDefinition() {
-    super("BegForSnacks", "BegForSnacks", "Beg for Snacks");
+    super("BegForSnacks", "BEG_FOR_SNACKS", "Beg for Snacks");
   }
 
   @Override

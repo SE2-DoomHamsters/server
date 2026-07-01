@@ -4,7 +4,6 @@ import com.doomhamsters.Card;
 import com.doomhamsters.Game;
 import com.doomhamsters.Player;
 import com.doomhamsters.gamesession.GameSession;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -138,27 +137,13 @@ public class SnackStashClaimService {
       Player claimant,
       List<String> accusingPlayerIds) {
 
-    List<SnackStashLifeChange> lifeChanges = new ArrayList<>();
-    for (String playerId : accusingPlayerIds) {
-      Player voter = findPlayer(game, playerId);
-      int livesBefore = voter.getLives();
-      voter.decrementLives();
-      lifeChanges.add(
-          new SnackStashLifeChange(
-              voter.getId(),
-              voter.getName(),
-              livesBefore,
-              voter.getLives()));
-    }
     game.defusePendingDoomWithClaimedCard(claim.getCardId());
-    game.checkWinCondition();
 
     return SnackStashResolution.builder(SnackStashOutcome.LEGITIMATE_CALL, claim.getClaimId())
         .claimingPlayer(claimant.getId(), claimant.getName())
         .accusingPlayerIds(accusingPlayerIds)
-        .lifeChanges(lifeChanges)
         .doomDefused(true)
-        .message(claimant.getName() + " had a real Snack Stash. NO voters lose 1 life.")
+        .message(claimant.getName() + " had a real Snack Stash. Doom defused, no lives lost.")
         .build();
   }
 

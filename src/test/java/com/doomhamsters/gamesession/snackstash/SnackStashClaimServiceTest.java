@@ -50,7 +50,7 @@ class SnackStashClaimServiceTest {
   }
 
   @Test
-  void noVotesAgainstRealSnackStashCostEachAccuserOneLife() {
+  void noVotesAgainstRealSnackStashDoNotCostAccuserLife() {
     GameSession session = runningSession(List.of("Alice", "Bob", "Cara"));
     Game game = session.getGame();
     Player claimant = game.getPlayers().get(0);
@@ -80,9 +80,9 @@ class SnackStashClaimServiceTest {
     SnackStashResolution resolution = resolved.orElseThrow();
     assertEquals(SnackStashOutcome.LEGITIMATE_CALL, resolution.getOutcome());
     assertEquals(List.of(firstVoter.getId(), secondVoter.getId()), resolution.getAccusingPlayerIds());
-    assertEquals(2, resolution.getLifeChanges().size());
-    assertEquals(firstLivesBefore - 1, firstVoter.getLives());
-    assertEquals(secondLivesBefore - 1, secondVoter.getLives());
+    assertTrue(resolution.getLifeChanges().isEmpty());
+    assertEquals(firstLivesBefore, firstVoter.getLives());
+    assertEquals(secondLivesBefore, secondVoter.getLives());
     assertTrue(game.isPendingDoomRequiresInsertion());
     assertNull(game.getPendingSnackStashClaim());
   }

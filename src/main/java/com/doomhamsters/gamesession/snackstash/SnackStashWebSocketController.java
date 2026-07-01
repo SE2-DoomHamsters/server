@@ -98,10 +98,14 @@ public class SnackStashWebSocketController {
             claimId,
             vote);
 
-    resolution.ifPresentOrElse(
-        resolved -> publishSnackStashResolutionEvent(session.getGameId(), resolved),
-        () -> publishSnackStashClaimProgressEvent(session));
-    gameSessionBroadcaster.saveAndBroadcast(session, playerId);
+    if (resolution.isPresent()) {
+      SnackStashResolution resolved = resolution.get();
+      publishSnackStashResolutionEvent(session.getGameId(), resolved);
+      gameSessionBroadcaster.saveAndBroadcast(session, resolved.getClaimingPlayerId());
+    } else {
+      publishSnackStashClaimProgressEvent(session);
+      gameSessionBroadcaster.saveAndBroadcast(session, playerId);
+    }
   }
 
   private GameSession loadSession(String gameId) {

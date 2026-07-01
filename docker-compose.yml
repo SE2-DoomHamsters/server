@@ -12,6 +12,25 @@ services:
       # <university-server-port>:<container-internal-port>
       - "53217:8080"
 
+    deploy:
+      resources:
+        limits:
+          # Measured peak under active gameplay: 3% CPU across all cores.
+          # Set to 0.50 to give the JVM burst room for GC and spike connections
+          # without starving other containers on the host.
+          cpus: '0.50'
+
+          # Measured peak under active gameplay: ~400 MB.
+          # Limit is 1.5× the peak (600 MB) because the JVM heap can spike
+          # sharply during garbage collection — Docker OOM-kills the container
+          # the moment it exceeds the limit, so headroom is critical.
+          memory: 600M
+
+        reservations:
+          # Guarantees the container always gets at least its measured baseline.
+          # Prevents the host from over-committing memory to other containers.
+          memory: 400M
+
     environment:
       # Override default sessions.json path to write inside the Docker volume
       - SESSIONS_FILE_PATH=/data/sessions.json

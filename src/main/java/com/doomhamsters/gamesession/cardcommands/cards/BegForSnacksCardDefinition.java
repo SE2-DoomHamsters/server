@@ -17,15 +17,15 @@ import org.springframework.stereotype.Component;
  * <p>Required parameters:
  *
  * <ul>
- *   <li>{@code targetPlayerId} – the id of the player being begged
- *   <li>{@code cardType} – the card type to request
+ *   <li>{@code targetPlayerId} - the id of the player being begged
+ *   <li>{@code cardType} - the card type to request
  * </ul>
  */
 @Component
 public class BegForSnacksCardDefinition extends AbstractCardDefinition {
 
   public BegForSnacksCardDefinition() {
-    super("BegForSnacks", "BegForSnacks", "Beg for Snacks");
+    super("BegForSnacks", "BEG_FOR_SNACKS", "Beg for Snacks");
   }
 
   @Override
@@ -35,33 +35,31 @@ public class BegForSnacksCardDefinition extends AbstractCardDefinition {
 
     Player requester = context.getPlayer();
     Player target = context.getGame().getPlayers().stream()
-        .filter(p -> p.getId().equals(targetPlayerId))
+        .filter(player -> player.getId().equals(targetPlayerId))
         .findFirst()
         .orElseThrow(() -> new IllegalArgumentException(
-        "BegForSnacks: unknown targetPlayerId=" + targetPlayerId));
+            "BegForSnacks: unknown targetPlayerId=" + targetPlayerId));
 
     if (target.getId().equals(requester.getId())) {
       throw new IllegalArgumentException("BegForSnacks: cannot target yourself");
     }
 
-    requester.removeFromHand(context.getCard().getId());
-
     Card found = target.getHand().stream()
-        .filter(c -> requestedType.equalsIgnoreCase(c.getType()))
+        .filter(card -> requestedType.equalsIgnoreCase(card.getType()))
         .findFirst()
         .orElse(null);
 
     if (found == null) {
       return CardCommandResult.publicOnly(String.format(
-        "%s begged %s for a %s — but they had none.",
-        requester.getName(), target.getName(), requestedType));
+          "%s begged %s for a %s - but they had none.",
+          requester.getName(), target.getName(), requestedType));
     }
 
     target.removeFromHand(found.getId());
     requester.addToHand(found);
 
     return CardCommandResult.publicOnly(String.format(
-      "%s begged %s for a %s and received one.",
-      requester.getName(), target.getName(), requestedType));
+        "%s begged %s for a %s and received one.",
+        requester.getName(), target.getName(), requestedType));
   }
 }

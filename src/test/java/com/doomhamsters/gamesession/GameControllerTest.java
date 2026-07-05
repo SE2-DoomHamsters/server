@@ -175,7 +175,7 @@ class GameControllerTest {
             .filter(Card::isSnackStash)
             .count();
 
-    assertEquals(39, testSession.getGame().getDeck().size());
+    assertEquals(55, testSession.getGame().getDeck().size());
     assertEquals(3, snackStashCardsInGame);
     testSession.getGame().getPlayers().forEach(player ->
         assertEquals(6, player.getHand().size()));

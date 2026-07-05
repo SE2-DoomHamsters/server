@@ -36,6 +36,10 @@ public class CardRegistry {
   private final Map<String, CardDefinition> definitionsByType;
   private final List<CardDefinition> definitions;
 
+  private static final List<String> HAMSTER_VARIANTS =
+      List.of("hamster_ninja", "hamster_viking", "hamster_wizard", "hamster_pirate");
+  private static final int HAMSTER_COPIES_PER_VARIANT = 4;
+
   /**
    * Creates the registry from discovered card definition beans.
    *
@@ -162,7 +166,30 @@ public class CardRegistry {
       }
     }
 
+    addHamsterCollectibleCards(cards);
+
     return cards;
+  }
+
+  /**
+   * Adds the collectible hamster cards that Hamster Combo commands consume.
+   *
+   * @param cards deck being built
+   */
+  private void addHamsterCollectibleCards(List<Card> cards) {
+    for (String variant : HAMSTER_VARIANTS) {
+      String displayName = toHamsterDisplayName(variant);
+      for (int copy = 0; copy < HAMSTER_COPIES_PER_VARIANT; copy++) {
+        cards.add(new Card(variant + "_" + copy, displayName, variant));
+      }
+    }
+  }
+
+  private String toHamsterDisplayName(String variant) {
+    String suffix = variant.substring(variant.indexOf('_') + 1);
+    String capitalized =
+        suffix.substring(0, 1).toUpperCase(Locale.ROOT) + suffix.substring(1);
+    return capitalized + " Hamster";
   }
 
   /**
